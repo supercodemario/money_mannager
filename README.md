@@ -1,34 +1,110 @@
-# money_manager
+# Money Manager
 
-A new Flutter project.
+Flutter app for tracking daily expenses, recurring payments, and spending guidance (**homeRatio** UI). Data is **local-first** (SQLite via **Drift**); **optional cloud sync** uses **Supabase** (Postgres + Auth + Row Level Security).
 
-## Supabase (optional cloud sync)
+## Requirements
 
-Phase-1 sync uses [Supabase](https://supabase.com/) when credentials are provided at **compile time** (no `.env` in repo).
+- [Flutter](https://docs.flutter.dev/get-started/install) (Dart SDK **^3.11** — see `pubspec.yaml`)
+- For cloud sync: a Supabase project and applied SQL migrations
 
-1. Copy `supabase.env.example` and fill in URL + anon key from the Supabase dashboard (**do not commit** real keys).
-2. Run / build with defines, for example:
+## Run the app
 
-   ```bash
-   flutter run \
-     --dart-define=SUPABASE_URL=https://YOUR-PROJECT.supabase.co \
-     --dart-define=SUPABASE_ANON_KEY=YOUR_ANON_KEY
-   ```
+```bash
+flutter pub get
+flutter run
+```
 
-3. Apply SQL from `supabase/migrations/` in the Supabase SQL editor (see `docs/supabase_dev_setup.md`).
+### With Supabase (cloud sync)
 
-Without these defines, the app runs **local-only** as before; Settings shows a short “not configured” message under **Cloud sync**.
+Credentials are passed at **compile time** (do not commit real keys):
 
-## Getting Started
+```bash
+flutter run \
+  --dart-define=SUPABASE_URL=https://YOUR-PROJECT.supabase.co \
+  --dart-define=SUPABASE_ANON_KEY=YOUR_ANON_KEY
+```
 
-This project is a starting point for a Flutter application.
+1. Copy `supabase.env.example` for local reference only.
+2. Apply SQL from `supabase/migrations/` in the Supabase SQL editor — see **`docs/supabase_dev_setup.md`**.
+3. Without these defines, the app runs **fully offline**; Settings shows that cloud sync is not configured.
 
-A few resources to get you started if this is your first Flutter project:
+### Backend / API notes
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
+Phase 1 uses **Supabase PostgREST** against Postgres (no separate custom REST server). For schema, RLS, and client contracts, see **`docs/backend-developer-overview.md`**.
+
+## Project layout (`lib/`)
+
+| Path | Role |
+|------|------|
+| `lib/features/` | Screens and feature modules (auth, expenses, settings, …) |
+| `lib/core/` | Shared infrastructure |
+| `lib/data/` | Local DB (Drift), repositories, remote gateways |
+| `lib/sync/` | Sync orchestration when cloud is enabled |
+| `lib/share/` | Design tokens, shared widgets |
+
+Architecture rules for contributors: **`.cursor/rules/project_structure.mdc`**.
+
+## Testing
+
+```bash
+flutter test
+```
+
+## Documentation
+
+| Doc | Purpose |
+|-----|---------|
+| `docs/supabase_dev_setup.md` | Create a dev Supabase project, keys, run migrations |
+| `docs/backend-developer-overview.md` | Handoff for backend: tables, RLS, sync behaviour |
+
+## OpenSpec (proposals, specs, and change workflow)
+
+This repo uses **OpenSpec** for structured feature work: **what** to build (proposal), **how** (design), **requirements** (spec deltas), and **checklists** (tasks). The **openspec** CLI is available in this environment; source-of-truth requirements for the product live under **`openspec/specs/`**. Per-change work and history live under **`openspec/changes/`** and **`openspec/changes/archive/`**.
+
+### Directory layout
+
+| Path | Purpose |
+|------|---------|
+| `openspec/specs/<capability>/spec.md` | **Current** normative requirements (the “main” spec tree). |
+| `openspec/changes/<change-name>/` | **Active** change: `proposal.md`, `design.md`, `tasks.md`, optional `specs/…` deltas, `.openspec.yaml`. |
+| `openspec/changes/archive/YYYY-MM-DD-<change-name>/` | **Completed** changes, moved here when you archive. |
+
+### CLI (quick reference)
+
+```bash
+openspec list --json              # active changes
+openspec status --change "<name>" --json
+```
+
+Use the same commands in CI or local shells where `openspec` is installed.
+
+### Cursor slash commands (this workspace)
+
+In **Cursor** chat, these map to the workflow (see **`.cursor/commands/`** for full text):
+
+| Command | Role |
+|---------|------|
+| **`/opsx-explore`** | Think through a problem, compare options, investigate the codebase — **no implementation** (explore / discovery). |
+| **`/opsx-propose <name or description>`** | Create a new change: scaffold **`openspec/changes/<name>/`** and fill **proposal**, **design**, **spec** deltas, **tasks** (one-shot generation). |
+| **`/opsx:apply <name?>`** | **Implement** from an active change’s `tasks.md` (code + mark tasks done). |
+| **`/opsx-archive <name?>`** | **Finish** a change: optional spec sync into `openspec/specs/`, then **move** the folder to `openspec/changes/archive/…`. |
+
+Agent skills for the same steps live under **`.cursor/skills/`** (e.g. `openspec-propose`, `openspec-apply-change`, `openspec-archive-change`, `openspec-explore`).
+
+### Typical flow
+
+1. **Explore** — Use **`/opsx-explore`** (or ad-hoc discussion) to clarify the problem and constraints.
+2. **Propose** — Run **`/opsx-propose my-feature-name`** so artifacts exist under `openspec/changes/my-feature-name/`.
+3. **Implement** — Run **`/opsx:apply`** (optional change name) and complete **`tasks.md`**.
+4. **Merge specs** — When a change updates behaviour at the requirement level, merge its delta into **`openspec/specs/…`** as part of closing out the work (often coordinated during **`/opsx-archive`**).
+5. **Archive** — Run **`/opsx-archive`** (optional change name) to move the finished change into **`openspec/changes/archive/`** and keep **`openspec list`** clean.
+
+This workflow is optional for tiny edits, but it keeps larger changes reviewable and traceable for humans and agents alike.
+
+## Learn Flutter
+
+If you are new to Flutter:
+
+- [Install Flutter](https://docs.flutter.dev/get-started/install)
 - [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- [Flutter documentation](https://docs.flutter.dev/)
