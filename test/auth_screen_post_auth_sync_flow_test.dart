@@ -229,7 +229,7 @@ void main() {
       addTearDown(db.close);
       final profiles = UserProfileRepository(db);
       final expenses = ExpenseRepository(db, profiles, cloud);
-      final recurring = RecurringPaymentRepository(db, expenses);
+      final recurring = RecurringPaymentRepository(db, expenses, cloud);
       final limits = ExpenseLimitsRepository(
         db,
         recurring,

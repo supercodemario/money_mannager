@@ -38,8 +38,12 @@ class RecurringPayments extends Table {
 
   /// When false, the template is hidden from Expenses → Recurring and home; management screen still lists it.
   BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
   IntColumn get createdAt => integer()();
   IntColumn get updatedAt => integer()();
+  TextColumn get remoteId => text().nullable()();
+  TextColumn get syncStatus => text().nullable()();
+  IntColumn get serverUpdatedAt => integer().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -122,7 +126,12 @@ class RecurringPaymentOccurrences extends Table {
       text().references(RecurringPayments, #id)();
   TextColumn get monthKey => text()();
   TextColumn get expenseId => text().nullable().references(Expenses, #id)();
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
   IntColumn get createdAt => integer()();
+  IntColumn get updatedAt => integer().withDefault(const Constant(0))();
+  TextColumn get remoteId => text().nullable()();
+  TextColumn get syncStatus => text().nullable()();
+  IntColumn get serverUpdatedAt => integer().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -146,7 +155,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -185,6 +194,35 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(
           expenseLimitPreferences,
           expenseLimitPreferences.serverUpdatedAt,
+        );
+      }
+      if (from < 8) {
+        await m.addColumn(recurringPayments, recurringPayments.isDeleted);
+        await m.addColumn(recurringPayments, recurringPayments.remoteId);
+        await m.addColumn(recurringPayments, recurringPayments.syncStatus);
+        await m.addColumn(recurringPayments, recurringPayments.serverUpdatedAt);
+        await m.addColumn(
+          recurringPaymentOccurrences,
+          recurringPaymentOccurrences.isDeleted,
+        );
+        await m.addColumn(
+          recurringPaymentOccurrences,
+          recurringPaymentOccurrences.updatedAt,
+        );
+        await customStatement(
+          'UPDATE recurring_payment_occurrences SET updated_at = created_at WHERE updated_at = 0',
+        );
+        await m.addColumn(
+          recurringPaymentOccurrences,
+          recurringPaymentOccurrences.remoteId,
+        );
+        await m.addColumn(
+          recurringPaymentOccurrences,
+          recurringPaymentOccurrences.syncStatus,
+        );
+        await m.addColumn(
+          recurringPaymentOccurrences,
+          recurringPaymentOccurrences.serverUpdatedAt,
         );
       }
     },

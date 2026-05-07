@@ -16,7 +16,7 @@ class AppServices extends InheritedWidget {
     required this.cloudSync,
   }) : profiles = UserProfileRepository(db) {
     expenses = ExpenseRepository(db, profiles, cloudSync);
-    recurring = RecurringPaymentRepository(db, expenses);
+    recurring = RecurringPaymentRepository(db, expenses, cloudSync);
     expenseLimits = ExpenseLimitsRepository(
       db,
       recurring,
