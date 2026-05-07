@@ -23,12 +23,27 @@ ExpenseLimitsRepository _expenseLimitsRepository({
   DateTime Function()? nowProvider,
 }) {
   final expenses = ExpenseRepository(db, profiles, cloud);
-  final recurring = RecurringPaymentRepository(db, expenses);
+  final recurring = RecurringPaymentRepository(db, expenses, cloud);
   return ExpenseLimitsRepository(
     db,
     recurring,
     profiles: profiles,
     cloudSync: cloud,
+    nowProvider: nowProvider,
+  );
+}
+
+RecurringPaymentRepository _recurringRepository({
+  required AppDatabase db,
+  required UserProfileRepository profiles,
+  required CloudSyncController cloud,
+  DateTime Function()? nowProvider,
+}) {
+  final expenses = ExpenseRepository(db, profiles, cloud);
+  return RecurringPaymentRepository(
+    db,
+    expenses,
+    cloud,
     nowProvider: nowProvider,
   );
 }
@@ -228,6 +243,274 @@ void main() {
     expect(row?.monthlySavingsMinor, 20000);
     expect(row?.excludeUnpaidRecurring, isTrue);
     expect(row?.syncStatus, SyncStatusValue.synced);
+    await db.close();
+  });
+
+  test(
+    'Recurring template save uses local_only while sync is unavailable',
+    () async {
+      final db = AppDatabase.memory();
+      final profiles = UserProfileRepository(db);
+      final cloud = _FakeCloudSyncController(false);
+      final recurring = _recurringRepository(
+        db: db,
+        profiles: profiles,
+        cloud: cloud,
+      );
+
+      await recurring.insertTemplate(
+        title: 'Rent',
+        categoryId: 'house',
+        amountMinorSuggested: 90000,
+        currencyCode: 'USD',
+        dayOfMonth: 1,
+      );
+
+      final rows = await db.select(db.recurringPayments).get();
+      expect(rows.single.syncStatus, SyncStatusValue.localOnly);
+      await db.close();
+    },
+  );
+
+  test(
+    'Recurring template save uses pending while sync is available',
+    () async {
+      final db = AppDatabase.memory();
+      final profiles = UserProfileRepository(db);
+      final cloud = _FakeCloudSyncController(true);
+      final recurring = _recurringRepository(
+        db: db,
+        profiles: profiles,
+        cloud: cloud,
+      );
+
+      await recurring.insertTemplate(
+        title: 'Rent',
+        categoryId: 'house',
+        amountMinorSuggested: 90000,
+        currencyCode: 'USD',
+        dayOfMonth: 1,
+      );
+
+      final rows = await db.select(db.recurringPayments).get();
+      expect(rows.single.syncStatus, SyncStatusValue.pending);
+      await db.close();
+    },
+  );
+
+  test('Recurring occurrence save follows sync availability', () async {
+    final db = AppDatabase.memory();
+    final profiles = UserProfileRepository(db);
+    final signedOut = _FakeCloudSyncController(false);
+    final recurring = _recurringRepository(
+      db: db,
+      profiles: profiles,
+      cloud: signedOut,
+    );
+
+    final templateId = await recurring.insertTemplate(
+      title: 'Internet',
+      categoryId: 'bill',
+      amountMinorSuggested: 7000,
+      currencyCode: 'USD',
+      dayOfMonth: 5,
+    );
+    await recurring.markPaidForMonth(
+      recurringPaymentId: templateId,
+      monthKey: '2026-05',
+      amountMinor: 7000,
+      occurredAtLocal: DateTime(2026, 5, 5),
+    );
+
+    var rows = await db.select(db.recurringPaymentOccurrences).get();
+    expect(rows.single.syncStatus, SyncStatusValue.localOnly);
+
+    signedOut.allowed = true;
+    final templateId2 = await recurring.insertTemplate(
+      title: 'Phone',
+      categoryId: 'bill',
+      amountMinorSuggested: 2500,
+      currencyCode: 'USD',
+      dayOfMonth: 10,
+    );
+    await recurring.markPaidForMonth(
+      recurringPaymentId: templateId2,
+      monthKey: '2026-05',
+      amountMinor: 2500,
+      occurredAtLocal: DateTime(2026, 5, 10),
+    );
+
+    rows = await db.select(db.recurringPaymentOccurrences).get();
+    expect(rows.last.syncStatus, SyncStatusValue.pending);
+    await db.close();
+  });
+
+  test(
+    'Recurring sync transitions and LWW merge work for templates and occurrences',
+    () async {
+      var now = DateTime.fromMillisecondsSinceEpoch(1000);
+      final db = AppDatabase.memory();
+      final profiles = UserProfileRepository(db);
+      final cloud = _FakeCloudSyncController(false);
+      final recurring = _recurringRepository(
+        db: db,
+        profiles: profiles,
+        cloud: cloud,
+        nowProvider: () => now,
+      );
+
+      final templateId = await recurring.insertTemplate(
+        title: 'Gym',
+        categoryId: 'health',
+        amountMinorSuggested: 3000,
+        currencyCode: 'USD',
+        dayOfMonth: 15,
+      );
+      expect(await recurring.promoteLocalOnlyToPending(), 1);
+      await recurring.markTemplateRemoteError(templateId);
+      expect(await recurring.retryErroredAsPending(), 1);
+      await recurring.markTemplateRemoteSynced(templateId);
+      expect(
+        (await recurring.getTemplateById(templateId))?.syncStatus,
+        SyncStatusValue.synced,
+      );
+
+      await recurring.applyRemoteTemplateRow({
+        'id': templateId,
+        'title': 'Old Gym',
+        'category_id': 'health',
+        'amount_minor_suggested': 1000,
+        'currency_code': 'USD',
+        'day_of_month': 1,
+        'end_month_key': null,
+        'is_enabled': true,
+        'is_deleted': false,
+        'created_at': 1000,
+        'updated_at': 900,
+        'server_updated_at': 900,
+      });
+      expect((await recurring.getTemplateById(templateId))?.title, 'Gym');
+
+      now = DateTime.fromMillisecondsSinceEpoch(3000);
+      await recurring.applyRemoteTemplateRow({
+        'id': templateId,
+        'title': 'Fitness',
+        'category_id': 'health',
+        'amount_minor_suggested': 3500,
+        'currency_code': 'USD',
+        'day_of_month': 20,
+        'end_month_key': null,
+        'is_enabled': true,
+        'is_deleted': false,
+        'created_at': 1000,
+        'updated_at': 2500,
+        'server_updated_at': 2500,
+      });
+      expect((await recurring.getTemplateById(templateId))?.title, 'Fitness');
+
+      await recurring.markPaidForMonth(
+        recurringPaymentId: templateId,
+        monthKey: '2026-05',
+        amountMinor: 3500,
+        occurredAtLocal: DateTime(2026, 5, 20),
+      );
+      final occurrence =
+          (await db.select(db.recurringPaymentOccurrences).get()).single;
+      await recurring.markOccurrenceRemoteError(occurrence.id);
+      expect(await recurring.retryErroredAsPending(), 1);
+      await recurring.markOccurrenceRemoteSynced(occurrence.id);
+
+      await recurring.applyRemoteOccurrenceRow({
+        'id': occurrence.id,
+        'recurring_payment_id': templateId,
+        'month_key': '2026-05',
+        'expense_id': null,
+        'is_deleted': false,
+        'created_at': occurrence.createdAt,
+        'updated_at': occurrence.updatedAt - 1,
+        'server_updated_at': occurrence.updatedAt - 1,
+      });
+      expect(
+        (await db.select(db.recurringPaymentOccurrences).get())
+            .single
+            .expenseId,
+        isNotNull,
+      );
+
+      await recurring.applyRemoteOccurrenceRow({
+        'id': occurrence.id,
+        'recurring_payment_id': templateId,
+        'month_key': '2026-05',
+        'expense_id': null,
+        'is_deleted': false,
+        'created_at': occurrence.createdAt,
+        'updated_at': occurrence.updatedAt + 1000,
+        'server_updated_at': occurrence.updatedAt + 1000,
+      });
+      expect(
+        (await db.select(db.recurringPaymentOccurrences).get())
+            .single
+            .expenseId,
+        isNull,
+      );
+      await db.close();
+    },
+  );
+
+  test('Remote recurring occurrence skips missing dependencies', () async {
+    final db = AppDatabase.memory();
+    final profiles = UserProfileRepository(db);
+    final cloud = _FakeCloudSyncController(false);
+    final recurring = _recurringRepository(
+      db: db,
+      profiles: profiles,
+      cloud: cloud,
+    );
+
+    expect(
+      await recurring.applyRemoteOccurrenceRow({
+        'id': 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+        'recurring_payment_id': 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+        'month_key': '2026-05',
+        'expense_id': null,
+        'is_deleted': false,
+        'created_at': 1000,
+        'updated_at': 1000,
+        'server_updated_at': 1000,
+      }),
+      isFalse,
+    );
+
+    await recurring.applyRemoteTemplateRow({
+      'id': 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+      'title': 'Rent',
+      'category_id': 'house',
+      'amount_minor_suggested': 90000,
+      'currency_code': 'USD',
+      'day_of_month': 1,
+      'end_month_key': null,
+      'is_enabled': true,
+      'is_deleted': false,
+      'created_at': 1000,
+      'updated_at': 1000,
+      'server_updated_at': 1000,
+    });
+
+    expect(
+      await recurring.applyRemoteOccurrenceRow({
+        'id': 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+        'recurring_payment_id': 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+        'month_key': '2026-05',
+        'expense_id': 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+        'is_deleted': false,
+        'created_at': 1000,
+        'updated_at': 1000,
+        'server_updated_at': 1000,
+      }),
+      isFalse,
+    );
+
+    expect(await db.select(db.recurringPaymentOccurrences).get(), isEmpty);
     await db.close();
   });
 }

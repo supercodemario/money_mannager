@@ -25,6 +25,7 @@ class _SyncLifecycleState extends State<SyncLifecycle> {
       cloud: s.cloudSync,
       expenses: s.expenses,
       expenseLimits: s.expenseLimits,
+      recurring: s.recurring,
     );
     o.start();
     _orchestrator = o;

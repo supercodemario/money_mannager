@@ -577,6 +577,21 @@ class $RecurringPaymentsTable extends RecurringPayments
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -599,6 +614,39 @@ class $RecurringPaymentsTable extends RecurringPayments
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _remoteIdMeta = const VerificationMeta(
+    'remoteId',
+  );
+  @override
+  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
+    'remote_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _serverUpdatedAtMeta = const VerificationMeta(
+    'serverUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> serverUpdatedAt = GeneratedColumn<int>(
+    'server_updated_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -609,8 +657,12 @@ class $RecurringPaymentsTable extends RecurringPayments
     dayOfMonth,
     endMonthKey,
     isEnabled,
+    isDeleted,
     createdAt,
     updatedAt,
+    remoteId,
+    syncStatus,
+    serverUpdatedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -693,6 +745,12 @@ class $RecurringPaymentsTable extends RecurringPayments
         isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta),
       );
     }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -708,6 +766,27 @@ class $RecurringPaymentsTable extends RecurringPayments
       );
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('remote_id')) {
+      context.handle(
+        _remoteIdMeta,
+        remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta),
+      );
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    if (data.containsKey('server_updated_at')) {
+      context.handle(
+        _serverUpdatedAtMeta,
+        serverUpdatedAt.isAcceptableOrUnknown(
+          data['server_updated_at']!,
+          _serverUpdatedAtMeta,
+        ),
+      );
     }
     return context;
   }
@@ -750,6 +829,10 @@ class $RecurringPaymentsTable extends RecurringPayments
         DriftSqlType.bool,
         data['${effectivePrefix}is_enabled'],
       )!,
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}created_at'],
@@ -758,6 +841,18 @@ class $RecurringPaymentsTable extends RecurringPayments
         DriftSqlType.int,
         data['${effectivePrefix}updated_at'],
       )!,
+      remoteId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}remote_id'],
+      ),
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      ),
+      serverUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_updated_at'],
+      ),
     );
   }
 
@@ -782,8 +877,12 @@ class RecurringPayment extends DataClass
 
   /// When false, the template is hidden from Expenses → Recurring and home; management screen still lists it.
   final bool isEnabled;
+  final bool isDeleted;
   final int createdAt;
   final int updatedAt;
+  final String? remoteId;
+  final String? syncStatus;
+  final int? serverUpdatedAt;
   const RecurringPayment({
     required this.id,
     required this.title,
@@ -793,8 +892,12 @@ class RecurringPayment extends DataClass
     required this.dayOfMonth,
     this.endMonthKey,
     required this.isEnabled,
+    required this.isDeleted,
     required this.createdAt,
     required this.updatedAt,
+    this.remoteId,
+    this.syncStatus,
+    this.serverUpdatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -809,8 +912,18 @@ class RecurringPayment extends DataClass
       map['end_month_key'] = Variable<String>(endMonthKey);
     }
     map['is_enabled'] = Variable<bool>(isEnabled);
+    map['is_deleted'] = Variable<bool>(isDeleted);
     map['created_at'] = Variable<int>(createdAt);
     map['updated_at'] = Variable<int>(updatedAt);
+    if (!nullToAbsent || remoteId != null) {
+      map['remote_id'] = Variable<String>(remoteId);
+    }
+    if (!nullToAbsent || syncStatus != null) {
+      map['sync_status'] = Variable<String>(syncStatus);
+    }
+    if (!nullToAbsent || serverUpdatedAt != null) {
+      map['server_updated_at'] = Variable<int>(serverUpdatedAt);
+    }
     return map;
   }
 
@@ -826,8 +939,18 @@ class RecurringPayment extends DataClass
           ? const Value.absent()
           : Value(endMonthKey),
       isEnabled: Value(isEnabled),
+      isDeleted: Value(isDeleted),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
+      syncStatus: syncStatus == null && nullToAbsent
+          ? const Value.absent()
+          : Value(syncStatus),
+      serverUpdatedAt: serverUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverUpdatedAt),
     );
   }
 
@@ -847,8 +970,12 @@ class RecurringPayment extends DataClass
       dayOfMonth: serializer.fromJson<int>(json['dayOfMonth']),
       endMonthKey: serializer.fromJson<String?>(json['endMonthKey']),
       isEnabled: serializer.fromJson<bool>(json['isEnabled']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
+      remoteId: serializer.fromJson<String?>(json['remoteId']),
+      syncStatus: serializer.fromJson<String?>(json['syncStatus']),
+      serverUpdatedAt: serializer.fromJson<int?>(json['serverUpdatedAt']),
     );
   }
   @override
@@ -863,8 +990,12 @@ class RecurringPayment extends DataClass
       'dayOfMonth': serializer.toJson<int>(dayOfMonth),
       'endMonthKey': serializer.toJson<String?>(endMonthKey),
       'isEnabled': serializer.toJson<bool>(isEnabled),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
       'createdAt': serializer.toJson<int>(createdAt),
       'updatedAt': serializer.toJson<int>(updatedAt),
+      'remoteId': serializer.toJson<String?>(remoteId),
+      'syncStatus': serializer.toJson<String?>(syncStatus),
+      'serverUpdatedAt': serializer.toJson<int?>(serverUpdatedAt),
     };
   }
 
@@ -877,8 +1008,12 @@ class RecurringPayment extends DataClass
     int? dayOfMonth,
     Value<String?> endMonthKey = const Value.absent(),
     bool? isEnabled,
+    bool? isDeleted,
     int? createdAt,
     int? updatedAt,
+    Value<String?> remoteId = const Value.absent(),
+    Value<String?> syncStatus = const Value.absent(),
+    Value<int?> serverUpdatedAt = const Value.absent(),
   }) => RecurringPayment(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -888,8 +1023,14 @@ class RecurringPayment extends DataClass
     dayOfMonth: dayOfMonth ?? this.dayOfMonth,
     endMonthKey: endMonthKey.present ? endMonthKey.value : this.endMonthKey,
     isEnabled: isEnabled ?? this.isEnabled,
+    isDeleted: isDeleted ?? this.isDeleted,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    remoteId: remoteId.present ? remoteId.value : this.remoteId,
+    syncStatus: syncStatus.present ? syncStatus.value : this.syncStatus,
+    serverUpdatedAt: serverUpdatedAt.present
+        ? serverUpdatedAt.value
+        : this.serverUpdatedAt,
   );
   RecurringPayment copyWithCompanion(RecurringPaymentsCompanion data) {
     return RecurringPayment(
@@ -911,8 +1052,16 @@ class RecurringPayment extends DataClass
           ? data.endMonthKey.value
           : this.endMonthKey,
       isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+      serverUpdatedAt: data.serverUpdatedAt.present
+          ? data.serverUpdatedAt.value
+          : this.serverUpdatedAt,
     );
   }
 
@@ -927,8 +1076,12 @@ class RecurringPayment extends DataClass
           ..write('dayOfMonth: $dayOfMonth, ')
           ..write('endMonthKey: $endMonthKey, ')
           ..write('isEnabled: $isEnabled, ')
+          ..write('isDeleted: $isDeleted, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('serverUpdatedAt: $serverUpdatedAt')
           ..write(')'))
         .toString();
   }
@@ -943,8 +1096,12 @@ class RecurringPayment extends DataClass
     dayOfMonth,
     endMonthKey,
     isEnabled,
+    isDeleted,
     createdAt,
     updatedAt,
+    remoteId,
+    syncStatus,
+    serverUpdatedAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -958,8 +1115,12 @@ class RecurringPayment extends DataClass
           other.dayOfMonth == this.dayOfMonth &&
           other.endMonthKey == this.endMonthKey &&
           other.isEnabled == this.isEnabled &&
+          other.isDeleted == this.isDeleted &&
           other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.remoteId == this.remoteId &&
+          other.syncStatus == this.syncStatus &&
+          other.serverUpdatedAt == this.serverUpdatedAt);
 }
 
 class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
@@ -971,8 +1132,12 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
   final Value<int> dayOfMonth;
   final Value<String?> endMonthKey;
   final Value<bool> isEnabled;
+  final Value<bool> isDeleted;
   final Value<int> createdAt;
   final Value<int> updatedAt;
+  final Value<String?> remoteId;
+  final Value<String?> syncStatus;
+  final Value<int?> serverUpdatedAt;
   final Value<int> rowid;
   const RecurringPaymentsCompanion({
     this.id = const Value.absent(),
@@ -983,8 +1148,12 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
     this.dayOfMonth = const Value.absent(),
     this.endMonthKey = const Value.absent(),
     this.isEnabled = const Value.absent(),
+    this.isDeleted = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.serverUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RecurringPaymentsCompanion.insert({
@@ -996,8 +1165,12 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
     required int dayOfMonth,
     this.endMonthKey = const Value.absent(),
     this.isEnabled = const Value.absent(),
+    this.isDeleted = const Value.absent(),
     required int createdAt,
     required int updatedAt,
+    this.remoteId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.serverUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        title = Value(title),
@@ -1016,8 +1189,12 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
     Expression<int>? dayOfMonth,
     Expression<String>? endMonthKey,
     Expression<bool>? isEnabled,
+    Expression<bool>? isDeleted,
     Expression<int>? createdAt,
     Expression<int>? updatedAt,
+    Expression<String>? remoteId,
+    Expression<String>? syncStatus,
+    Expression<int>? serverUpdatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1030,8 +1207,12 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
       if (dayOfMonth != null) 'day_of_month': dayOfMonth,
       if (endMonthKey != null) 'end_month_key': endMonthKey,
       if (isEnabled != null) 'is_enabled': isEnabled,
+      if (isDeleted != null) 'is_deleted': isDeleted,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (remoteId != null) 'remote_id': remoteId,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (serverUpdatedAt != null) 'server_updated_at': serverUpdatedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1045,8 +1226,12 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
     Value<int>? dayOfMonth,
     Value<String?>? endMonthKey,
     Value<bool>? isEnabled,
+    Value<bool>? isDeleted,
     Value<int>? createdAt,
     Value<int>? updatedAt,
+    Value<String?>? remoteId,
+    Value<String?>? syncStatus,
+    Value<int?>? serverUpdatedAt,
     Value<int>? rowid,
   }) {
     return RecurringPaymentsCompanion(
@@ -1058,8 +1243,12 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
       dayOfMonth: dayOfMonth ?? this.dayOfMonth,
       endMonthKey: endMonthKey ?? this.endMonthKey,
       isEnabled: isEnabled ?? this.isEnabled,
+      isDeleted: isDeleted ?? this.isDeleted,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      remoteId: remoteId ?? this.remoteId,
+      syncStatus: syncStatus ?? this.syncStatus,
+      serverUpdatedAt: serverUpdatedAt ?? this.serverUpdatedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1091,11 +1280,23 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
     if (isEnabled.present) {
       map['is_enabled'] = Variable<bool>(isEnabled.value);
     }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
     }
     if (updatedAt.present) {
       map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (remoteId.present) {
+      map['remote_id'] = Variable<String>(remoteId.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (serverUpdatedAt.present) {
+      map['server_updated_at'] = Variable<int>(serverUpdatedAt.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -1114,8 +1315,12 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
           ..write('dayOfMonth: $dayOfMonth, ')
           ..write('endMonthKey: $endMonthKey, ')
           ..write('isEnabled: $isEnabled, ')
+          ..write('isDeleted: $isDeleted, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('serverUpdatedAt: $serverUpdatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2030,6 +2235,21 @@ class $RecurringPaymentOccurrencesTable extends RecurringPaymentOccurrences
       'REFERENCES expenses (id)',
     ),
   );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -2041,13 +2261,63 @@ class $RecurringPaymentOccurrencesTable extends RecurringPaymentOccurrences
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _remoteIdMeta = const VerificationMeta(
+    'remoteId',
+  );
+  @override
+  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
+    'remote_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _serverUpdatedAtMeta = const VerificationMeta(
+    'serverUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> serverUpdatedAt = GeneratedColumn<int>(
+    'server_updated_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
     recurringPaymentId,
     monthKey,
     expenseId,
+    isDeleted,
     createdAt,
+    updatedAt,
+    remoteId,
+    syncStatus,
+    serverUpdatedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2091,6 +2361,12 @@ class $RecurringPaymentOccurrencesTable extends RecurringPaymentOccurrences
         expenseId.isAcceptableOrUnknown(data['expense_id']!, _expenseIdMeta),
       );
     }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -2098,6 +2374,33 @@ class $RecurringPaymentOccurrencesTable extends RecurringPaymentOccurrences
       );
     } else if (isInserting) {
       context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('remote_id')) {
+      context.handle(
+        _remoteIdMeta,
+        remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta),
+      );
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    if (data.containsKey('server_updated_at')) {
+      context.handle(
+        _serverUpdatedAtMeta,
+        serverUpdatedAt.isAcceptableOrUnknown(
+          data['server_updated_at']!,
+          _serverUpdatedAtMeta,
+        ),
+      );
     }
     return context;
   }
@@ -2127,10 +2430,30 @@ class $RecurringPaymentOccurrencesTable extends RecurringPaymentOccurrences
         DriftSqlType.string,
         data['${effectivePrefix}expense_id'],
       ),
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}created_at'],
       )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      remoteId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}remote_id'],
+      ),
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      ),
+      serverUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_updated_at'],
+      ),
     );
   }
 
@@ -2146,13 +2469,23 @@ class RecurringPaymentOccurrence extends DataClass
   final String recurringPaymentId;
   final String monthKey;
   final String? expenseId;
+  final bool isDeleted;
   final int createdAt;
+  final int updatedAt;
+  final String? remoteId;
+  final String? syncStatus;
+  final int? serverUpdatedAt;
   const RecurringPaymentOccurrence({
     required this.id,
     required this.recurringPaymentId,
     required this.monthKey,
     this.expenseId,
+    required this.isDeleted,
     required this.createdAt,
+    required this.updatedAt,
+    this.remoteId,
+    this.syncStatus,
+    this.serverUpdatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2163,7 +2496,18 @@ class RecurringPaymentOccurrence extends DataClass
     if (!nullToAbsent || expenseId != null) {
       map['expense_id'] = Variable<String>(expenseId);
     }
+    map['is_deleted'] = Variable<bool>(isDeleted);
     map['created_at'] = Variable<int>(createdAt);
+    map['updated_at'] = Variable<int>(updatedAt);
+    if (!nullToAbsent || remoteId != null) {
+      map['remote_id'] = Variable<String>(remoteId);
+    }
+    if (!nullToAbsent || syncStatus != null) {
+      map['sync_status'] = Variable<String>(syncStatus);
+    }
+    if (!nullToAbsent || serverUpdatedAt != null) {
+      map['server_updated_at'] = Variable<int>(serverUpdatedAt);
+    }
     return map;
   }
 
@@ -2175,7 +2519,18 @@ class RecurringPaymentOccurrence extends DataClass
       expenseId: expenseId == null && nullToAbsent
           ? const Value.absent()
           : Value(expenseId),
+      isDeleted: Value(isDeleted),
       createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
+      syncStatus: syncStatus == null && nullToAbsent
+          ? const Value.absent()
+          : Value(syncStatus),
+      serverUpdatedAt: serverUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverUpdatedAt),
     );
   }
 
@@ -2191,7 +2546,12 @@ class RecurringPaymentOccurrence extends DataClass
       ),
       monthKey: serializer.fromJson<String>(json['monthKey']),
       expenseId: serializer.fromJson<String?>(json['expenseId']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+      remoteId: serializer.fromJson<String?>(json['remoteId']),
+      syncStatus: serializer.fromJson<String?>(json['syncStatus']),
+      serverUpdatedAt: serializer.fromJson<int?>(json['serverUpdatedAt']),
     );
   }
   @override
@@ -2202,7 +2562,12 @@ class RecurringPaymentOccurrence extends DataClass
       'recurringPaymentId': serializer.toJson<String>(recurringPaymentId),
       'monthKey': serializer.toJson<String>(monthKey),
       'expenseId': serializer.toJson<String?>(expenseId),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
       'createdAt': serializer.toJson<int>(createdAt),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+      'remoteId': serializer.toJson<String?>(remoteId),
+      'syncStatus': serializer.toJson<String?>(syncStatus),
+      'serverUpdatedAt': serializer.toJson<int?>(serverUpdatedAt),
     };
   }
 
@@ -2211,13 +2576,25 @@ class RecurringPaymentOccurrence extends DataClass
     String? recurringPaymentId,
     String? monthKey,
     Value<String?> expenseId = const Value.absent(),
+    bool? isDeleted,
     int? createdAt,
+    int? updatedAt,
+    Value<String?> remoteId = const Value.absent(),
+    Value<String?> syncStatus = const Value.absent(),
+    Value<int?> serverUpdatedAt = const Value.absent(),
   }) => RecurringPaymentOccurrence(
     id: id ?? this.id,
     recurringPaymentId: recurringPaymentId ?? this.recurringPaymentId,
     monthKey: monthKey ?? this.monthKey,
     expenseId: expenseId.present ? expenseId.value : this.expenseId,
+    isDeleted: isDeleted ?? this.isDeleted,
     createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    remoteId: remoteId.present ? remoteId.value : this.remoteId,
+    syncStatus: syncStatus.present ? syncStatus.value : this.syncStatus,
+    serverUpdatedAt: serverUpdatedAt.present
+        ? serverUpdatedAt.value
+        : this.serverUpdatedAt,
   );
   RecurringPaymentOccurrence copyWithCompanion(
     RecurringPaymentOccurrencesCompanion data,
@@ -2229,7 +2606,16 @@ class RecurringPaymentOccurrence extends DataClass
           : this.recurringPaymentId,
       monthKey: data.monthKey.present ? data.monthKey.value : this.monthKey,
       expenseId: data.expenseId.present ? data.expenseId.value : this.expenseId,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+      serverUpdatedAt: data.serverUpdatedAt.present
+          ? data.serverUpdatedAt.value
+          : this.serverUpdatedAt,
     );
   }
 
@@ -2240,14 +2626,29 @@ class RecurringPaymentOccurrence extends DataClass
           ..write('recurringPaymentId: $recurringPaymentId, ')
           ..write('monthKey: $monthKey, ')
           ..write('expenseId: $expenseId, ')
-          ..write('createdAt: $createdAt')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('serverUpdatedAt: $serverUpdatedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, recurringPaymentId, monthKey, expenseId, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    recurringPaymentId,
+    monthKey,
+    expenseId,
+    isDeleted,
+    createdAt,
+    updatedAt,
+    remoteId,
+    syncStatus,
+    serverUpdatedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2256,7 +2657,12 @@ class RecurringPaymentOccurrence extends DataClass
           other.recurringPaymentId == this.recurringPaymentId &&
           other.monthKey == this.monthKey &&
           other.expenseId == this.expenseId &&
-          other.createdAt == this.createdAt);
+          other.isDeleted == this.isDeleted &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.remoteId == this.remoteId &&
+          other.syncStatus == this.syncStatus &&
+          other.serverUpdatedAt == this.serverUpdatedAt);
 }
 
 class RecurringPaymentOccurrencesCompanion
@@ -2265,14 +2671,24 @@ class RecurringPaymentOccurrencesCompanion
   final Value<String> recurringPaymentId;
   final Value<String> monthKey;
   final Value<String?> expenseId;
+  final Value<bool> isDeleted;
   final Value<int> createdAt;
+  final Value<int> updatedAt;
+  final Value<String?> remoteId;
+  final Value<String?> syncStatus;
+  final Value<int?> serverUpdatedAt;
   final Value<int> rowid;
   const RecurringPaymentOccurrencesCompanion({
     this.id = const Value.absent(),
     this.recurringPaymentId = const Value.absent(),
     this.monthKey = const Value.absent(),
     this.expenseId = const Value.absent(),
+    this.isDeleted = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.serverUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RecurringPaymentOccurrencesCompanion.insert({
@@ -2280,7 +2696,12 @@ class RecurringPaymentOccurrencesCompanion
     required String recurringPaymentId,
     required String monthKey,
     this.expenseId = const Value.absent(),
+    this.isDeleted = const Value.absent(),
     required int createdAt,
+    this.updatedAt = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.serverUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        recurringPaymentId = Value(recurringPaymentId),
@@ -2291,7 +2712,12 @@ class RecurringPaymentOccurrencesCompanion
     Expression<String>? recurringPaymentId,
     Expression<String>? monthKey,
     Expression<String>? expenseId,
+    Expression<bool>? isDeleted,
     Expression<int>? createdAt,
+    Expression<int>? updatedAt,
+    Expression<String>? remoteId,
+    Expression<String>? syncStatus,
+    Expression<int>? serverUpdatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2300,7 +2726,12 @@ class RecurringPaymentOccurrencesCompanion
         'recurring_payment_id': recurringPaymentId,
       if (monthKey != null) 'month_key': monthKey,
       if (expenseId != null) 'expense_id': expenseId,
+      if (isDeleted != null) 'is_deleted': isDeleted,
       if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (remoteId != null) 'remote_id': remoteId,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (serverUpdatedAt != null) 'server_updated_at': serverUpdatedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2310,7 +2741,12 @@ class RecurringPaymentOccurrencesCompanion
     Value<String>? recurringPaymentId,
     Value<String>? monthKey,
     Value<String?>? expenseId,
+    Value<bool>? isDeleted,
     Value<int>? createdAt,
+    Value<int>? updatedAt,
+    Value<String?>? remoteId,
+    Value<String?>? syncStatus,
+    Value<int?>? serverUpdatedAt,
     Value<int>? rowid,
   }) {
     return RecurringPaymentOccurrencesCompanion(
@@ -2318,7 +2754,12 @@ class RecurringPaymentOccurrencesCompanion
       recurringPaymentId: recurringPaymentId ?? this.recurringPaymentId,
       monthKey: monthKey ?? this.monthKey,
       expenseId: expenseId ?? this.expenseId,
+      isDeleted: isDeleted ?? this.isDeleted,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      remoteId: remoteId ?? this.remoteId,
+      syncStatus: syncStatus ?? this.syncStatus,
+      serverUpdatedAt: serverUpdatedAt ?? this.serverUpdatedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2338,8 +2779,23 @@ class RecurringPaymentOccurrencesCompanion
     if (expenseId.present) {
       map['expense_id'] = Variable<String>(expenseId.value);
     }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (remoteId.present) {
+      map['remote_id'] = Variable<String>(remoteId.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (serverUpdatedAt.present) {
+      map['server_updated_at'] = Variable<int>(serverUpdatedAt.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -2354,7 +2810,12 @@ class RecurringPaymentOccurrencesCompanion
           ..write('recurringPaymentId: $recurringPaymentId, ')
           ..write('monthKey: $monthKey, ')
           ..write('expenseId: $expenseId, ')
+          ..write('isDeleted: $isDeleted, ')
           ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('serverUpdatedAt: $serverUpdatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4335,8 +4796,12 @@ typedef $$RecurringPaymentsTableCreateCompanionBuilder =
       required int dayOfMonth,
       Value<String?> endMonthKey,
       Value<bool> isEnabled,
+      Value<bool> isDeleted,
       required int createdAt,
       required int updatedAt,
+      Value<String?> remoteId,
+      Value<String?> syncStatus,
+      Value<int?> serverUpdatedAt,
       Value<int> rowid,
     });
 typedef $$RecurringPaymentsTableUpdateCompanionBuilder =
@@ -4349,8 +4814,12 @@ typedef $$RecurringPaymentsTableUpdateCompanionBuilder =
       Value<int> dayOfMonth,
       Value<String?> endMonthKey,
       Value<bool> isEnabled,
+      Value<bool> isDeleted,
       Value<int> createdAt,
       Value<int> updatedAt,
+      Value<String?> remoteId,
+      Value<String?> syncStatus,
+      Value<int?> serverUpdatedAt,
       Value<int> rowid,
     });
 
@@ -4469,6 +4938,11 @@ class $$RecurringPaymentsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
@@ -4476,6 +4950,21 @@ class $$RecurringPaymentsTableFilterComposer
 
   ColumnFilters<int> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get remoteId => $composableBuilder(
+    column: $table.remoteId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serverUpdatedAt => $composableBuilder(
+    column: $table.serverUpdatedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4583,6 +5072,11 @@ class $$RecurringPaymentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -4590,6 +5084,21 @@ class $$RecurringPaymentsTableOrderingComposer
 
   ColumnOrderings<int> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get remoteId => $composableBuilder(
+    column: $table.remoteId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get serverUpdatedAt => $composableBuilder(
+    column: $table.serverUpdatedAt,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -4637,11 +5146,27 @@ class $$RecurringPaymentsTableAnnotationComposer
   GeneratedColumn<bool> get isEnabled =>
       $composableBuilder(column: $table.isEnabled, builder: (column) => column);
 
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
   GeneratedColumn<int> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
   GeneratedColumn<int> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get remoteId =>
+      $composableBuilder(column: $table.remoteId, builder: (column) => column);
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get serverUpdatedAt => $composableBuilder(
+    column: $table.serverUpdatedAt,
+    builder: (column) => column,
+  );
 
   Expression<T> expensesRefs<T extends Object>(
     Expression<T> Function($$ExpensesTableAnnotationComposer a) f,
@@ -4742,8 +5267,12 @@ class $$RecurringPaymentsTableTableManager
                 Value<int> dayOfMonth = const Value.absent(),
                 Value<String?> endMonthKey = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
+                Value<String?> remoteId = const Value.absent(),
+                Value<String?> syncStatus = const Value.absent(),
+                Value<int?> serverUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RecurringPaymentsCompanion(
                 id: id,
@@ -4754,8 +5283,12 @@ class $$RecurringPaymentsTableTableManager
                 dayOfMonth: dayOfMonth,
                 endMonthKey: endMonthKey,
                 isEnabled: isEnabled,
+                isDeleted: isDeleted,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                remoteId: remoteId,
+                syncStatus: syncStatus,
+                serverUpdatedAt: serverUpdatedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -4768,8 +5301,12 @@ class $$RecurringPaymentsTableTableManager
                 required int dayOfMonth,
                 Value<String?> endMonthKey = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
                 required int createdAt,
                 required int updatedAt,
+                Value<String?> remoteId = const Value.absent(),
+                Value<String?> syncStatus = const Value.absent(),
+                Value<int?> serverUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RecurringPaymentsCompanion.insert(
                 id: id,
@@ -4780,8 +5317,12 @@ class $$RecurringPaymentsTableTableManager
                 dayOfMonth: dayOfMonth,
                 endMonthKey: endMonthKey,
                 isEnabled: isEnabled,
+                isDeleted: isDeleted,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                remoteId: remoteId,
+                syncStatus: syncStatus,
+                serverUpdatedAt: serverUpdatedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -5600,7 +6141,12 @@ typedef $$RecurringPaymentOccurrencesTableCreateCompanionBuilder =
       required String recurringPaymentId,
       required String monthKey,
       Value<String?> expenseId,
+      Value<bool> isDeleted,
       required int createdAt,
+      Value<int> updatedAt,
+      Value<String?> remoteId,
+      Value<String?> syncStatus,
+      Value<int?> serverUpdatedAt,
       Value<int> rowid,
     });
 typedef $$RecurringPaymentOccurrencesTableUpdateCompanionBuilder =
@@ -5609,7 +6155,12 @@ typedef $$RecurringPaymentOccurrencesTableUpdateCompanionBuilder =
       Value<String> recurringPaymentId,
       Value<String> monthKey,
       Value<String?> expenseId,
+      Value<bool> isDeleted,
       Value<int> createdAt,
+      Value<int> updatedAt,
+      Value<String?> remoteId,
+      Value<String?> syncStatus,
+      Value<int?> serverUpdatedAt,
       Value<int> rowid,
     });
 
@@ -5690,8 +6241,33 @@ class $$RecurringPaymentOccurrencesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get remoteId => $composableBuilder(
+    column: $table.remoteId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serverUpdatedAt => $composableBuilder(
+    column: $table.serverUpdatedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5761,8 +6337,33 @@ class $$RecurringPaymentOccurrencesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get remoteId => $composableBuilder(
+    column: $table.remoteId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get serverUpdatedAt => $composableBuilder(
+    column: $table.serverUpdatedAt,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -5828,8 +6429,27 @@ class $$RecurringPaymentOccurrencesTableAnnotationComposer
   GeneratedColumn<String> get monthKey =>
       $composableBuilder(column: $table.monthKey, builder: (column) => column);
 
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
   GeneratedColumn<int> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get remoteId =>
+      $composableBuilder(column: $table.remoteId, builder: (column) => column);
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get serverUpdatedAt => $composableBuilder(
+    column: $table.serverUpdatedAt,
+    builder: (column) => column,
+  );
 
   $$RecurringPaymentsTableAnnotationComposer get recurringPaymentId {
     final $$RecurringPaymentsTableAnnotationComposer composer =
@@ -5925,14 +6545,24 @@ class $$RecurringPaymentOccurrencesTableTableManager
                 Value<String> recurringPaymentId = const Value.absent(),
                 Value<String> monthKey = const Value.absent(),
                 Value<String?> expenseId = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<String?> remoteId = const Value.absent(),
+                Value<String?> syncStatus = const Value.absent(),
+                Value<int?> serverUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RecurringPaymentOccurrencesCompanion(
                 id: id,
                 recurringPaymentId: recurringPaymentId,
                 monthKey: monthKey,
                 expenseId: expenseId,
+                isDeleted: isDeleted,
                 createdAt: createdAt,
+                updatedAt: updatedAt,
+                remoteId: remoteId,
+                syncStatus: syncStatus,
+                serverUpdatedAt: serverUpdatedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5941,14 +6571,24 @@ class $$RecurringPaymentOccurrencesTableTableManager
                 required String recurringPaymentId,
                 required String monthKey,
                 Value<String?> expenseId = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
                 required int createdAt,
+                Value<int> updatedAt = const Value.absent(),
+                Value<String?> remoteId = const Value.absent(),
+                Value<String?> syncStatus = const Value.absent(),
+                Value<int?> serverUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RecurringPaymentOccurrencesCompanion.insert(
                 id: id,
                 recurringPaymentId: recurringPaymentId,
                 monthKey: monthKey,
                 expenseId: expenseId,
+                isDeleted: isDeleted,
                 createdAt: createdAt,
+                updatedAt: updatedAt,
+                remoteId: remoteId,
+                syncStatus: syncStatus,
+                serverUpdatedAt: serverUpdatedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
