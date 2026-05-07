@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-high": "#e5e9eb",
+                        "inverse-primary": "#8ad2fc",
+                        "error-dim": "#821a01",
+                        "on-primary-container": "#004762",
+                        "background": "#f8f9fa",
+                        "tertiary-fixed-dim": "#ff8e33",
+                        "surface-dim": "#d5dbdd",
+                        "secondary-dim": "#006117",
+                        "on-primary": "#f4f9ff",
+                        "primary": "#01668b",
+                        "on-primary-fixed-variant": "#00516f",
+                        "surface": "#f8f9fa",
+                        "on-surface-variant": "#5a6062",
+                        "primary-fixed": "#8ad2fc",
+                        "on-surface": "#2e3335",
+                        "error-container": "#fa7150",
+                        "on-error-container": "#671200",
+                        "tertiary-fixed": "#ffa361",
+                        "on-secondary-fixed": "#004b0f",
+                        "on-secondary-container": "#006016",
+                        "on-primary-fixed": "#003247",
+                        "surface-variant": "#dee3e5",
+                        "surface-bright": "#f8f9fa",
+                        "inverse-on-surface": "#9b9d9e",
+                        "secondary-fixed": "#9df898",
+                        "outline-variant": "#aeb3b5",
+                        "primary-fixed-dim": "#7cc4ed",
+                        "tertiary-dim": "#854000",
+                        "surface-container-low": "#f2f4f5",
+                        "surface-container": "#ebeef0",
+                        "tertiary": "#974a00",
+                        "secondary": "#116e20",
+                        "surface-tint": "#01668b",
+                        "on-tertiary": "#fff7f4",
+                        "secondary-container": "#9df898",
+                        "secondary-fixed-dim": "#90e98b",
+                        "error": "#aa371c",
+                        "on-tertiary-fixed-variant": "#673000",
+                        "on-secondary": "#eaffe2",
+                        "surface-container-highest": "#dee3e5",
+                        "on-tertiary-container": "#5a2900",
+                        "outline": "#767c7e",
+                        "on-secondary-fixed-variant": "#0a6a1d",
+                        "tertiary-container": "#ffa361",
+                        "on-tertiary-fixed": "#381700",
+                        "inverse-surface": "#0c0f10",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-dim": "#00597a",
+                        "on-error": "#fff7f6",
+                        "primary-container": "#8ad2fc",
+                        "on-background": "#2e3335"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; background-color: #f8f9fa; color: #2e3335; }
+        .font-jakarta { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-nav { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        body { min-height: 100dvh; overflow-x: hidden; }
+        .tap-highlight-transparent { -webkit-tap-highlight-color: transparent; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/20">
+<div class="flex justify-between items-center px-6 py-3 w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-3">
+<button class="p-2 hover:bg-slate-200/50 transition-colors rounded-full">
+<span class="material-symbols-outlined text-emerald-800">menu</span>
+</button>
+<h1 class="text-lg font-jakarta font-bold tracking-tight text-emerald-900">Sanctuary</h1>
+</div>
+<img alt="Profile" class="w-9 h-9 rounded-full border-2 border-secondary-fixed object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3DlNrClntinCl3EomOBv8J5NgBSUJMrFeIryTmVa2f7Jg649dvLrLgbGkPo0_Rw3EMh_pDgUJm9msrUTdDj2_OLJUOAlu41i4GD4lfLQaniTetkOLTZzEZ-hOkyiPnZV5HNQa0ckkgswJwjhp3Dlb_k7hTFIiH1YCihU8Ut0uYwa5tvMzujLW2w_59ZJ8-jrHOrD6Ht99WZw3TLBD1MlVI0GmqSRq_uKtmeQHQvlqLqpLx-1dj-FdZ7uJHVJg-tcP5NrjCDmbZYdA"/>
+</div>
+</header>
+<main class="pt-20 pb-28 px-4 max-w-7xl mx-auto">
+<!-- Header Section - More Compact -->
+<div class="mb-6 px-2">
+<h2 class="text-3xl font-jakarta font-extrabold tracking-tight text-on-surface">Settings</h2>
+<p class="text-sm text-on-surface-variant">Manage your sanctuary's flow and limits.</p>
+</div>
+<!-- High-Density Grid Layout -->
+<div class="grid grid-cols-2 gap-3 mb-6">
+<!-- Recurring Costs Card -->
+<button class="flex flex-col items-start p-4 bg-surface-container-low rounded-2xl border border-slate-200/10 text-left hover:bg-white transition-colors relative overflow-hidden group">
+<div class="flex items-center justify-between w-full mb-2">
+<span class="material-symbols-outlined text-emerald-700 bg-emerald-50 p-2 rounded-xl">autorenew</span>
+<span class="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">3 ACTIVE</span>
+</div>
+<p class="font-jakarta font-bold text-on-surface">Recurring</p>
+<p class="text-[11px] text-on-surface-variant">$2,654.99/mo</p>
+<div class="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-sm text-on-surface-variant">chevron_right</span>
+</div>
+</button>
+<!-- Family Management Card -->
+<button class="flex flex-col items-start p-4 bg-surface-container-low rounded-2xl border border-slate-200/10 text-left hover:bg-white transition-colors group">
+<div class="flex items-center justify-between w-full mb-2">
+<span class="material-symbols-outlined text-primary bg-primary-container/20 p-2 rounded-xl">group</span>
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border-2 border-white bg-slate-200 overflow-hidden">
+<img alt="User" class="object-cover w-full h-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvLYx-JxPhK7bjztvGuoTV2XmU6heB_P0rBUDaqJKPmkaX9C-_J4vwQuNGWOR6FR_ctEnmKqCHead9ODryAf-OE1TdqNBYkBDAZOu7-LrtPZDlf-3K3eknqxenHCGK2s77TZP5ryedNsCyb2XdXm9XE4TiDHtTxoFzWsBRWy2sIU3sr6bJxuEMhn9Nph4AGVsna8My32-4L06p0w5HL--rcuJRnMC8i_Z8-qgFiE-J_A88UOgidgcPTf72FGYgQudlzaHO5tosDh6_"/>
+</div>
+<div class="w-6 h-6 rounded-full border-2 border-white bg-slate-200 overflow-hidden">
+<img alt="User" class="object-cover w-full h-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNxLdNlk6EcvcFf8rXep7m5fg5u8LF70ogfBGjz74Qf6lTZQ8n4_KdM064nGlg5q11_l2FXEJ6EYgjIovM5IcqD3kx6ZjhNuzTIfvXSIwfeuKdtpnQWpwY1TAQFRUNJitx5_0GHMRMPhURUgDJ0mwRWiYQzzeSI_tbRTA9HGWAawRaUw2zaiVWGplS4FVt_NrAbnZz2WMPQ9oDvY7SSfDQCaLy5ifYcwyZ1CFpuG691NYXf1HNEVRGIBmF0rcrUdz7MrsOPJesVXWw"/>
+</div>
+</div>
+</div>
+<p class="font-jakarta font-bold text-on-surface">Family</p>
+<p class="text-[11px] text-on-surface-variant">The Henderson Fold</p>
+</button>
+<!-- Limits Card -->
+<button class="flex flex-col items-start p-4 bg-surface-container-low rounded-2xl border border-slate-200/10 text-left hover:bg-white transition-colors group">
+<div class="flex items-center justify-between w-full mb-2">
+<span class="material-symbols-outlined text-tertiary bg-tertiary-container/20 p-2 rounded-xl">speed</span>
+<span class="text-[11px] font-jakarta font-bold text-emerald-800">$12k Limit</span>
+</div>
+<p class="font-jakarta font-bold text-on-surface">Limits</p>
+<div class="w-full h-1 bg-surface-container-highest rounded-full mt-1.5 overflow-hidden">
+<div class="bg-emerald-600 h-full w-[45%]"></div>
+</div>
+</button>
+<!-- Preferences Card -->
+<button class="flex flex-col items-start p-4 bg-surface-container-low rounded-2xl border border-slate-200/10 text-left hover:bg-white transition-colors group">
+<div class="flex items-center justify-between w-full mb-2">
+<span class="material-symbols-outlined text-on-surface-variant bg-surface-variant/30 p-2 rounded-xl">tune</span>
+<span class="text-[11px] font-bold text-on-surface-variant">USD ($)</span>
+</div>
+<p class="font-jakarta font-bold text-on-surface">Preferences</p>
+<p class="text-[11px] text-on-surface-variant">Alerts &amp; Currency</p>
+</button>
+</div>
+<!-- Quick Actions Row -->
+<div class="space-y-3">
+<!-- Biometric Lock - Integrated more efficiently -->
+<div class="bg-gradient-to-r from-emerald-900 to-emerald-800 rounded-2xl p-4 flex items-center justify-between shadow-lg shadow-emerald-900/10">
+<div class="flex items-center gap-3">
+<div class="bg-white/10 p-2 rounded-xl">
+<span class="material-symbols-outlined text-white text-[20px]" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+</div>
+<div>
+<p class="text-white font-jakarta font-bold text-sm leading-none">Biometric Lock</p>
+<p class="text-emerald-100/60 text-[10px] mt-1">Require FaceID</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-10 h-5 bg-white/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-400"></div>
+</label>
+</div>
+<!-- Push Notifications Row -->
+<div class="bg-surface-container-low rounded-2xl p-4 flex items-center justify-between border border-slate-200/10">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-emerald-700 bg-white p-2 rounded-xl shadow-sm">notifications</span>
+<p class="text-sm font-bold">Push Notifications</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-10 h-5 bg-surface-variant rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+<!-- Add Recurring Cost Quick Button -->
+<button class="w-full bg-primary text-on-primary py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:scale-[0.98] transition-transform shadow-lg shadow-primary/10">
+<span class="material-symbols-outlined">add</span>
+            Add Recurring Cost
+        </button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-slate-50/80 backdrop-blur-xl border-t border-slate-200/20 z-50">
+<button class="flex flex-col items-center justify-center text-slate-400 px-4 py-2 hover:text-emerald-600 tap-highlight-transparent active:scale-90 transition-transform">
+<span class="material-symbols-outlined">home_app_logo</span>
+<span class="font-['Manrope'] text-[10px] font-semibold uppercase tracking-wider mt-1">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 px-4 py-2 hover:text-emerald-600 tap-highlight-transparent active:scale-90 transition-transform">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+<span class="font-['Manrope'] text-[10px] font-semibold uppercase tracking-wider mt-1">Flow</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 px-4 py-2 hover:text-emerald-600 tap-highlight-transparent active:scale-90 transition-transform">
+<span class="material-symbols-outlined">group</span>
+<span class="font-['Manrope'] text-[10px] font-semibold uppercase tracking-wider mt-1">Family</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-gradient-to-br from-emerald-700 to-emerald-800 text-white rounded-2xl px-5 py-2 tap-highlight-transparent active:scale-95 transition-transform shadow-md">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-['Manrope'] text-[10px] font-semibold uppercase tracking-wider mt-1">Settings</span>
+</button>
+</nav>
+</body></html>

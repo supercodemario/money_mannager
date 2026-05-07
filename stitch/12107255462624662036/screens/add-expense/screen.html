@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Add Expense - Financial Sanctuary</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#f8f9fa",
+                        "on-surface-variant": "#5a6062",
+                        "surface-container-high": "#e5e9eb",
+                        "on-secondary-fixed-variant": "#0a6a1d",
+                        "surface-variant": "#dee3e5",
+                        "on-primary-fixed": "#003247",
+                        "on-error": "#fff7f6",
+                        "on-tertiary-fixed": "#381700",
+                        "primary": "#01668b",
+                        "surface-bright": "#f8f9fa",
+                        "inverse-surface": "#0c0f10",
+                        "on-primary-container": "#004762",
+                        "on-tertiary": "#fff7f4",
+                        "surface-container": "#ebeef0",
+                        "on-secondary-container": "#006016",
+                        "on-primary-fixed-variant": "#00516f",
+                        "on-surface": "#2e3335",
+                        "inverse-primary": "#8ad2fc",
+                        "outline": "#767c7e",
+                        "on-secondary-fixed": "#004b0f",
+                        "tertiary-fixed-dim": "#ff8e33",
+                        "error-container": "#fa7150",
+                        "surface-dim": "#d5dbdd",
+                        "outline-variant": "#aeb3b5",
+                        "tertiary": "#974a00",
+                        "background": "#f8f9fa",
+                        "on-tertiary-fixed-variant": "#673000",
+                        "secondary-fixed": "#9df898",
+                        "surface-container-highest": "#dee3e5",
+                        "secondary-fixed-dim": "#90e98b",
+                        "on-primary": "#f4f9ff",
+                        "tertiary-container": "#ffa361",
+                        "secondary-container": "#9df898",
+                        "secondary": "#116e20",
+                        "tertiary-dim": "#854000",
+                        "primary-fixed": "#8ad2fc",
+                        "primary-container": "#8ad2fc",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed-dim": "#7cc4ed",
+                        "primary-dim": "#00597a",
+                        "on-background": "#2e3335",
+                        "surface-tint": "#01668b",
+                        "secondary-dim": "#006117",
+                        "on-error-container": "#671200",
+                        "tertiary-fixed": "#ffa361",
+                        "surface-container-low": "#f2f4f5",
+                        "on-secondary": "#eaffe2",
+                        "on-tertiary-container": "#5a2900",
+                        "inverse-on-surface": "#9b9d9e",
+                        "error-dim": "#821a01",
+                        "error": "#aa371c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; }
+        h1, h2, h3 { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md flex justify-between items-center px-6 py-4 w-full">
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors active:scale-95">
+<span class="material-symbols-outlined text-on-surface">arrow_back</span>
+</button>
+<h1 class="text-xl font-bold text-emerald-900 dark:text-emerald-100 tracking-tight">New Expense</h1>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-8 h-8 rounded-full overflow-hidden">
+<img alt="User Profile" data-alt="Headshot of a friendly elderly man with a warm smile, wearing a premium linen shirt, soft studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjhAIGeG7qHiW9hI2l8LrqoLRdqRTePgOXYth72VPEh1hlj-TCvE2Xggv5R_RKiiv9ECkLlpjxEZY43GeIWdmPNA8pGL4jsoQFbUfagPFVxJb4j02yU56VXqdsT6MBHjoE06PcXi7j8eB_hCd9BhrB1Q02Kqb5OzrtEBuCsYuaT3rwJY8Mijer2YOz3HFuyP1maaiFAh30pVkTkBD15Hs9DkJsGVQ9biCHXUXb1NxwTam2zP2mM1bPVpLReNugdo2TClJHfzJKrCAO"/>
+</div>
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400">notifications</span>
+</div>
+</header>
+<main class="pt-24 px-6 max-w-2xl mx-auto">
+<!-- Amount Section -->
+<section class="mb-10 text-center">
+<label class="block text-sm font-semibold text-on-surface-variant mb-2 font-label">Transaction Amount</label>
+<div class="flex items-center justify-center gap-1">
+<span class="text-4xl font-bold text-primary">$</span>
+<input class="w-full text-5xl font-extrabold text-on-surface bg-transparent border-none focus:ring-0 text-center placeholder-surface-container-highest font-headline" placeholder="0.00" step="0.01" type="number"/>
+</div>
+</section>
+<!-- Form Fields Bento Layout -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+<div class="bg-surface-container-lowest p-6 rounded-3xl transition-all">
+<label class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2 font-label">Date</label>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">calendar_today</span>
+<input class="bg-transparent border-none focus:ring-0 text-on-surface font-semibold p-0 w-full" type="date" value="2023-10-27"/>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-3xl transition-all">
+<label class="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2 font-label">Note</label>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">description</span>
+<input class="bg-transparent border-none focus:ring-0 text-on-surface font-semibold p-0 w-full placeholder-outline-variant" placeholder="What was this for?" type="text"/>
+</div>
+</div>
+</div>
+<!-- Category Grid -->
+<section class="mb-12">
+<h2 class="text-lg font-bold text-on-surface mb-6 px-1">Select Category</h2>
+<div class="grid grid-cols-4 gap-4">
+<!-- House -->
+<button class="flex flex-col items-center gap-3 group active:scale-95 transition-transform">
+<div class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center text-primary group-hover:shadow-lg transition-all">
+<span class="material-symbols-outlined text-3xl" data-weight="fill" style="font-variation-settings: 'FILL' 1;">home</span>
+</div>
+<span class="text-xs font-bold text-on-surface-variant font-label">House</span>
+</button>
+<!-- Medical -->
+<button class="flex flex-col items-center gap-3 group active:scale-95 transition-transform">
+<div class="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center text-error group-hover:shadow-lg transition-all">
+<span class="material-symbols-outlined text-3xl" data-weight="fill" style="font-variation-settings: 'FILL' 1;">medical_services</span>
+</div>
+<span class="text-xs font-bold text-on-surface-variant font-label">Medical</span>
+</button>
+<!-- Travel -->
+<button class="flex flex-col items-center gap-3 group active:scale-95 transition-transform">
+<div class="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center text-tertiary group-hover:shadow-lg transition-all">
+<span class="material-symbols-outlined text-3xl" data-weight="fill" style="font-variation-settings: 'FILL' 1;">flight</span>
+</div>
+<span class="text-xs font-bold text-on-surface-variant font-label">Travel</span>
+</button>
+<!-- Grocery -->
+<button class="flex flex-col items-center gap-3 group active:scale-95 transition-transform">
+<div class="w-16 h-16 rounded-full bg-secondary-container flex items-center justify-center text-secondary group-hover:shadow-lg transition-all">
+<span class="material-symbols-outlined text-3xl" data-weight="fill" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+</div>
+<span class="text-xs font-bold text-on-surface-variant font-label">Grocery</span>
+</button>
+<!-- Bill -->
+<button class="flex flex-col items-center gap-3 group active:scale-95 transition-transform">
+<div class="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center text-on-surface-variant group-hover:shadow-lg transition-all">
+<span class="material-symbols-outlined text-3xl" data-weight="fill" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+</div>
+<span class="text-xs font-bold text-on-surface-variant font-label">Bill</span>
+</button>
+<!-- Out-eat -->
+<button class="flex flex-col items-center gap-3 group active:scale-95 transition-transform">
+<div class="w-16 h-16 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary-container group-hover:shadow-lg transition-all">
+<span class="material-symbols-outlined text-3xl" data-weight="fill" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+</div>
+<span class="text-xs font-bold text-on-surface-variant font-label">Out-eat</span>
+</button>
+<!-- Entertainment -->
+<button class="flex flex-col items-center gap-3 group active:scale-95 transition-transform">
+<div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-primary group-hover:shadow-lg transition-all">
+<span class="material-symbols-outlined text-3xl" data-weight="fill" style="font-variation-settings: 'FILL' 1;">movie</span>
+</div>
+<span class="text-xs font-bold text-on-surface-variant font-label">Cinema</span>
+</button>
+<!-- Health -->
+<button class="flex flex-col items-center gap-3 group active:scale-95 transition-transform">
+<div class="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-secondary group-hover:shadow-lg transition-all">
+<span class="material-symbols-outlined text-3xl" data-weight="fill" style="font-variation-settings: 'FILL' 1;">fitness_center</span>
+</div>
+<span class="text-xs font-bold text-on-surface-variant font-label">Health</span>
+</button>
+</div>
+</section>
+<!-- Primary CTA -->
+<div class="flex flex-col gap-4">
+<button class="w-full py-5 rounded-3xl bg-gradient-to-br from-primary to-primary-container text-white text-lg font-bold shadow-xl active:scale-95 transition-all">
+                Save Expense
+            </button>
+<button class="w-full py-4 rounded-3xl bg-surface-container-low text-on-surface-variant font-semibold hover:bg-surface-container-high transition-colors">
+                Cancel
+            </button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-2 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md rounded-t-[1.5rem] z-50">
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 p-3 hover:text-emerald-600 transition-all" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[11px] font-semibold font-label">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 p-3 hover:text-emerald-600 transition-all" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="text-[11px] font-semibold font-label">Expenses</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-gradient-to-br from-emerald-700 to-sky-400 text-white rounded-2xl p-3 shadow-lg scale-110" href="#">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="text-[11px] font-semibold font-label">Add</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 p-3 hover:text-emerald-600 transition-all" href="#">
+<span class="material-symbols-outlined">insights</span>
+<span class="text-[11px] font-semibold font-label">Insights</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 p-3 hover:text-emerald-600 transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[11px] font-semibold font-label">Settings</span>
+</a>
+</nav>
+<!-- Success Feedback Glow (Decorative Background) -->
+<div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 blur-[120px] -z-10 pointer-events-none rounded-full"></div>
+</body></html>

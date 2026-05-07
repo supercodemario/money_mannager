@@ -1,0 +1,21 @@
+{
+  "projectId": "12107255462624662036",
+  "projectTitle": "Family Expense Tracker",
+  "designSystemAsset": "assets/8fc8ff4e83e141f6871d9e78f88808e9",
+  "designSystemDisplayName": "Kinetic Hearth",
+  "theme": {
+    "colorMode": "LIGHT",
+    "roundness": "ROUND_EIGHT",
+    "customColor": "#2E7D32",
+    "headlineFont": "PLUS_JAKARTA_SANS",
+    "bodyFont": "MANROPE",
+    "labelFont": "MANROPE",
+    "overridePrimaryColor": "#00668B",
+    "overrideSecondaryColor": "#388E3C",
+    "overrideTertiaryColor": "#F57C00",
+    "overrideNeutralColor": "#F8F9FA",
+    "colorVariant": "EXPRESSIVE",
+    "spacingScale": 2
+  }
+}
+

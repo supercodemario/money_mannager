@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Manrope', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .headline-font {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #2E7D32;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 4px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        input[type="range"].accent-tertiary::-webkit-slider-thumb {
+            background: #974a00;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#01668b",
+                        "tertiary": "#974a00",
+                        "surface-variant": "#dee3e5",
+                        "primary-fixed": "#8ad2fc",
+                        "on-secondary-container": "#006016",
+                        "on-background": "#2e3335",
+                        "background": "#f8f9fa",
+                        "primary-dim": "#00597a",
+                        "error-container": "#fa7150",
+                        "tertiary-container": "#ffa361",
+                        "secondary-fixed-dim": "#90e98b",
+                        "on-secondary": "#eaffe2",
+                        "surface-container-high": "#e5e9eb",
+                        "inverse-primary": "#8ad2fc",
+                        "primary-container": "#8ad2fc",
+                        "tertiary-fixed": "#ffa361",
+                        "secondary": "#116e20",
+                        "error-dim": "#821a01",
+                        "outline-variant": "#aeb3b5",
+                        "on-error-container": "#671200",
+                        "surface-bright": "#f8f9fa",
+                        "on-primary-container": "#004762",
+                        "surface-container-low": "#f2f4f5",
+                        "error": "#aa371c",
+                        "surface-container-highest": "#dee3e5",
+                        "on-tertiary-fixed": "#381700",
+                        "on-secondary-fixed": "#004b0f",
+                        "on-tertiary-container": "#5a2900",
+                        "on-tertiary": "#fff7f4",
+                        "on-error": "#fff7f6",
+                        "tertiary-dim": "#854000",
+                        "primary": "#01668b",
+                        "tertiary-fixed-dim": "#ff8e33",
+                        "on-primary-fixed": "#003247",
+                        "surface-dim": "#d5dbdd",
+                        "outline": "#767c7e",
+                        "inverse-surface": "#0c0f10",
+                        "on-primary": "#f4f9ff",
+                        "secondary-container": "#9df898",
+                        "surface": "#f8f9fa",
+                        "surface-container": "#ebeef0",
+                        "inverse-on-surface": "#9b9d9e",
+                        "on-surface-variant": "#5a6062",
+                        "secondary-dim": "#006117",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#673000",
+                        "secondary-fixed": "#9df898",
+                        "primary-fixed-dim": "#7cc4ed",
+                        "on-primary-fixed-variant": "#00516f",
+                        "on-surface": "#2e3335",
+                        "on-secondary-fixed-variant": "#0a6a1d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-[#F8F9FA] text-on-surface min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md flex items-center justify-between px-6 h-16 border-b border-slate-100">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-slate-600 cursor-pointer active:scale-95 transition-transform">arrow_back</span>
+<h1 class="font-headline font-bold tracking-tight text-xl text-[#2E7D32]">Financial Sanctuary</h1>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full border-2 border-emerald-100 overflow-hidden shadow-sm">
+<img alt="User Profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBI7zhb-EtF44JFNa_b-xqqas56LhGw7cJcoVlbE_zc_FBOzxP2tO0iwMFzC0MGhIj_LNyqdwu17Tr1b5BRfzd2gyf1AGnItNz2HHuKr_hxX5cFjkBZEO70RGEbGMsaRiXy3vbPaqeFN0WoIFU28ePuyq-lYGe7nnW0Xxv_IG46XseAWKv5RN2VBdxb-mkXwhea_1EJswlHclipw4PJKJ3I04I4xkgzufUAJVc5y-c31C6Kq0NPfD60re4467497x4laIjVvG1YrSCR"/>
+</div>
+</div>
+</header>
+<main class="pt-24 px-6 max-w-2xl mx-auto space-y-6">
+<!-- Monthly Income Section -->
+<section class="space-y-4">
+<div class="flex flex-col gap-0.5">
+<h2 class="text-on-surface-variant font-headline text-[10px] font-extrabold uppercase tracking-[0.2em]">Monthly Income</h2>
+<p class="text-on-surface/50 text-xs">Establish your baseline for the month</p>
+</div>
+<div class="bg-white rounded-3xl p-8 space-y-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-slate-100">
+<div class="relative">
+<label class="block text-on-surface-variant text-[10px] font-bold uppercase tracking-wider mb-2 px-1">Total Monthly Net</label>
+<div class="flex items-baseline gap-2 border-b-2 border-emerald-500/20 focus-within:border-emerald-500 transition-colors pb-2">
+<span class="text-emerald-600 font-headline text-3xl font-bold">$</span>
+<input class="bg-transparent border-none p-0 focus:ring-0 font-headline text-4xl font-extrabold text-slate-800 w-full placeholder:text-slate-200" type="text" value="8,500.00"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Indicative Summaries (Side-by-Side) -->
+<section class="grid grid-cols-2 gap-4">
+<div class="bg-emerald-50/50 rounded-3xl p-6 flex flex-col justify-between aspect-[1.1/1] border border-emerald-100/50">
+<div class="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-emerald-600" style="font-variation-settings: 'FILL' 1;">calendar_month</span>
+</div>
+<div>
+<h3 class="text-emerald-800/60 text-[10px] font-bold uppercase tracking-wider mb-1">Monthly Spendable</h3>
+<p class="font-headline text-2xl font-extrabold text-emerald-900">$5,240</p>
+</div>
+</div>
+<div class="bg-cyan-50/50 rounded-3xl p-6 flex flex-col justify-between aspect-[1.1/1] border border-cyan-100/50">
+<div class="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-cyan-600" style="font-variation-settings: 'FILL' 1;">today</span>
+</div>
+<div>
+<h3 class="text-cyan-800/60 text-[10px] font-bold uppercase tracking-wider mb-1">Daily Spendable</h3>
+<p class="font-headline text-2xl font-extrabold text-cyan-900">$174</p>
+</div>
+</div>
+</section>
+<!-- Savings Goal Card -->
+<section class="bg-white rounded-3xl p-7 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-slate-100 space-y-6">
+<div class="flex items-start justify-between">
+<div class="flex gap-4">
+<div class="w-12 h-12 rounded-2xl bg-tertiary-container/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary" style="font-variation-settings: 'FILL' 1;">savings</span>
+</div>
+<div>
+<h3 class="font-headline font-bold text-slate-800">Savings Goal</h3>
+<p class="text-xs text-slate-500">Pay yourself first</p>
+<div class="mt-2 flex items-center gap-2">
+<button class="relative inline-flex h-5 w-9 items-center rounded-full bg-emerald-600 transition-colors">
+<span class="inline-block h-3 w-3 translate-x-5 rounded-full bg-white transition-transform"></span>
+</button>
+<span class="text-[10px] font-bold text-emerald-600 uppercase">Active</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<div class="flex items-center justify-end border-b border-tertiary/10 pb-1">
+<span class="text-tertiary/60 font-headline font-bold text-lg">$</span>
+<span class="font-headline text-2xl font-bold text-tertiary text-right">1,200</span>
+</div>
+<span class="text-[10px] font-extrabold text-tertiary/40 uppercase tracking-widest mt-1 block">per month</span>
+</div>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between items-center text-[10px] font-extrabold text-tertiary uppercase tracking-wider">
+<span>Savings Rate</span>
+<span class="text-xs">14%</span>
+</div>
+<input class="w-full h-1.5 bg-slate-100 rounded-full appearance-none cursor-pointer accent-tertiary" max="50" min="0" type="range" value="14"/>
+<div class="flex justify-between text-[10px] font-bold text-slate-400 tracking-wider uppercase">
+<span>0%</span>
+<span>50%</span>
+</div>
+</div>
+</section>
+<!-- Subtract Recurring Toggle -->
+<section class="bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-slate-100">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-500" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+</div>
+<div>
+<h4 class="font-bold text-sm text-slate-800">Subtract unpaid recurring</h4>
+<p class="text-xs text-slate-500">Factor in bills yet to be paid</p>
+</div>
+</div>
+<button class="relative inline-flex h-6 w-11 items-center rounded-full bg-emerald-600 transition-colors">
+<span class="inline-block h-4 w-4 translate-x-6 rounded-full bg-white transition-transform"></span>
+</button>
+</div>
+</section>
+<!-- Save Button -->
+<div class="pt-6 pb-4">
+<button class="w-full bg-[#2E7D32] hover:bg-[#256629] text-white font-headline font-bold py-4.5 rounded-[20px] shadow-lg shadow-emerald-900/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-lg py-4">
+            Save Changes 
+            <span class="material-symbols-outlined text-xl">check_circle</span>
+</button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-4 bg-white/90 backdrop-blur-xl border-t border-slate-100">
+<a class="flex flex-col items-center justify-center text-slate-400 px-4 transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">shield</span>
+<span class="font-body font-bold text-[10px] uppercase tracking-tighter mt-1">Sanctuary</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 px-4 transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">swap_calls</span>
+<span class="font-body font-bold text-[10px] uppercase tracking-tighter mt-1">Flow</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#2E7D32] px-4 transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">speed</span>
+<span class="font-body font-bold text-[10px] uppercase tracking-tighter mt-1">Limits</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 px-4 transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">settings</span>
+<span class="font-body font-bold text-[10px] uppercase tracking-tighter mt-1">Settings</span>
+</a>
+</nav>
+</body></html>

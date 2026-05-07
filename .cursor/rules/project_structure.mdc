@@ -1,0 +1,39 @@
+---
+description: Enforce strict feature-first architecture and folder structure
+globs: lib/**/*.dart
+---
+
+# Project Structure & Architecture Rules
+
+Enforce the following rules for all code changes and file creations in the `lib/` directory.
+
+## 1. Top-Level Organization
+- `lib/features/`: Domain-specific modules.
+- `lib/core/`: Global infrastructure (network, endpoints, utils).
+- `lib/share/`: Reusable UI tokens, constants, and widgets.
+
+## 2. Feature Folder Structure
+Every feature in `lib/features/<feature_name>/` MUST have these sub-folders:
+- `bloc/`: For `flutter_bloc` logic.
+- `data/`: For repositories and data sources.
+- `models/`: For data models.
+- `view/`: For UI screens and widgets.
+- `routes/`: For `auto_route` definitions.
+
+## 3. Model Convention
+Models MUST follow the nested pattern:
+`lib/features/<feature>/models/<model_name>/<model_name>.dart`
+
+## 4. Routing
+- Use `auto_route`.
+- Features must register routes via a `RouteRegistry`.
+- All `@RoutePage` screens MUST be exported in `lib/bootstrap_exports.dart`.
+
+## 5. Dependency Boundaries
+- **Strict Isolation**: Features MUST NOT import from other features.
+- Common code MUST reside in `lib/core/` or `lib/share/`.
+- **Layered Flow**: `view` -> `bloc` -> `data`.
+
+## 6. Token-First UI
+- No raw hex colors or hardcoded spacing/asset strings in `view/` files.
+- Use tokens defined in `lib/share/tokens/` and assets from `lib/share/assets/`.

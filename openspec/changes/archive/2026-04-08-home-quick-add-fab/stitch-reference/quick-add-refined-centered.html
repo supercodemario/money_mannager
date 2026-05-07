@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "surface-container-high": "#e5e9eb",
+                  "tertiary-fixed": "#ffa361",
+                  "surface-container": "#ebeef0",
+                  "on-secondary-fixed": "#004b0f",
+                  "on-primary-fixed-variant": "#00516f",
+                  "secondary-fixed": "#9df898",
+                  "error-dim": "#821a01",
+                  "primary-fixed-dim": "#7cc4ed",
+                  "primary": "#01668b",
+                  "on-primary-fixed": "#003247",
+                  "secondary-container": "#9df898",
+                  "surface-dim": "#d5dbdd",
+                  "on-secondary": "#eaffe2",
+                  "on-tertiary": "#fff7f4",
+                  "tertiary": "#974a00",
+                  "on-error": "#fff7f6",
+                  "surface-variant": "#dee3e5",
+                  "secondary-dim": "#006117",
+                  "on-background": "#2e3335",
+                  "background": "#f8f9fa",
+                  "tertiary-dim": "#854000",
+                  "on-primary": "#f4f9ff",
+                  "error-container": "#fa7150",
+                  "outline-variant": "#aeb3b5",
+                  "surface-tint": "#01668b",
+                  "primary-container": "#8ad2fc",
+                  "surface-container-lowest": "#ffffff",
+                  "surface-container-low": "#f2f4f5",
+                  "on-surface": "#2e3335",
+                  "surface-container-highest": "#dee3e5",
+                  "on-tertiary-container": "#5a2900",
+                  "surface": "#f8f9fa",
+                  "tertiary-fixed-dim": "#ff8e33",
+                  "secondary-fixed-dim": "#90e98b",
+                  "primary-fixed": "#8ad2fc",
+                  "tertiary-container": "#ffa361",
+                  "outline": "#767c7e",
+                  "on-secondary-fixed-variant": "#0a6a1d",
+                  "inverse-primary": "#8ad2fc",
+                  "secondary": "#116e20",
+                  "inverse-on-surface": "#9b9d9e",
+                  "on-tertiary-fixed-variant": "#673000",
+                  "inverse-surface": "#0c0f10",
+                  "primary-dim": "#00597a",
+                  "on-secondary-container": "#006016",
+                  "on-primary-container": "#004762",
+                  "on-tertiary-fixed": "#381700",
+                  "on-error-container": "#671200",
+                  "on-surface-variant": "#5a6062",
+                  "error": "#aa371c",
+                  "surface-bright": "#f8f9fa"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "0.5rem",
+                  "xl": "0.75rem",
+                  "2xl": "1.5rem",
+                  "full": "9999px"
+          },
+          "fontFamily": {
+                  "headline": ["Plus Jakarta Sans"],
+                  "body": ["Manrope"],
+                  "label": ["Manrope"]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    body {
+      font-family: 'Manrope', sans-serif;
+      background-color: #f8f9fa;
+      color: #2e3335;
+    }
+    h1, h2, h3, .headline-font {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+<style>
+    body {
+      min-height: 100dvh;
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col items-center">
+<div class="w-full max-w-md bg-surface h-screen flex flex-col relative overflow-hidden">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-6 py-4 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md sticky top-0 z-50 shrink-0">
+<div class="hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors rounded-full p-2 active:scale-95 transition-transform cursor-pointer">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400">close</span>
+</div>
+<h1 class="font-['Plus_Jakarta_Sans'] font-semibold text-lg text-emerald-800 dark:text-emerald-200">Add Expense</h1>
+<div class="hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors rounded-full p-2 active:scale-95 transition-transform cursor-pointer">
+<span class="material-symbols-outlined text-emerald-700 dark:text-emerald-400" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</header>
+<main class="flex-1 px-4 flex flex-col overflow-hidden">
+<!-- Date Selector -->
+<section class="mt-4 shrink-0">
+<div class="bg-surface-container-lowest rounded-2xl p-3 flex items-center justify-between shadow-[0_4px_20px_0_rgba(0,0,0,0.03)] border border-outline-variant/10 mx-auto max-w-[280px]">
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container transition-colors rounded-full p-1">chevron_left</button>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-emerald-600 text-sm" style="font-variation-settings: 'FILL' 1;">calendar_today</span>
+<span class="font-headline font-semibold text-on-surface text-sm">Today, Oct 24</span>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container transition-colors rounded-full p-1">chevron_right</button>
+</div>
+</section>
+<!-- Amount Display -->
+<section class="py-4 flex flex-col items-center shrink-0 lg:py-8">
+<span class="text-on-surface-variant font-label text-[10px] tracking-widest uppercase mb-1">Amount</span>
+<div class="flex items-baseline gap-1">
+<span class="text-emerald-600 font-headline font-bold text-2xl">$</span>
+<span class="text-on-surface font-headline font-extrabold text-5xl tracking-tighter">0.00</span>
+</div>
+</section><section class="px-4 mb-4 shrink-0">
+<div class="relative">
+<input class="w-full bg-surface-container-low border-none rounded-xl py-3 px-10 text-sm focus:ring-2 focus:ring-emerald-500/20 text-on-surface placeholder:text-on-surface-variant/50" placeholder="Add a note..." type="text"/>
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">notes</span>
+</div>
+</section>
+<!-- Category Section - 4x2 Swipeable Grid -->
+<section class="shrink-0 overflow-hidden">
+<h2 class="font-headline font-bold text-on-surface text-xs mb-3">Select Category</h2>
+<!-- Scrollable Container -->
+<div class="flex snap-x snap-mandatory overflow-x-auto hide-scrollbar -mx-4 px-4 gap-4">
+<!-- Page 1 (8 Items) -->
+<div class="grid grid-cols-4 grid-rows-2 gap-y-4 gap-x-2 shrink-0 w-full snap-center">
+<!-- House -->
+<div class="flex flex-col items-center gap-1 group cursor-pointer">
+<div class="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center group-active:scale-90 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-emerald-700 text-2xl" style="font-variation-settings: 'FILL' 1;">house</span>
+</div>
+<span class="text-[10px] font-medium text-on-surface-variant truncate w-full text-center">House</span>
+</div>
+<!-- Medical -->
+<div class="flex flex-col items-center gap-1 group cursor-pointer">
+<div class="w-14 h-14 rounded-2xl bg-rose-100 flex items-center justify-center group-active:scale-90 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-rose-600 text-2xl" style="font-variation-settings: 'FILL' 1;">medical_services</span>
+</div>
+<span class="text-[10px] font-medium text-on-surface-variant truncate w-full text-center">Medical</span>
+</div>
+<!-- Travel -->
+<div class="flex flex-col items-center gap-1 group cursor-pointer">
+<div class="w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center group-active:scale-90 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-orange-600 text-2xl" style="font-variation-settings: 'FILL' 1;">flight</span>
+</div>
+<span class="text-[10px] font-medium text-on-surface-variant truncate w-full text-center">Travel</span>
+</div>
+<!-- Grocery -->
+<div class="flex flex-col items-center gap-1 group cursor-pointer">
+<div class="w-14 h-14 rounded-2xl bg-emerald-500/20 flex items-center justify-center group-active:scale-90 transition-transform shadow-sm relative ring-2 ring-emerald-600 ring-offset-2"><div class="absolute -top-1 -right-1 bg-emerald-600 text-white rounded-full p-0.5 shadow-sm">
+<span class="material-symbols-outlined text-[10px] font-bold">check</span>
+</div>
+<span class="material-symbols-outlined text-emerald-800 text-2xl" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+</div>
+<span class="text-[10px] font-medium text-on-surface-variant truncate w-full text-center">Grocery</span>
+</div>
+<!-- Bill -->
+<div class="flex flex-col items-center gap-1 group cursor-pointer">
+<div class="w-14 h-14 rounded-2xl bg-slate-200 flex items-center justify-center group-active:scale-90 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-slate-700 text-2xl" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+</div>
+<span class="text-[10px] font-medium text-on-surface-variant truncate w-full text-center">Bill</span>
+</div>
+<!-- Out-eat -->
+<div class="flex flex-col items-center gap-1 group cursor-pointer">
+<div class="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center group-active:scale-90 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-amber-700 text-2xl" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+</div>
+<span class="text-[10px] font-medium text-on-surface-variant truncate w-full text-center">Eat-out</span>
+</div>
+<!-- Entertainment -->
+<div class="flex flex-col items-center gap-1 group cursor-pointer">
+<div class="w-14 h-14 rounded-2xl bg-sky-100 flex items-center justify-center group-active:scale-90 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-sky-700 text-2xl" style="font-variation-settings: 'FILL' 1;">confirmation_number</span>
+</div>
+<span class="text-[10px] font-medium text-on-surface-variant truncate w-full text-center">Ent.</span>
+</div>
+<!-- Health -->
+<div class="flex flex-col items-center gap-1 group cursor-pointer">
+<div class="w-14 h-14 rounded-2xl bg-teal-100 flex items-center justify-center group-active:scale-90 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-teal-700 text-2xl" style="font-variation-settings: 'FILL' 1;">fitness_center</span>
+</div>
+<span class="text-[10px] font-medium text-on-surface-variant truncate w-full text-center">Health</span>
+</div>
+</div>
+<!-- Page 2 (Remaining 7 Items) -->
+<div class="grid grid-cols-4 grid-rows-2 gap-y-4 gap-x-2 shrink-0 w-full snap-center">
+<!-- Transport -->
+<div class="flex flex-col items-center gap-1 group cursor-pointer">
+<div class="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center group-active:scale-90 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-blue-700 text-2xl" style="font-variation-settings: 'FILL' 1;">directions_car</span>
+</div>
+<span class="text-[10px] font-medium text-on-surface-variant truncate w-full text-center">Transp.</span>
+</div>
+<!-- Education -->
+<div class="flex flex-col items-center gap-1 group cursor-pointer">
+<div class="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center group-active:scale-90 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-emerald-800 text-2xl" style="font-variation-settings: 'FILL' 1;">school</span>
+</div>
+<span class="text-[10px] font-medium text-on-surface-variant truncate w-full text-center">Edu</span>
+</div>
+<!-- Shopping -->
+<div class="flex flex-col items-center gap-1 group cursor-pointer">
+<div class="w-14 h-14 rounded-2xl bg-pink-100 flex items-center justify-center group-active:scale-90 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-pink-700 text-2xl" style="font-variation-settings: 'FILL' 1;">shopping_bag</span>
+</div>
+<span class="text-[10px] font-medium text-on-surface-variant truncate w-full text-center">Shop</span>
+</div>
+<!-- Personal -->
+<div class="flex flex-col items-center gap-1 group cursor-pointer">
+<div class="w-14 h-14 rounded-2xl bg-emerald-500/20 flex items-center justify-center group-active:scale-90 transition-transform shadow-sm relative ring-2 ring-emerald-600 ring-offset-2"><div class="absolute -top-1 -right-1 bg-emerald-600 text-white rounded-full p-0.5 shadow-sm">
+<span class="material-symbols-outlined text-[10px] font-bold">check</span>
+</div>
+<span class="material-symbols-outlined text-slate-600 text-2xl" style="font-variation-settings: 'FILL' 1;">person</span>
+</div>
+<span class="text-[10px] font-medium text-on-surface-variant truncate w-full text-center">Personal</span>
+</div>
+<!-- Pets -->
+<div class="flex flex-col items-center gap-1 group cursor-pointer">
+<div class="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center group-active:scale-90 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-orange-800 text-2xl" style="font-variation-settings: 'FILL' 1;">pets</span>
+</div>
+<span class="text-[10px] font-medium text-on-surface-variant truncate w-full text-center">Pets</span>
+</div>
+<!-- Maintenance -->
+<div class="flex flex-col items-center gap-1 group cursor-pointer">
+<div class="w-14 h-14 rounded-2xl bg-gray-200 flex items-center justify-center group-active:scale-90 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-gray-700 text-2xl" style="font-variation-settings: 'FILL' 1;">build</span>
+</div>
+<span class="text-[10px] font-medium text-on-surface-variant truncate w-full text-center">Maint.</span>
+</div>
+<!-- Gifts -->
+<div class="flex flex-col items-center gap-1 group cursor-pointer">
+<div class="w-14 h-14 rounded-2xl bg-indigo-100 flex items-center justify-center group-active:scale-90 transition-transform shadow-sm">
+<span class="material-symbols-outlined text-indigo-700 text-2xl" style="font-variation-settings: 'FILL' 1;">redeem</span>
+</div>
+<span class="text-[10px] font-medium text-on-surface-variant truncate w-full text-center">Gifts</span>
+</div>
+<!-- Empty slot to maintain grid for Page 2 if needed or add a "More" -->
+<div class="flex flex-col items-center gap-1 group cursor-pointer opacity-40">
+<div class="w-14 h-14 rounded-2xl border-2 border-dashed border-outline-variant flex items-center justify-center group-active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-on-surface-variant text-xl">add</span>
+</div>
+<span class="text-[10px] font-medium text-on-surface-variant truncate w-full text-center">More</span>
+</div>
+</div>
+</div>
+<!-- Pagination Dots -->
+<div class="flex justify-center gap-1.5 mt-4">
+<div class="w-1.5 h-1.5 rounded-full bg-emerald-600"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+</div>
+</section>
+<!-- Numeric Keypad -->
+<section class="mt-auto pb-4 shrink-0">
+<div class="grid grid-cols-3 gap-2">
+<button class="h-12 flex items-center justify-center bg-surface-container-lowest rounded-xl font-headline font-semibold text-lg text-on-surface hover:bg-slate-100 transition-colors active:scale-95 shadow-sm border border-slate-100/50">1</button>
+<button class="h-12 flex items-center justify-center bg-surface-container-lowest rounded-xl font-headline font-semibold text-lg text-on-surface hover:bg-slate-100 transition-colors active:scale-95 shadow-sm border border-slate-100/50">2</button>
+<button class="h-12 flex items-center justify-center bg-surface-container-lowest rounded-xl font-headline font-semibold text-lg text-on-surface hover:bg-slate-100 transition-colors active:scale-95 shadow-sm border border-slate-100/50">3</button>
+<button class="h-12 flex items-center justify-center bg-surface-container-lowest rounded-xl font-headline font-semibold text-lg text-on-surface hover:bg-slate-100 transition-colors active:scale-95 shadow-sm border border-slate-100/50">4</button>
+<button class="h-12 flex items-center justify-center bg-surface-container-lowest rounded-xl font-headline font-semibold text-lg text-on-surface hover:bg-slate-100 transition-colors active:scale-95 shadow-sm border border-slate-100/50">5</button>
+<button class="h-12 flex items-center justify-center bg-surface-container-lowest rounded-xl font-headline font-semibold text-lg text-on-surface hover:bg-slate-100 transition-colors active:scale-95 shadow-sm border border-slate-100/50">6</button>
+<button class="h-12 flex items-center justify-center bg-surface-container-lowest rounded-xl font-headline font-semibold text-lg text-on-surface hover:bg-slate-100 transition-colors active:scale-95 shadow-sm border border-slate-100/50">7</button>
+<button class="h-12 flex items-center justify-center bg-surface-container-lowest rounded-xl font-headline font-semibold text-lg text-on-surface hover:bg-slate-100 transition-colors active:scale-95 shadow-sm border border-slate-100/50">8</button>
+<button class="h-12 flex items-center justify-center bg-surface-container-lowest rounded-xl font-headline font-semibold text-lg text-on-surface hover:bg-slate-100 transition-colors active:scale-95 shadow-sm border border-slate-100/50">9</button>
+<button class="h-12 flex items-center justify-center bg-surface-container-lowest rounded-xl font-headline font-semibold text-lg text-on-surface hover:bg-slate-100 transition-colors active:scale-95 shadow-sm border border-slate-100/50">.</button>
+<button class="h-12 flex items-center justify-center bg-surface-container-lowest rounded-xl font-headline font-semibold text-lg text-on-surface hover:bg-slate-100 transition-colors active:scale-95 shadow-sm border border-slate-100/50">0</button>
+<button class="h-12 flex items-center justify-center bg-slate-100 rounded-xl font-headline font-semibold text-lg text-on-surface hover:bg-slate-200 transition-colors active:scale-95 shadow-sm">
+<span class="material-symbols-outlined text-xl">backspace</span>
+</button>
+</div>
+<div class="flex justify-center items-center gap-2 pt-4">
+<span class="material-symbols-outlined text-emerald-600 text-[12px]">info</span>
+<p class="text-on-surface-variant font-medium text-[10px]">Tap category to save instantly</p>
+</div>
+</section>
+</main>
+</div>
+<!-- Decorative Background Layering -->
+<div class="fixed top-[-10%] right-[-10%] w-64 h-64 bg-emerald-50 rounded-full blur-[100px] -z-10 opacity-60"></div>
+<div class="fixed bottom-[-10%] left-[-10%] w-80 h-80 bg-slate-200 rounded-full blur-[120px] -z-10 opacity-40"></div>
+</body></html>

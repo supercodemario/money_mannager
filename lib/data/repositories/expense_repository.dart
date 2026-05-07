@@ -1,0 +1,225 @@
+import 'package:drift/drift.dart';
+import 'package:money_manager/app/cloud_sync_controller.dart';
+import 'package:money_manager/data/local/app_database.dart';
+import 'package:money_manager/data/repositories/user_profile_repository.dart';
+import 'package:money_manager/data/remote/sync_constants.dart';
+import 'package:uuid/uuid.dart';
+
+class MonthlyCategoryTotal {
+  const MonthlyCategoryTotal({required this.categoryId, required this.totalMinor});
+
+  final String categoryId;
+  final int totalMinor;
+}
+
+class ExpenseRepository {
+  ExpenseRepository(
+    this._db,
+    this._profiles,
+    this._cloudSync,
+  );
+
+  final AppDatabase _db;
+  final UserProfileRepository _profiles;
+  final CloudSyncController _cloudSync;
+
+  Future<String> insertExpense({
+    required int amountMinor,
+    required String currencyCode,
+    required String categoryId,
+    String? budgetBucket,
+    String? note,
+    required DateTime occurredAt,
+    String? recurringPaymentId,
+  }) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final userId = await _profiles.getCurrentUserId();
+    final id = const Uuid().v4();
+
+    await _db.into(_db.expenses).insert(
+          ExpensesCompanion.insert(
+            id: id,
+            amountMinor: amountMinor,
+            currencyCode: currencyCode,
+            categoryId: categoryId,
+            budgetBucket: Value(budgetBucket),
+            note: Value(note?.trim().isEmpty ?? true ? null : note!.trim()),
+            occurredAt: occurredAt.toUtc().millisecondsSinceEpoch,
+            createdAt: now,
+            updatedAt: now,
+            createdByUserId: userId,
+            recurringPaymentId: recurringPaymentId != null
+                ? Value(recurringPaymentId)
+                : const Value.absent(),
+            syncStatus: _cloudSync.syncAllowed
+                ? Value(SyncStatusValue.pending)
+                : const Value(SyncStatusValue.localOnly),
+          ),
+        );
+
+    return id;
+  }
+
+  Stream<List<Expense>> watchRecent({int limit = 50}) {
+    return (_db.select(_db.expenses)
+          ..orderBy([(t) => OrderingTerm(expression: t.occurredAt, mode: OrderingMode.desc)])
+          ..limit(limit))
+        .watch();
+  }
+
+  /// Whether [userId] has recorded at least one expense.
+  Future<bool> hasAnyExpenseForUser(String userId) async {
+    final row = await (_db.select(_db.expenses)
+          ..where((t) => t.createdByUserId.equals(userId))
+          ..limit(1))
+        .getSingleOrNull();
+    return row != null;
+  }
+
+  /// Emits whether [userId] has any expense whenever the expenses table changes.
+  Stream<bool> watchHasAnyExpenseForUser(String userId) {
+    return (_db.select(_db.expenses)
+          ..where((t) => t.createdByUserId.equals(userId))
+          ..limit(1))
+        .watch()
+        .map((rows) => rows.isNotEmpty);
+  }
+
+  Stream<List<Expense>> watchExpensesInRange({
+    required int startUtcMs,
+    required int endUtcMs,
+    int? limit,
+  }) {
+    final q = _db.select(_db.expenses)
+      ..where((t) => t.occurredAt.isBetweenValues(startUtcMs, endUtcMs))
+      ..orderBy([(t) => OrderingTerm(expression: t.occurredAt, mode: OrderingMode.desc)]);
+    if (limit != null) q.limit(limit);
+    return q.watch();
+  }
+
+  Stream<List<MonthlyCategoryTotal>> watchMonthlyCategoryTotals({
+    required int monthStartUtcMs,
+    required int monthEndUtcMs,
+  }) {
+    return _db
+        .customSelect(
+          '''
+SELECT category_id AS category_id, SUM(amount_minor) AS total_minor
+FROM expenses
+WHERE occurred_at >= ? AND occurred_at < ?
+GROUP BY category_id
+ORDER BY total_minor DESC
+''',
+          variables: [
+            Variable.withInt(monthStartUtcMs),
+            Variable.withInt(monthEndUtcMs),
+          ],
+          readsFrom: {_db.expenses},
+        )
+        .watch()
+        .map(
+          (rows) => rows
+              .map(
+                (r) => MonthlyCategoryTotal(
+                  categoryId: r.read<String>('category_id'),
+                  totalMinor: r.read<int>('total_minor'),
+                ),
+              )
+              .toList(growable: false),
+        );
+  }
+
+  /// Called by [SyncOrchestrator] after a successful remote upsert.
+  Future<void> markRemoteSynced(String expenseId) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await (_db.update(_db.expenses)..where((e) => e.id.equals(expenseId))).write(
+      ExpensesCompanion(
+        remoteId: Value(expenseId),
+        syncStatus: const Value(SyncStatusValue.synced),
+        serverUpdatedAt: Value(now),
+      ),
+    );
+  }
+
+  /// Called by [SyncOrchestrator] when push fails.
+  Future<void> markRemoteError(String expenseId) async {
+    await (_db.update(_db.expenses)..where((e) => e.id.equals(expenseId))).write(
+      const ExpensesCompanion(
+        syncStatus: Value(SyncStatusValue.error),
+      ),
+    );
+  }
+
+  Future<int> countBySyncStatuses(Set<String> statuses) async {
+    if (statuses.isEmpty) return 0;
+    final q = _db.selectOnly(_db.expenses)
+      ..addColumns([_db.expenses.id.count()])
+      ..where(_db.expenses.syncStatus.isIn(statuses.toList(growable: false)));
+    final row = await q.getSingle();
+    return row.read(_db.expenses.id.count()) ?? 0;
+  }
+
+  Future<int> countUnsynced() {
+    return countBySyncStatuses({
+      SyncStatusValue.localOnly,
+      SyncStatusValue.pending,
+      SyncStatusValue.error,
+    });
+  }
+
+  Future<int> promoteLocalOnlyToPending() async {
+    return (_db.update(_db.expenses)
+          ..where((e) => e.syncStatus.equals(SyncStatusValue.localOnly)))
+        .write(
+      const ExpensesCompanion(
+        syncStatus: Value(SyncStatusValue.pending),
+      ),
+    );
+  }
+
+  Future<int> retryErroredAsPending() async {
+    return (_db.update(_db.expenses)
+          ..where((e) => e.syncStatus.equals(SyncStatusValue.error)))
+        .write(
+      const ExpensesCompanion(
+        syncStatus: Value(SyncStatusValue.pending),
+      ),
+    );
+  }
+
+  /// Merges a remote row (PostgREST snake_case keys) into Drift using LWW vs local [updated_at].
+  Future<void> applyRemoteExpenseRow(Map<String, dynamic> m) async {
+    final id = m['id'] as String;
+    final remoteUpdated = m['updated_at'] as int;
+    final existing = await (_db.select(_db.expenses)..where((e) => e.id.equals(id))).getSingleOrNull();
+    if (existing != null && existing.updatedAt > remoteUpdated) {
+      return;
+    }
+
+    final localUserId = await _profiles.getCurrentUserId();
+    final recurring = m['recurring_payment_id'] as String?;
+
+    final companion = ExpensesCompanion(
+      id: Value(id),
+      amountMinor: Value(m['amount_minor'] as int),
+      currencyCode: Value(m['currency_code'] as String),
+      categoryId: Value(m['category_id'] as String),
+      budgetBucket: Value(m['budget_bucket'] as String?),
+      note: Value(m['note'] as String?),
+      occurredAt: Value(m['occurred_at'] as int),
+      createdAt: Value(m['created_at'] as int),
+      updatedAt: Value(remoteUpdated),
+      createdByUserId: Value(localUserId),
+      recurringPaymentId: recurring != null ? Value(recurring) : const Value.absent(),
+      remoteId: Value(m['remote_id'] as String? ?? id),
+      syncStatus: const Value(SyncStatusValue.synced),
+      serverUpdatedAt: Value(m['server_updated_at'] as int? ?? remoteUpdated),
+    );
+
+    if (existing == null) {
+      await _db.into(_db.expenses).insert(companion);
+    } else {
+      await (_db.update(_db.expenses)..where((e) => e.id.equals(id))).write(companion);
+    }
+  }
+}

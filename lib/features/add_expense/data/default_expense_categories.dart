@@ -1,0 +1,112 @@
+import 'package:flutter/material.dart';
+import 'package:money_manager/data/categories/category_bucket.dart';
+import 'package:money_manager/features/add_expense/models/expense_category/expense_category.dart';
+import 'package:money_manager/share/share.dart';
+
+List<ExpenseCategory> defaultExpenseCategories() => const [
+      ExpenseCategory(
+        id: 'house',
+        label: AppStrings.categoryHousing,
+        bucket: CategoryBucket.needs,
+        icon: Icons.home_rounded,
+        backgroundColor: AppColors.primaryContainer,
+        foregroundColor: AppColors.primary,
+      ),
+      ExpenseCategory(
+        id: 'medical',
+        label: AppStrings.categoryMedical,
+        bucket: CategoryBucket.needs,
+        icon: Icons.medical_services_rounded,
+        backgroundColor: AppColors.categoryMedicalTint,
+        foregroundColor: AppColors.error,
+      ),
+      ExpenseCategory(
+        id: 'travel',
+        label: AppStrings.categoryTravel,
+        bucket: CategoryBucket.wants,
+        icon: Icons.flight_rounded,
+        backgroundColor: AppColors.categoryTravelTint,
+        foregroundColor: AppColors.tertiary,
+      ),
+      ExpenseCategory(
+        id: 'grocery',
+        label: AppStrings.categoryGrocery,
+        bucket: CategoryBucket.needs,
+        icon: Icons.shopping_cart_rounded,
+        backgroundColor: AppColors.secondaryContainer,
+        foregroundColor: AppColors.secondary,
+      ),
+      ExpenseCategory(
+        id: 'bill',
+        label: AppStrings.categoryUtilitiesBills,
+        bucket: CategoryBucket.needs,
+        icon: Icons.receipt_long_rounded,
+        backgroundColor: AppColors.surfaceContainer,
+        foregroundColor: AppColors.onSurface,
+      ),
+      ExpenseCategory(
+        id: 'out-eat',
+        label: AppStrings.categoryDiningOut,
+        bucket: CategoryBucket.wants,
+        icon: Icons.restaurant_rounded,
+        backgroundColor: AppColors.tertiaryContainer,
+        foregroundColor: AppColors.onTertiaryContainer,
+      ),
+      ExpenseCategory(
+        id: 'cinema',
+        label: AppStrings.categoryCinema,
+        bucket: CategoryBucket.wants,
+        icon: Icons.movie_rounded,
+        backgroundColor: AppColors.categoryCinemaTint,
+        foregroundColor: AppColors.onPrimaryContainer,
+      ),
+      ExpenseCategory(
+        id: 'health',
+        label: AppStrings.categoryHealth,
+        bucket: CategoryBucket.needs,
+        icon: Icons.fitness_center_rounded,
+        backgroundColor: AppColors.categoryHealthTint,
+        foregroundColor: AppColors.secondaryDim,
+      ),
+      ExpenseCategory(
+        id: 'online-shopping',
+        label: AppStrings.categoryOnlineShopping,
+        bucket: CategoryBucket.wants,
+        icon: Icons.shopping_bag_rounded,
+        backgroundColor: AppColors.categoryOnlineTint,
+        foregroundColor: AppColors.categoryOnlineOnTint,
+      ),
+      ExpenseCategory(
+        id: 'vegetables',
+        label: AppStrings.categoryVegetables,
+        bucket: CategoryBucket.needs,
+        icon: Icons.eco_rounded,
+        backgroundColor: AppColors.categoryVegetablesTint,
+        foregroundColor: AppColors.categoryVegetablesOnTint,
+      ),
+      ExpenseCategory(
+        id: 'fuel',
+        label: AppStrings.categoryFuel,
+        bucket: CategoryBucket.needs,
+        icon: Icons.local_gas_station_rounded,
+        backgroundColor: AppColors.categoryFuelTint,
+        foregroundColor: AppColors.tertiaryDim,
+      ),
+      ExpenseCategory(
+        id: 'vacation',
+        label: AppStrings.categoryVacation,
+        bucket: CategoryBucket.wants,
+        icon: Icons.beach_access_rounded,
+        backgroundColor: AppColors.categoryVacationTint,
+        foregroundColor: AppColors.categoryVacationOnTint,
+      ),
+      ExpenseCategory(
+        id: 'savings',
+        label: AppStrings.categorySavings,
+        bucket: CategoryBucket.savingsDebt,
+        icon: Icons.savings_rounded,
+        backgroundColor: AppColors.categorySavingsTint,
+        foregroundColor: AppColors.categorySavingsOnTint,
+      ),
+    ];
+
