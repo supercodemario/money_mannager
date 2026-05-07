@@ -22,7 +22,7 @@ class CloudSyncSettingsSection extends StatelessWidget {
 
     return ListenableBuilder(
       listenable: cloud,
-      builder: (context, _) {ay
+      builder: (context, _) {
         if (!cloud.isSupabaseConfigured) {
           return AppCard(
             padding: const EdgeInsets.all(AppSpacing.s16),
