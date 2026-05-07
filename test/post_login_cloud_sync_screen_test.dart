@@ -25,42 +25,160 @@ void main() {
     expect(calls, 0);
   });
 
-  testWidgets('renders idle count and progresses through sync stages to success', (tester) async {
-    final done = Completer<void>();
-    late void Function(ManualSyncStage stage) stageCallback;
+  testWidgets(
+    'renders idle count and progresses through sync stages to success',
+    (tester) async {
+      final done = Completer<void>();
+      late void Function(ManualSyncStage stage) stageCallback;
 
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PostLoginCloudSyncScreen(
+            totalRows: 3,
+            runSync: (onStage) async {
+              stageCallback = onStage;
+              await done.future;
+            },
+          ),
+        ),
+      );
+
+      expect(
+        find.text(AppStrings.cloudSyncPostAuthPromptTitle),
+        findsOneWidget,
+      );
+      expect(
+        find.text(AppStrings.cloudSyncPostAuthPromptBody(3)),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text(AppStrings.cloudSyncSyncNow));
+      await tester.pump();
+      expect(find.text(AppStrings.cloudSyncPostAuthPreparing), findsOneWidget);
+
+      stageCallback(ManualSyncStage.pushing);
+      await tester.pump();
+      expect(find.text(AppStrings.cloudSyncPostAuthPushing), findsOneWidget);
+
+      stageCallback(ManualSyncStage.pulling);
+      await tester.pump();
+      expect(find.text(AppStrings.cloudSyncPostAuthPulling), findsOneWidget);
+
+      done.complete();
+      await tester.pump();
+      expect(
+        find.text(AppStrings.cloudSyncPostAuthSuccessTitle),
+        findsOneWidget,
+      );
+      expect(find.text(AppStrings.commonDone), findsOneWidget);
+    },
+  );
+
+  testWidgets('shows bootstrap-only copy when requested', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: PostLoginCloudSyncScreen(
-          totalRows: 3,
-          runSync: (onStage) async {
-            stageCallback = onStage;
-            await done.future;
-          },
+          totalRows: 0,
+          isBootstrapOnly: true,
+          runSync: (_) async {},
         ),
       ),
     );
 
-    expect(find.text(AppStrings.cloudSyncPostAuthPromptTitle), findsOneWidget);
-    expect(find.text(AppStrings.cloudSyncPostAuthPromptBody(3)), findsOneWidget);
-
-    await tester.tap(find.text(AppStrings.cloudSyncSyncNow));
-    await tester.pump();
-    expect(find.text(AppStrings.cloudSyncPostAuthPreparing), findsOneWidget);
-
-    stageCallback(ManualSyncStage.pushing);
-    await tester.pump();
-    expect(find.text(AppStrings.cloudSyncPostAuthPushing), findsOneWidget);
-
-    stageCallback(ManualSyncStage.pulling);
-    await tester.pump();
-    expect(find.text(AppStrings.cloudSyncPostAuthPulling), findsOneWidget);
-
-    done.complete();
-    await tester.pump();
-    expect(find.text(AppStrings.cloudSyncPostAuthSuccessTitle), findsOneWidget);
-    expect(find.text(AppStrings.commonDone), findsOneWidget);
+    expect(
+      find.text(AppStrings.cloudSyncPostAuthBootstrapBody),
+      findsOneWidget,
+    );
+    expect(find.text(AppStrings.cloudSyncPostAuthPromptBody(0)), findsNothing);
   });
+
+  testWidgets('shows supabase row count before sync when provided', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PostLoginCloudSyncScreen(
+          totalRows: 2,
+          localRows: 5,
+          remoteRows: 7,
+          runSync: (_) async {},
+        ),
+      ),
+    );
+
+    expect(
+      find.text(AppStrings.cloudSyncPostAuthLocalRowsBody(5)),
+      findsOneWidget,
+    );
+    expect(
+      find.text(AppStrings.cloudSyncPostAuthCloudRowsBody(7)),
+      findsOneWidget,
+    );
+    expect(
+      find.text(AppStrings.cloudSyncPostAuthCompareRowsBody(5, 7)),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('shows fallback when supabase row count is unavailable', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PostLoginCloudSyncScreen(totalRows: 2, runSync: (_) async {}),
+      ),
+    );
+
+    expect(
+      find.text(AppStrings.cloudSyncPostAuthCloudRowsUnavailable),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+    'shows already synced status when local equals cloud and no unsynced',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              return Scaffold(
+                body: Center(
+                  child: FilledButton(
+                    onPressed: () {
+                      Navigator.of(context).push<void>(
+                        MaterialPageRoute<void>(
+                          builder: (_) => PostLoginCloudSyncScreen(
+                            totalRows: 0,
+                            localRows: 2,
+                            remoteRows: 2,
+                            runSync: (_) async {},
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text('open'),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(AppStrings.cloudSyncPostAuthAlreadySyncedStatus),
+        findsOneWidget,
+      );
+      expect(
+        find.text(AppStrings.cloudSyncPostAuthAlreadySyncedAction),
+        findsOneWidget,
+      );
+      expect(find.text(AppStrings.cloudSyncNotNow), findsNothing);
+    },
+  );
 
   testWidgets('shows failure, allows retry, and can defer', (tester) async {
     var attempts = 0;
@@ -90,7 +208,9 @@ void main() {
     expect(find.text(AppStrings.cloudSyncPostAuthSuccessTitle), findsOneWidget);
   });
 
-  testWidgets('defer from idle pops true so auth shell can close', (tester) async {
+  testWidgets('defer from idle pops true so auth shell can close', (
+    tester,
+  ) async {
     bool? result;
     await tester.pumpWidget(
       MaterialApp(

@@ -11,14 +11,21 @@ class PostLoginCloudSyncScreen extends StatefulWidget {
   const PostLoginCloudSyncScreen({
     super.key,
     required this.totalRows,
+    this.localRows,
+    this.remoteRows,
+    this.isBootstrapOnly = false,
     required this.runSync,
   });
 
   final int totalRows;
+  final int? localRows;
+  final int? remoteRows;
+  final bool isBootstrapOnly;
   final PostLoginCloudSyncRunner runSync;
 
   @override
-  State<PostLoginCloudSyncScreen> createState() => _PostLoginCloudSyncScreenState();
+  State<PostLoginCloudSyncScreen> createState() =>
+      _PostLoginCloudSyncScreenState();
 }
 
 class _PostLoginCloudSyncScreenState extends State<PostLoginCloudSyncScreen> {
@@ -37,6 +44,13 @@ class _PostLoginCloudSyncScreenState extends State<PostLoginCloudSyncScreen> {
         return AppStrings.cloudSyncPostAuthPulling;
     }
   }
+
+  bool get _looksAlreadySynced =>
+      widget.localRows != null &&
+      widget.remoteRows != null &&
+      widget.totalRows == 0 &&
+      widget.localRows == widget.remoteRows &&
+      _failure == null;
 
   Future<void> _startSync() async {
     setState(() {
@@ -97,87 +111,145 @@ class _PostLoginCloudSyncScreenState extends State<PostLoginCloudSyncScreen> {
                     ],
                   )
                 : _success
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const Spacer(),
-                          const Icon(
-                            Icons.check_circle_outline,
-                            size: AppSpacing.s48,
-                          ),
-                          const SizedBox(height: AppSpacing.s12),
-                          Text(
-                            AppStrings.cloudSyncPostAuthSuccessTitle,
-                            textAlign: TextAlign.center,
-                            style: textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.s8),
-                          Text(
-                            AppStrings.cloudSyncPostAuthSuccessBody,
-                            textAlign: TextAlign.center,
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                          ),
-                          const Spacer(),
-                          FilledButton(
-                            onPressed: _popDeferAllowCloseAuth,
-                            child: const Text(AppStrings.commonDone),
-                          ),
-                        ],
-                      )
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            AppStrings.cloudSyncPostAuthPromptTitle,
-                            style: textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.s8),
-                          Text(
-                            AppStrings.cloudSyncPostAuthPromptBody(widget.totalRows),
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                          ),
-                          if (_failure != null) ...[
-                            const SizedBox(height: AppSpacing.s16),
-                            Text(
-                              AppStrings.cloudSyncPostAuthFailureTitle,
-                              style: textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.s8),
-                            Text(
-                              _failure!,
-                              style: textTheme.bodySmall?.copyWith(
-                                color: AppColors.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                          const Spacer(),
-                          FilledButton(
-                            onPressed: _startSync,
-                            child: Text(
-                              _failure == null
-                                  ? AppStrings.cloudSyncSyncNow
-                                  : AppStrings.cloudSyncRetry,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.s8),
-                          FilledButton.tonal(
-                            onPressed: _failure == null
-                                ? _popDeferAllowCloseAuth
-                                : _popStayOnAuthAfterFailure,
-                            child: const Text(AppStrings.cloudSyncNotNow),
-                          ),
-                        ],
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Spacer(),
+                      const Icon(
+                        Icons.check_circle_outline,
+                        size: AppSpacing.s48,
                       ),
+                      const SizedBox(height: AppSpacing.s12),
+                      Text(
+                        AppStrings.cloudSyncPostAuthSuccessTitle,
+                        textAlign: TextAlign.center,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.s8),
+                      Text(
+                        widget.isBootstrapOnly
+                            ? AppStrings.cloudSyncPostAuthBootstrapSuccessBody
+                            : AppStrings.cloudSyncPostAuthSuccessBody,
+                        textAlign: TextAlign.center,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                      const Spacer(),
+                      FilledButton(
+                        onPressed: _popDeferAllowCloseAuth,
+                        child: const Text(AppStrings.commonDone),
+                      ),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        AppStrings.cloudSyncPostAuthPromptTitle,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.s8),
+                      Text(
+                        widget.isBootstrapOnly
+                            ? AppStrings.cloudSyncPostAuthBootstrapBody
+                            : AppStrings.cloudSyncPostAuthPromptBody(
+                                widget.totalRows,
+                              ),
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.s8),
+                      if (widget.localRows != null)
+                        Text(
+                          AppStrings.cloudSyncPostAuthLocalRowsBody(
+                            widget.localRows!,
+                          ),
+                          style: textTheme.bodySmall?.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      if (widget.localRows != null)
+                        const SizedBox(height: AppSpacing.s4),
+                      Text(
+                        widget.remoteRows != null
+                            ? AppStrings.cloudSyncPostAuthCloudRowsBody(
+                                widget.remoteRows!,
+                              )
+                            : AppStrings.cloudSyncPostAuthCloudRowsUnavailable,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                      if (widget.localRows != null &&
+                          widget.remoteRows != null) ...[
+                        const SizedBox(height: AppSpacing.s4),
+                        Text(
+                          AppStrings.cloudSyncPostAuthCompareRowsBody(
+                            widget.localRows!,
+                            widget.remoteRows!,
+                          ),
+                          style: textTheme.bodySmall?.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                      if (_looksAlreadySynced) ...[
+                        const SizedBox(height: AppSpacing.s8),
+                        Text(
+                          AppStrings.cloudSyncPostAuthAlreadySyncedStatus,
+                          style: textTheme.labelLarge?.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                      if (_failure != null) ...[
+                        const SizedBox(height: AppSpacing.s16),
+                        Text(
+                          AppStrings.cloudSyncPostAuthFailureTitle,
+                          style: textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.s8),
+                        Text(
+                          _failure!,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                      const Spacer(),
+                      FilledButton(
+                        onPressed: _looksAlreadySynced
+                            ? _popDeferAllowCloseAuth
+                            : _startSync,
+                        child: Text(
+                          _failure == null
+                              ? (_looksAlreadySynced
+                                    ? AppStrings
+                                          .cloudSyncPostAuthAlreadySyncedAction
+                                    : AppStrings.cloudSyncSyncNow)
+                              : AppStrings.cloudSyncRetry,
+                        ),
+                      ),
+                      if (!_looksAlreadySynced) ...[
+                        const SizedBox(height: AppSpacing.s8),
+                        FilledButton.tonal(
+                          onPressed: _failure == null
+                              ? _popDeferAllowCloseAuth
+                              : _popStayOnAuthAfterFailure,
+                          child: const Text(AppStrings.cloudSyncNotNow),
+                        ),
+                      ],
+                    ],
+                  ),
           ),
         ),
       ),

@@ -6,6 +6,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ExpenseRemoteGateway {
   ExpenseRemoteGateway();
 
+  Future<int> countExpenses({required String householdId}) async {
+    final c = Supabase.instance.client;
+    final rows =
+        await c.from('expenses').select('id').eq('household_id', householdId)
+            as List<dynamic>;
+    return rows.length;
+  }
+
   Future<void> upsertExpense({
     required Expense row,
     required String householdId,
@@ -42,15 +50,25 @@ class ExpenseRemoteGateway {
     final c = Supabase.instance.client;
     final List<dynamic> raw;
     if (sinceUpdatedAtMs <= 0) {
-      raw = await c.from('expenses').select().eq('household_id', householdId).order('updated_at', ascending: true) as List<dynamic>;
+      raw =
+          await c
+                  .from('expenses')
+                  .select()
+                  .eq('household_id', householdId)
+                  .order('updated_at', ascending: true)
+              as List<dynamic>;
     } else {
-      raw = await c
-          .from('expenses')
-          .select()
-          .eq('household_id', householdId)
-          .gt('updated_at', sinceUpdatedAtMs)
-          .order('updated_at', ascending: true) as List<dynamic>;
+      raw =
+          await c
+                  .from('expenses')
+                  .select()
+                  .eq('household_id', householdId)
+                  .gt('updated_at', sinceUpdatedAtMs)
+                  .order('updated_at', ascending: true)
+              as List<dynamic>;
     }
-    return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList(growable: false);
+    return raw
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList(growable: false);
   }
 }

@@ -93,6 +93,7 @@ class AppStrings {
   static const cloudSyncSignOut = 'Sign out';
   static const cloudSyncSignedIn = 'Signed in';
   static const cloudSyncSyncReady = 'Sync active';
+  static const cloudSyncRefreshCloudData = 'Refresh cloud data';
   static const cloudSyncUnsyncedLocalDataTitle = 'Local data available';
   static const cloudSyncUnsyncedLocalDataBody =
       'You have local data that is not synced. Sync to cloud now?';
@@ -102,12 +103,29 @@ class AppStrings {
   static const cloudSyncPostAuthPromptTitle = 'Data ready to sync';
   static String cloudSyncPostAuthPromptBody(int totalRows) =>
       '$totalRows local item(s) are available to sync to cloud.';
+  static const cloudSyncPostAuthBootstrapBody =
+      'No local uploads are pending. Download your latest cloud data to this device now?';
+  static String cloudSyncPostAuthCloudRowsBody(int totalRows) =>
+      'Supabase currently has $totalRows item(s).';
+  static String cloudSyncPostAuthLocalRowsBody(int totalRows) =>
+      'Local device currently has $totalRows item(s).';
+  static const cloudSyncPostAuthCloudRowsUnavailable =
+      'Supabase entry count is unavailable right now.';
+  static String cloudSyncPostAuthCompareRowsBody(
+    int localRows,
+    int remoteRows,
+  ) => 'Compare: local $localRows vs cloud $remoteRows.';
+  static const cloudSyncPostAuthAlreadySyncedStatus =
+      'Already synced: local and cloud counts match with no pending changes.';
+  static const cloudSyncPostAuthAlreadySyncedAction = 'Already synced (Done)';
   static const cloudSyncPostAuthPreparing = 'Preparing local data';
   static const cloudSyncPostAuthPushing = 'Uploading local changes';
   static const cloudSyncPostAuthPulling = 'Downloading latest cloud data';
   static const cloudSyncPostAuthSuccessTitle = 'Sync completed';
   static const cloudSyncPostAuthSuccessBody =
       'Your local data is now synced to cloud.';
+  static const cloudSyncPostAuthBootstrapSuccessBody =
+      'Latest cloud data is now available on this device.';
   static const cloudSyncPostAuthFailureTitle = 'Sync failed';
   static const cloudSyncSyncBeforeLogoutTitle = 'Syncing data before logout';
   static const cloudSyncSyncBeforeLogoutPreparing = 'Preparing local data';

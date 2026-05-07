@@ -6,6 +6,7 @@ class SyncMetadataStore {
 
   static const _householdIdKey = 'sync_household_id';
   static const _lastExpensePullMsKey = 'sync_last_expense_pull_ms';
+  static const _postAuthBootstrapDoneKey = 'sync_post_auth_bootstrap_done';
 
   static Future<String?> getHouseholdId() async {
     final p = await SharedPreferences.getInstance();
@@ -32,9 +33,20 @@ class SyncMetadataStore {
     await p.setInt(_lastExpensePullMsKey, ms);
   }
 
+  static Future<bool> getPostAuthBootstrapCompleted() async {
+    final p = await SharedPreferences.getInstance();
+    return p.getBool(_postAuthBootstrapDoneKey) ?? false;
+  }
+
+  static Future<void> setPostAuthBootstrapCompleted(bool done) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setBool(_postAuthBootstrapDoneKey, done);
+  }
+
   static Future<void> clearAll() async {
     final p = await SharedPreferences.getInstance();
     await p.remove(_householdIdKey);
     await p.remove(_lastExpensePullMsKey);
+    await p.remove(_postAuthBootstrapDoneKey);
   }
 }
