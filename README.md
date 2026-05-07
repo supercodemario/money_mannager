@@ -1,6 +1,28 @@
 # Money Manager
 
-Flutter app for tracking daily expenses, recurring payments, and spending guidance (**homeRatio** UI). Data is **local-first** (SQLite via **Drift**); **optional cloud sync** uses **Supabase** (Postgres + Auth + Row Level Security).
+## About this project
+
+**Money Manager** is a cross-platform **Flutter** application for **personal and household money tracking**. The product experience is branded **homeRatio**: a bottom-tab shell (**Home**, **Expenses**, **Insights**, **Settings**) focused on daily spending, recurring bills, and gentle spending guidance (limits and summaries are **guidance**, not hard blocks).
+
+### What it does today
+
+- **Home** — Dashboard-style overview and shortcuts (including quick add).
+- **Expenses** — Browse and manage expenses by day and month, including **recurring payment** templates and occurrences.
+- **Insights** — Navigation slot is present; main content is still a **placeholder** pending future analytics UX.
+- **Quick add** — Fast expense capture (amount, category, note).
+- **Limits & preferences** — User-set expense limits and regional/preferences-style settings from **Settings** (see feature modules under `lib/features/`).
+- **Categories** — Manage expense categories used across flows.
+- **Cloud sync (optional)** — After signing in with Supabase Auth, eligible expenses can sync to Postgres under a **household** model (phase 1); without credentials the app stays **fully local**.
+
+### Technical stance
+
+- **Local-first:** All core data is stored on-device with **Drift** (SQLite). Nothing requires the network for basic expense tracking.
+- **Privacy-conscious:** Cloud sync is opt-in via configuration; phase 1 sync scope is documented in **`docs/backend-developer-overview.md`**.
+- **Specifications:** Product behaviour for larger features is captured in **`openspec/specs/`** and past work in **`openspec/changes/archive/`** (see **OpenSpec** below).
+
+### Platform support
+
+The codebase targets standard **Flutter** mobile/desktop platforms supported by the SDK (see `pubspec.yaml` and platform folders **`android/`**, **`ios/`**, etc.).
 
 ## Requirements
 
