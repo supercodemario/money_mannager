@@ -4,8 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:money_manager/app/cloud_sync_controller.dart';
 import 'package:money_manager/data/local/app_database.dart';
 import 'package:money_manager/data/local/sync_metadata_store.dart';
+import 'package:money_manager/data/remote/expense_profile_remote_gateway.dart';
 import 'package:money_manager/data/remote/expense_remote_gateway.dart';
 import 'package:money_manager/data/remote/sync_constants.dart';
+import 'package:money_manager/data/repositories/expense_limits_repository.dart';
 import 'package:money_manager/data/repositories/expense_repository.dart';
 
 enum ManualSyncStage { preparing, pushing, pulling }
@@ -18,18 +20,25 @@ class SyncOrchestrator {
     required AppDatabase db,
     required CloudSyncController cloud,
     required ExpenseRepository expenses,
+    required ExpenseLimitsRepository expenseLimits,
     ExpenseRemoteGateway? remote,
+    ExpenseProfileRemoteGateway? profileRemote,
   }) : _db = db,
        _cloud = cloud,
        _expenses = expenses,
-       _remote = remote ?? ExpenseRemoteGateway();
+       _expenseLimits = expenseLimits,
+       _remote = remote ?? ExpenseRemoteGateway(),
+       _profileRemote = profileRemote ?? ExpenseProfileRemoteGateway();
 
   final AppDatabase _db;
   final CloudSyncController _cloud;
   final ExpenseRepository _expenses;
+  final ExpenseLimitsRepository _expenseLimits;
   final ExpenseRemoteGateway _remote;
+  final ExpenseProfileRemoteGateway _profileRemote;
 
   StreamSubscription<List<Expense>>? _pendingSub;
+  StreamSubscription<List<ExpenseLimitPreference>>? _profilePendingSub;
   Timer? _debounce;
   Future<void> _syncQueue = Future<void>.value();
 
@@ -39,6 +48,9 @@ class SyncOrchestrator {
               ..where((e) => e.syncStatus.equals(SyncStatusValue.pending)))
             .watch()
             .listen((_) => _schedule());
+    _profilePendingSub = _expenseLimits.watchPendingSync().listen(
+      (_) => _schedule(),
+    );
     _cloud.addListener(_schedule);
     _schedule();
   }
@@ -46,6 +58,7 @@ class SyncOrchestrator {
   void dispose() {
     _debounce?.cancel();
     _pendingSub?.cancel();
+    _profilePendingSub?.cancel();
     _cloud.removeListener(_schedule);
   }
 
@@ -58,7 +71,11 @@ class SyncOrchestrator {
   }
 
   Future<void> _runCycle() async {
-    await runManualSync();
+    try {
+      await runManualSync();
+    } catch (e, st) {
+      debugPrint('[sync] background sync failed: $e\n$st');
+    }
   }
 
   /// Returns remote expense row count for the signed-in household.
@@ -116,9 +133,11 @@ class SyncOrchestrator {
     onStage?.call(ManualSyncStage.preparing);
     if (includeLocalOnly) {
       await _expenses.promoteLocalOnlyToPending();
+      await _expenseLimits.promoteLocalOnlyToPending();
     }
     if (includeError) {
       await _expenses.retryErroredAsPending();
+      await _expenseLimits.retryErroredAsPending();
     }
     try {
       await _cloud.ensureHouseholdIfNeeded();
@@ -137,10 +156,11 @@ class SyncOrchestrator {
 
     if (mode == ManualSyncMode.pushThenPull) {
       onStage?.call(ManualSyncStage.pushing);
+      await _pushPendingProfiles(failFast: failFast);
       await _pushPending(hid, failFast: failFast);
     }
     onStage?.call(ManualSyncStage.pulling);
-    await _pullRemote(hid);
+    await _pullRemote(hid, failFast: failFast);
   }
 
   Future<void> _pushPending(String householdId, {bool failFast = false}) async {
@@ -161,20 +181,54 @@ class SyncOrchestrator {
     }
   }
 
-  Future<void> _pullRemote(String householdId) async {
-    final since = await SyncMetadataStore.getLastExpensePullServerMs();
-    final maps = await _remote.fetchExpensesSince(
-      householdId: householdId,
-      sinceUpdatedAtMs: since,
-    );
-    var maxUpdated = since;
-    for (final m in maps) {
-      final u = m['updated_at'] as int?;
-      if (u != null && u > maxUpdated) maxUpdated = u;
-      await _expenses.applyRemoteExpenseRow(m);
+  Future<void> _pushPendingProfiles({bool failFast = false}) async {
+    final pending = await _expenseLimits.getPendingSync();
+    for (final row in pending) {
+      try {
+        await _profileRemote.upsertProfile(row);
+        await _expenseLimits.markRemoteSynced(
+          userId: row.userId,
+          authUserId: _profileRemote.currentAuthUserId,
+        );
+      } catch (e, st) {
+        debugPrint('[sync] profile push failed ${row.userId}: $e\n$st');
+        await _expenseLimits.markRemoteError(row.userId);
+        if (failFast) {
+          throw StateError('Failed to sync expense profile ${row.userId}: $e');
+        }
+      }
     }
-    if (maxUpdated > since) {
-      await SyncMetadataStore.setLastExpensePullServerMs(maxUpdated);
+  }
+
+  Future<void> _pullRemote(String householdId, {bool failFast = false}) async {
+    try {
+      final profile = await _profileRemote.fetchProfile();
+      if (profile != null) {
+        await _expenseLimits.applyRemoteProfileRow(profile);
+      }
+    } catch (e, st) {
+      debugPrint('[sync] profile pull failed: $e\n$st');
+      if (failFast) rethrow;
+    }
+
+    try {
+      final since = await SyncMetadataStore.getLastExpensePullServerMs();
+      final maps = await _remote.fetchExpensesSince(
+        householdId: householdId,
+        sinceUpdatedAtMs: since,
+      );
+      var maxUpdated = since;
+      for (final m in maps) {
+        final u = m['updated_at'] as int?;
+        if (u != null && u > maxUpdated) maxUpdated = u;
+        await _expenses.applyRemoteExpenseRow(m);
+      }
+      if (maxUpdated > since) {
+        await SyncMetadataStore.setLastExpensePullServerMs(maxUpdated);
+      }
+    } catch (e, st) {
+      debugPrint('[sync] expense pull failed: $e\n$st');
+      if (failFast) rethrow;
     }
   }
 }

@@ -31,9 +31,11 @@ class RecurringPayments extends Table {
   IntColumn get amountMinorSuggested => integer()();
   TextColumn get currencyCode => text()();
   IntColumn get dayOfMonth => integer()();
+
   /// Optional inclusive end month for this recurring template (`YYYY-MM` in local calendar).
   /// When null, the template recurs indefinitely.
   TextColumn get endMonthKey => text().nullable()();
+
   /// When false, the template is hidden from Expenses → Recurring and home; management screen still lists it.
   BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
   IntColumn get createdAt => integer()();
@@ -44,7 +46,10 @@ class RecurringPayments extends Table {
 }
 
 @TableIndex(name: 'expenses_occurred_at', columns: {#occurredAt})
-@TableIndex(name: 'expenses_category_occurred', columns: {#categoryId, #occurredAt})
+@TableIndex(
+  name: 'expenses_category_occurred',
+  columns: {#categoryId, #occurredAt},
+)
 @TableIndex(name: 'expenses_created_by', columns: {#createdByUserId})
 class Expenses extends Table {
   TextColumn get id => text()();
@@ -57,7 +62,8 @@ class Expenses extends Table {
   IntColumn get createdAt => integer()();
   IntColumn get updatedAt => integer()();
   TextColumn get createdByUserId => text().references(UserProfiles, #id)();
-  TextColumn get recurringPaymentId => text().nullable().references(RecurringPayments, #id)();
+  TextColumn get recurringPaymentId =>
+      text().nullable().references(RecurringPayments, #id)();
   TextColumn get remoteId => text().nullable()();
   TextColumn get syncStatus => text().nullable()();
   IntColumn get serverUpdatedAt => integer().nullable()();
@@ -71,8 +77,12 @@ class ExpenseLimitPreferences extends Table {
   TextColumn get userId => text().references(UserProfiles, #id)();
   IntColumn get monthlyIncomeMinor => integer().nullable()();
   IntColumn get monthlySavingsMinor => integer().nullable()();
-  BoolColumn get excludeUnpaidRecurring => boolean().withDefault(const Constant(false))();
+  BoolColumn get excludeUnpaidRecurring =>
+      boolean().withDefault(const Constant(false))();
   IntColumn get updatedAt => integer()();
+  TextColumn get remoteId => text().nullable()();
+  TextColumn get syncStatus => text().nullable()();
+  IntColumn get serverUpdatedAt => integer().nullable()();
 
   @override
   Set<Column> get primaryKey => {userId};
@@ -101,10 +111,15 @@ class ExpenseCategories extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@TableIndex(name: 'idx_rp_occurrence_unique', columns: {#recurringPaymentId, #monthKey}, unique: true)
+@TableIndex(
+  name: 'idx_rp_occurrence_unique',
+  columns: {#recurringPaymentId, #monthKey},
+  unique: true,
+)
 class RecurringPaymentOccurrences extends Table {
   TextColumn get id => text()();
-  TextColumn get recurringPaymentId => text().references(RecurringPayments, #id)();
+  TextColumn get recurringPaymentId =>
+      text().references(RecurringPayments, #id)();
   TextColumn get monthKey => text()();
   TextColumn get expenseId => text().nullable().references(Expenses, #id)();
   IntColumn get createdAt => integer()();
@@ -131,40 +146,54 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (Migrator m) async {
-          await m.createAll();
-        },
-        onUpgrade: (Migrator m, int from, int to) async {
-          if (from < 2) {
-            await m.createTable(recurringPayments);
-            await m.addColumn(expenses, expenses.recurringPaymentId);
-            await m.createTable(recurringPaymentOccurrences);
-          }
-          if (from < 3) {
-            await m.addColumn(recurringPayments, recurringPayments.endMonthKey);
-          }
-          if (from < 4) {
-            await m.addColumn(recurringPayments, recurringPayments.isEnabled);
-          }
-          if (from < 5) {
-            await m.createTable(expenseLimitPreferences);
-          }
-          if (from < 6) {
-            await m.addColumn(expenses, expenses.budgetBucket);
-            await m.createTable(userPreferences);
-            await m.createTable(expenseCategories);
-          }
-        },
-        beforeOpen: (OpeningDetails details) async {
-          await customStatement('PRAGMA foreign_keys = ON');
-          await _ensureDefaultProfile();
-          await _syncExpenseCategoryCatalog();
-        },
-      );
+    onCreate: (Migrator m) async {
+      await m.createAll();
+    },
+    onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 2) {
+        await m.createTable(recurringPayments);
+        await m.addColumn(expenses, expenses.recurringPaymentId);
+        await m.createTable(recurringPaymentOccurrences);
+      }
+      if (from < 3) {
+        await m.addColumn(recurringPayments, recurringPayments.endMonthKey);
+      }
+      if (from < 4) {
+        await m.addColumn(recurringPayments, recurringPayments.isEnabled);
+      }
+      if (from < 5) {
+        await m.createTable(expenseLimitPreferences);
+      }
+      if (from < 6) {
+        await m.addColumn(expenses, expenses.budgetBucket);
+        await m.createTable(userPreferences);
+        await m.createTable(expenseCategories);
+      }
+      if (from < 7) {
+        await m.addColumn(
+          expenseLimitPreferences,
+          expenseLimitPreferences.remoteId,
+        );
+        await m.addColumn(
+          expenseLimitPreferences,
+          expenseLimitPreferences.syncStatus,
+        );
+        await m.addColumn(
+          expenseLimitPreferences,
+          expenseLimitPreferences.serverUpdatedAt,
+        );
+      }
+    },
+    beforeOpen: (OpeningDetails details) async {
+      await customStatement('PRAGMA foreign_keys = ON');
+      await _ensureDefaultProfile();
+      await _syncExpenseCategoryCatalog();
+    },
+  );
 
   Future<void> ensureReady() async {
     await customSelect('SELECT 1').getSingle();
@@ -217,7 +246,9 @@ class AppDatabase extends _$AppDatabase {
     ];
 
     for (final (id, label, bucket) in catalog) {
-      final row = await (select(expenseCategories)..where((t) => t.id.equals(id))).getSingleOrNull();
+      final row = await (select(
+        expenseCategories,
+      )..where((t) => t.id.equals(id))).getSingleOrNull();
       if (row == null) {
         await into(expenseCategories).insert(
           ExpenseCategoriesCompanion.insert(

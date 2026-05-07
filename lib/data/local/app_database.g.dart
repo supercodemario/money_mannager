@@ -2425,6 +2425,39 @@ class $ExpenseLimitPreferencesTable extends ExpenseLimitPreferences
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _remoteIdMeta = const VerificationMeta(
+    'remoteId',
+  );
+  @override
+  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
+    'remote_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _serverUpdatedAtMeta = const VerificationMeta(
+    'serverUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> serverUpdatedAt = GeneratedColumn<int>(
+    'server_updated_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     userId,
@@ -2432,6 +2465,9 @@ class $ExpenseLimitPreferencesTable extends ExpenseLimitPreferences
     monthlySavingsMinor,
     excludeUnpaidRecurring,
     updatedAt,
+    remoteId,
+    syncStatus,
+    serverUpdatedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2488,6 +2524,27 @@ class $ExpenseLimitPreferencesTable extends ExpenseLimitPreferences
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
+    if (data.containsKey('remote_id')) {
+      context.handle(
+        _remoteIdMeta,
+        remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta),
+      );
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    if (data.containsKey('server_updated_at')) {
+      context.handle(
+        _serverUpdatedAtMeta,
+        serverUpdatedAt.isAcceptableOrUnknown(
+          data['server_updated_at']!,
+          _serverUpdatedAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2517,6 +2574,18 @@ class $ExpenseLimitPreferencesTable extends ExpenseLimitPreferences
         DriftSqlType.int,
         data['${effectivePrefix}updated_at'],
       )!,
+      remoteId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}remote_id'],
+      ),
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      ),
+      serverUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_updated_at'],
+      ),
     );
   }
 
@@ -2533,12 +2602,18 @@ class ExpenseLimitPreference extends DataClass
   final int? monthlySavingsMinor;
   final bool excludeUnpaidRecurring;
   final int updatedAt;
+  final String? remoteId;
+  final String? syncStatus;
+  final int? serverUpdatedAt;
   const ExpenseLimitPreference({
     required this.userId,
     this.monthlyIncomeMinor,
     this.monthlySavingsMinor,
     required this.excludeUnpaidRecurring,
     required this.updatedAt,
+    this.remoteId,
+    this.syncStatus,
+    this.serverUpdatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2552,6 +2627,15 @@ class ExpenseLimitPreference extends DataClass
     }
     map['exclude_unpaid_recurring'] = Variable<bool>(excludeUnpaidRecurring);
     map['updated_at'] = Variable<int>(updatedAt);
+    if (!nullToAbsent || remoteId != null) {
+      map['remote_id'] = Variable<String>(remoteId);
+    }
+    if (!nullToAbsent || syncStatus != null) {
+      map['sync_status'] = Variable<String>(syncStatus);
+    }
+    if (!nullToAbsent || serverUpdatedAt != null) {
+      map['server_updated_at'] = Variable<int>(serverUpdatedAt);
+    }
     return map;
   }
 
@@ -2566,6 +2650,15 @@ class ExpenseLimitPreference extends DataClass
           : Value(monthlySavingsMinor),
       excludeUnpaidRecurring: Value(excludeUnpaidRecurring),
       updatedAt: Value(updatedAt),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
+      syncStatus: syncStatus == null && nullToAbsent
+          ? const Value.absent()
+          : Value(syncStatus),
+      serverUpdatedAt: serverUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverUpdatedAt),
     );
   }
 
@@ -2584,6 +2677,9 @@ class ExpenseLimitPreference extends DataClass
         json['excludeUnpaidRecurring'],
       ),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
+      remoteId: serializer.fromJson<String?>(json['remoteId']),
+      syncStatus: serializer.fromJson<String?>(json['syncStatus']),
+      serverUpdatedAt: serializer.fromJson<int?>(json['serverUpdatedAt']),
     );
   }
   @override
@@ -2595,6 +2691,9 @@ class ExpenseLimitPreference extends DataClass
       'monthlySavingsMinor': serializer.toJson<int?>(monthlySavingsMinor),
       'excludeUnpaidRecurring': serializer.toJson<bool>(excludeUnpaidRecurring),
       'updatedAt': serializer.toJson<int>(updatedAt),
+      'remoteId': serializer.toJson<String?>(remoteId),
+      'syncStatus': serializer.toJson<String?>(syncStatus),
+      'serverUpdatedAt': serializer.toJson<int?>(serverUpdatedAt),
     };
   }
 
@@ -2604,6 +2703,9 @@ class ExpenseLimitPreference extends DataClass
     Value<int?> monthlySavingsMinor = const Value.absent(),
     bool? excludeUnpaidRecurring,
     int? updatedAt,
+    Value<String?> remoteId = const Value.absent(),
+    Value<String?> syncStatus = const Value.absent(),
+    Value<int?> serverUpdatedAt = const Value.absent(),
   }) => ExpenseLimitPreference(
     userId: userId ?? this.userId,
     monthlyIncomeMinor: monthlyIncomeMinor.present
@@ -2615,6 +2717,11 @@ class ExpenseLimitPreference extends DataClass
     excludeUnpaidRecurring:
         excludeUnpaidRecurring ?? this.excludeUnpaidRecurring,
     updatedAt: updatedAt ?? this.updatedAt,
+    remoteId: remoteId.present ? remoteId.value : this.remoteId,
+    syncStatus: syncStatus.present ? syncStatus.value : this.syncStatus,
+    serverUpdatedAt: serverUpdatedAt.present
+        ? serverUpdatedAt.value
+        : this.serverUpdatedAt,
   );
   ExpenseLimitPreference copyWithCompanion(
     ExpenseLimitPreferencesCompanion data,
@@ -2631,6 +2738,13 @@ class ExpenseLimitPreference extends DataClass
           ? data.excludeUnpaidRecurring.value
           : this.excludeUnpaidRecurring,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+      serverUpdatedAt: data.serverUpdatedAt.present
+          ? data.serverUpdatedAt.value
+          : this.serverUpdatedAt,
     );
   }
 
@@ -2641,7 +2755,10 @@ class ExpenseLimitPreference extends DataClass
           ..write('monthlyIncomeMinor: $monthlyIncomeMinor, ')
           ..write('monthlySavingsMinor: $monthlySavingsMinor, ')
           ..write('excludeUnpaidRecurring: $excludeUnpaidRecurring, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('serverUpdatedAt: $serverUpdatedAt')
           ..write(')'))
         .toString();
   }
@@ -2653,6 +2770,9 @@ class ExpenseLimitPreference extends DataClass
     monthlySavingsMinor,
     excludeUnpaidRecurring,
     updatedAt,
+    remoteId,
+    syncStatus,
+    serverUpdatedAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -2662,7 +2782,10 @@ class ExpenseLimitPreference extends DataClass
           other.monthlyIncomeMinor == this.monthlyIncomeMinor &&
           other.monthlySavingsMinor == this.monthlySavingsMinor &&
           other.excludeUnpaidRecurring == this.excludeUnpaidRecurring &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.remoteId == this.remoteId &&
+          other.syncStatus == this.syncStatus &&
+          other.serverUpdatedAt == this.serverUpdatedAt);
 }
 
 class ExpenseLimitPreferencesCompanion
@@ -2672,6 +2795,9 @@ class ExpenseLimitPreferencesCompanion
   final Value<int?> monthlySavingsMinor;
   final Value<bool> excludeUnpaidRecurring;
   final Value<int> updatedAt;
+  final Value<String?> remoteId;
+  final Value<String?> syncStatus;
+  final Value<int?> serverUpdatedAt;
   final Value<int> rowid;
   const ExpenseLimitPreferencesCompanion({
     this.userId = const Value.absent(),
@@ -2679,6 +2805,9 @@ class ExpenseLimitPreferencesCompanion
     this.monthlySavingsMinor = const Value.absent(),
     this.excludeUnpaidRecurring = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.serverUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ExpenseLimitPreferencesCompanion.insert({
@@ -2687,6 +2816,9 @@ class ExpenseLimitPreferencesCompanion
     this.monthlySavingsMinor = const Value.absent(),
     this.excludeUnpaidRecurring = const Value.absent(),
     required int updatedAt,
+    this.remoteId = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.serverUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : userId = Value(userId),
        updatedAt = Value(updatedAt);
@@ -2696,6 +2828,9 @@ class ExpenseLimitPreferencesCompanion
     Expression<int>? monthlySavingsMinor,
     Expression<bool>? excludeUnpaidRecurring,
     Expression<int>? updatedAt,
+    Expression<String>? remoteId,
+    Expression<String>? syncStatus,
+    Expression<int>? serverUpdatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2707,6 +2842,9 @@ class ExpenseLimitPreferencesCompanion
       if (excludeUnpaidRecurring != null)
         'exclude_unpaid_recurring': excludeUnpaidRecurring,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (remoteId != null) 'remote_id': remoteId,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (serverUpdatedAt != null) 'server_updated_at': serverUpdatedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2717,6 +2855,9 @@ class ExpenseLimitPreferencesCompanion
     Value<int?>? monthlySavingsMinor,
     Value<bool>? excludeUnpaidRecurring,
     Value<int>? updatedAt,
+    Value<String?>? remoteId,
+    Value<String?>? syncStatus,
+    Value<int?>? serverUpdatedAt,
     Value<int>? rowid,
   }) {
     return ExpenseLimitPreferencesCompanion(
@@ -2726,6 +2867,9 @@ class ExpenseLimitPreferencesCompanion
       excludeUnpaidRecurring:
           excludeUnpaidRecurring ?? this.excludeUnpaidRecurring,
       updatedAt: updatedAt ?? this.updatedAt,
+      remoteId: remoteId ?? this.remoteId,
+      syncStatus: syncStatus ?? this.syncStatus,
+      serverUpdatedAt: serverUpdatedAt ?? this.serverUpdatedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2750,6 +2894,15 @@ class ExpenseLimitPreferencesCompanion
     if (updatedAt.present) {
       map['updated_at'] = Variable<int>(updatedAt.value);
     }
+    if (remoteId.present) {
+      map['remote_id'] = Variable<String>(remoteId.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (serverUpdatedAt.present) {
+      map['server_updated_at'] = Variable<int>(serverUpdatedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2764,6 +2917,9 @@ class ExpenseLimitPreferencesCompanion
           ..write('monthlySavingsMinor: $monthlySavingsMinor, ')
           ..write('excludeUnpaidRecurring: $excludeUnpaidRecurring, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('serverUpdatedAt: $serverUpdatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5889,6 +6045,9 @@ typedef $$ExpenseLimitPreferencesTableCreateCompanionBuilder =
       Value<int?> monthlySavingsMinor,
       Value<bool> excludeUnpaidRecurring,
       required int updatedAt,
+      Value<String?> remoteId,
+      Value<String?> syncStatus,
+      Value<int?> serverUpdatedAt,
       Value<int> rowid,
     });
 typedef $$ExpenseLimitPreferencesTableUpdateCompanionBuilder =
@@ -5898,6 +6057,9 @@ typedef $$ExpenseLimitPreferencesTableUpdateCompanionBuilder =
       Value<int?> monthlySavingsMinor,
       Value<bool> excludeUnpaidRecurring,
       Value<int> updatedAt,
+      Value<String?> remoteId,
+      Value<String?> syncStatus,
+      Value<int?> serverUpdatedAt,
       Value<int> rowid,
     });
 
@@ -5966,6 +6128,21 @@ class $$ExpenseLimitPreferencesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get remoteId => $composableBuilder(
+    column: $table.remoteId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serverUpdatedAt => $composableBuilder(
+    column: $table.serverUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$UserProfilesTableFilterComposer get userId {
     final $$UserProfilesTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -6019,6 +6196,21 @@ class $$ExpenseLimitPreferencesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get remoteId => $composableBuilder(
+    column: $table.remoteId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get serverUpdatedAt => $composableBuilder(
+    column: $table.serverUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$UserProfilesTableOrderingComposer get userId {
     final $$UserProfilesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -6069,6 +6261,19 @@ class $$ExpenseLimitPreferencesTableAnnotationComposer
 
   GeneratedColumn<int> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get remoteId =>
+      $composableBuilder(column: $table.remoteId, builder: (column) => column);
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get serverUpdatedAt => $composableBuilder(
+    column: $table.serverUpdatedAt,
+    builder: (column) => column,
+  );
 
   $$UserProfilesTableAnnotationComposer get userId {
     final $$UserProfilesTableAnnotationComposer composer = $composerBuilder(
@@ -6138,6 +6343,9 @@ class $$ExpenseLimitPreferencesTableTableManager
                 Value<int?> monthlySavingsMinor = const Value.absent(),
                 Value<bool> excludeUnpaidRecurring = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
+                Value<String?> remoteId = const Value.absent(),
+                Value<String?> syncStatus = const Value.absent(),
+                Value<int?> serverUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ExpenseLimitPreferencesCompanion(
                 userId: userId,
@@ -6145,6 +6353,9 @@ class $$ExpenseLimitPreferencesTableTableManager
                 monthlySavingsMinor: monthlySavingsMinor,
                 excludeUnpaidRecurring: excludeUnpaidRecurring,
                 updatedAt: updatedAt,
+                remoteId: remoteId,
+                syncStatus: syncStatus,
+                serverUpdatedAt: serverUpdatedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6154,6 +6365,9 @@ class $$ExpenseLimitPreferencesTableTableManager
                 Value<int?> monthlySavingsMinor = const Value.absent(),
                 Value<bool> excludeUnpaidRecurring = const Value.absent(),
                 required int updatedAt,
+                Value<String?> remoteId = const Value.absent(),
+                Value<String?> syncStatus = const Value.absent(),
+                Value<int?> serverUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ExpenseLimitPreferencesCompanion.insert(
                 userId: userId,
@@ -6161,6 +6375,9 @@ class $$ExpenseLimitPreferencesTableTableManager
                 monthlySavingsMinor: monthlySavingsMinor,
                 excludeUnpaidRecurring: excludeUnpaidRecurring,
                 updatedAt: updatedAt,
+                remoteId: remoteId,
+                syncStatus: syncStatus,
+                serverUpdatedAt: serverUpdatedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
