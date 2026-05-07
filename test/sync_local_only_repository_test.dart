@@ -2,7 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:money_manager/app/cloud_sync_controller.dart';
 import 'package:money_manager/data/local/app_database.dart';
 import 'package:money_manager/data/remote/sync_constants.dart';
+import 'package:money_manager/data/repositories/expense_limits_repository.dart';
 import 'package:money_manager/data/repositories/expense_repository.dart';
+import 'package:money_manager/data/repositories/recurring_payment_repository.dart';
 import 'package:money_manager/data/repositories/user_profile_repository.dart';
 
 class _FakeCloudSyncController extends CloudSyncController {
@@ -12,6 +14,23 @@ class _FakeCloudSyncController extends CloudSyncController {
 
   @override
   bool get syncAllowed => allowed;
+}
+
+ExpenseLimitsRepository _expenseLimitsRepository({
+  required AppDatabase db,
+  required UserProfileRepository profiles,
+  required CloudSyncController cloud,
+  DateTime Function()? nowProvider,
+}) {
+  final expenses = ExpenseRepository(db, profiles, cloud);
+  final recurring = RecurringPaymentRepository(db, expenses);
+  return ExpenseLimitsRepository(
+    db,
+    recurring,
+    profiles: profiles,
+    cloudSync: cloud,
+    nowProvider: nowProvider,
+  );
 }
 
 void main() {
@@ -71,6 +90,144 @@ void main() {
 
     final unsynced = await expenses.countUnsynced();
     expect(unsynced, 1);
+    await db.close();
+  });
+
+  test(
+    'Expense profile save uses local_only while sync is unavailable',
+    () async {
+      final db = AppDatabase.memory();
+      final profiles = UserProfileRepository(db);
+      final cloud = _FakeCloudSyncController(false);
+      final limits = _expenseLimitsRepository(
+        db: db,
+        profiles: profiles,
+        cloud: cloud,
+      );
+      final uid = await profiles.getCurrentUserId();
+
+      await limits.upsertPreferences(
+        userId: uid,
+        monthlyIncomeMinor: 100000,
+        monthlySavingsMinor: 10000,
+        excludeUnpaidRecurring: true,
+      );
+
+      final row = await limits.getPreferences(uid);
+      expect(row?.syncStatus, SyncStatusValue.localOnly);
+      await db.close();
+    },
+  );
+
+  test('Expense profile save uses pending while sync is available', () async {
+    final db = AppDatabase.memory();
+    final profiles = UserProfileRepository(db);
+    final cloud = _FakeCloudSyncController(true);
+    final limits = _expenseLimitsRepository(
+      db: db,
+      profiles: profiles,
+      cloud: cloud,
+    );
+    final uid = await profiles.getCurrentUserId();
+
+    await limits.upsertPreferences(
+      userId: uid,
+      monthlyIncomeMinor: 100000,
+      monthlySavingsMinor: null,
+      excludeUnpaidRecurring: false,
+    );
+
+    final row = await limits.getPreferences(uid);
+    expect(row?.syncStatus, SyncStatusValue.pending);
+    await db.close();
+  });
+
+  test(
+    'Expense profile local_only and error rows can be promoted to pending',
+    () async {
+      final db = AppDatabase.memory();
+      final profiles = UserProfileRepository(db);
+      final cloud = _FakeCloudSyncController(false);
+      final limits = _expenseLimitsRepository(
+        db: db,
+        profiles: profiles,
+        cloud: cloud,
+      );
+      final uid = await profiles.getCurrentUserId();
+
+      await limits.upsertPreferences(
+        userId: uid,
+        monthlyIncomeMinor: 90000,
+        monthlySavingsMinor: null,
+        excludeUnpaidRecurring: false,
+      );
+
+      expect(await limits.promoteLocalOnlyToPending(), 1);
+      expect(
+        (await limits.getPreferences(uid))?.syncStatus,
+        SyncStatusValue.pending,
+      );
+
+      await limits.markRemoteError(uid);
+      expect(await limits.retryErroredAsPending(), 1);
+      expect(
+        (await limits.getPreferences(uid))?.syncStatus,
+        SyncStatusValue.pending,
+      );
+
+      await limits.markRemoteSynced(userId: uid, authUserId: 'auth-user-1');
+      final synced = await limits.getPreferences(uid);
+      expect(synced?.syncStatus, SyncStatusValue.synced);
+      expect(synced?.remoteId, 'auth-user-1');
+      await db.close();
+    },
+  );
+
+  test('Expense profile remote merge uses last-write-wins', () async {
+    var now = DateTime.fromMillisecondsSinceEpoch(1000);
+    final db = AppDatabase.memory();
+    final profiles = UserProfileRepository(db);
+    final cloud = _FakeCloudSyncController(false);
+    final limits = _expenseLimitsRepository(
+      db: db,
+      profiles: profiles,
+      cloud: cloud,
+      nowProvider: () => now,
+    );
+    final uid = await profiles.getCurrentUserId();
+
+    await limits.upsertPreferences(
+      userId: uid,
+      monthlyIncomeMinor: 100000,
+      monthlySavingsMinor: null,
+      excludeUnpaidRecurring: false,
+    );
+
+    await limits.applyRemoteProfileRow({
+      'auth_user_id': 'auth-user-1',
+      'monthly_income_minor': 120000,
+      'monthly_savings_minor': 20000,
+      'exclude_unpaid_recurring': true,
+      'updated_at': 900,
+      'server_updated_at': 900,
+    });
+    expect((await limits.getPreferences(uid))?.monthlyIncomeMinor, 100000);
+
+    now = DateTime.fromMillisecondsSinceEpoch(2000);
+    await limits.applyRemoteProfileRow({
+      'auth_user_id': 'auth-user-1',
+      'monthly_income_minor': 120000,
+      'monthly_savings_minor': 20000,
+      'exclude_unpaid_recurring': true,
+      'updated_at': 1500,
+      'server_updated_at': 1500,
+    });
+
+    final row = await limits.getPreferences(uid);
+    expect(row?.monthlyIncomeMinor, 120000);
+    expect(row?.monthlySavingsMinor, 20000);
+    expect(row?.excludeUnpaidRecurring, isTrue);
+    expect(row?.syncStatus, SyncStatusValue.synced);
     await db.close();
   });
 }

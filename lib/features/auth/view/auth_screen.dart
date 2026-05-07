@@ -325,6 +325,7 @@ class _AuthScreenState extends State<AuthScreen> {
       db: services.db,
       cloud: services.cloudSync,
       expenses: services.expenses,
+      expenseLimits: services.expenseLimits,
     );
     await o.runManualSync(
       includeLocalOnly: includeLocalOnly,
@@ -366,15 +367,22 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<({int localOnly, int unsynced, int localTotal, int? remoteRows})>
   _loadSyncPreview(AppServices services) async {
-    final localOnly = await services.expenses.countBySyncStatuses({
+    final expenseLocalOnly = await services.expenses.countBySyncStatuses({
       SyncStatusValue.localOnly,
     });
-    final unsynced = await services.expenses.countUnsynced();
+    final profileLocalOnly = await services.expenseLimits.countBySyncStatuses({
+      SyncStatusValue.localOnly,
+    });
+    final localOnly = expenseLocalOnly + profileLocalOnly;
+    final expenseUnsynced = await services.expenses.countUnsynced();
+    final profileUnsynced = await services.expenseLimits.countUnsynced();
+    final unsynced = expenseUnsynced + profileUnsynced;
     final localTotal = await services.expenses.countAllRows();
     final orchestrator = SyncOrchestrator(
       db: services.db,
       cloud: services.cloudSync,
       expenses: services.expenses,
+      expenseLimits: services.expenseLimits,
     );
     final remoteRows = await orchestrator.getRemoteExpenseCount();
     return (

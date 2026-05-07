@@ -5,7 +5,9 @@ import 'package:money_manager/app/cloud_sync_controller.dart';
 import 'package:money_manager/data/local/app_database.dart';
 import 'package:money_manager/data/local/sync_metadata_store.dart';
 import 'package:money_manager/data/remote/sync_constants.dart';
+import 'package:money_manager/data/repositories/expense_limits_repository.dart';
 import 'package:money_manager/data/repositories/expense_repository.dart';
+import 'package:money_manager/data/repositories/recurring_payment_repository.dart';
 import 'package:money_manager/data/repositories/user_profile_repository.dart';
 import 'package:money_manager/features/auth/view/auth_screen.dart';
 import 'package:money_manager/features/auth/view/post_login_cloud_sync_screen.dart';
@@ -68,6 +70,9 @@ class _FakeCloudSyncController extends CloudSyncController {
     _session = null;
     notifyListeners();
   }
+
+  @override
+  Future<void> ensureHouseholdIfNeeded() async {}
 }
 
 class _AuthHost extends StatelessWidget {
@@ -109,7 +114,7 @@ void main() {
     expect(await expenses.countBySyncStatuses({SyncStatusValue.localOnly}), 1);
   });
 
-  Future<void> _pumpHost(
+  Future<void> pumpHost(
     WidgetTester tester, {
     required AppDatabase db,
     required CloudSyncController cloud,
@@ -123,7 +128,7 @@ void main() {
     );
   }
 
-  Future<void> _openAndSubmitSignIn(WidgetTester tester) async {
+  Future<void> openAndSubmitSignIn(WidgetTester tester) async {
     await tester.tap(find.text('open-auth'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
@@ -203,8 +208,8 @@ void main() {
     final cloud = _FakeCloudSyncController();
     addTearDown(db.close);
 
-    await _pumpHost(tester, db: db, cloud: cloud);
-    await _openAndSubmitSignIn(tester);
+    await pumpHost(tester, db: db, cloud: cloud);
+    await openAndSubmitSignIn(tester);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pumpAndSettle(const Duration(seconds: 3));
@@ -216,6 +221,44 @@ void main() {
     );
   });
 
+  testWidgets(
+    'post-login sync includes local-only expense profile preferences',
+    (tester) async {
+      final db = AppDatabase.memory();
+      final cloud = _FakeCloudSyncController();
+      addTearDown(db.close);
+      final profiles = UserProfileRepository(db);
+      final expenses = ExpenseRepository(db, profiles, cloud);
+      final recurring = RecurringPaymentRepository(db, expenses);
+      final limits = ExpenseLimitsRepository(
+        db,
+        recurring,
+        profiles: profiles,
+        cloudSync: cloud,
+      );
+      final uid = await profiles.getCurrentUserId();
+
+      await limits.upsertPreferences(
+        userId: uid,
+        monthlyIncomeMinor: 120000,
+        monthlySavingsMinor: 12000,
+        excludeUnpaidRecurring: true,
+      );
+
+      await pumpHost(tester, db: db, cloud: cloud);
+      await openAndSubmitSignIn(tester);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle(const Duration(seconds: 3));
+
+      expect(find.byType(PostLoginCloudSyncScreen), findsOneWidget);
+      expect(
+        find.text(AppStrings.cloudSyncPostAuthPromptBody(1)),
+        findsOneWidget,
+      );
+    },
+  );
+
   testWidgets('skips post-login bootstrap flow when already completed', (
     tester,
   ) async {
@@ -224,8 +267,8 @@ void main() {
     addTearDown(db.close);
     await SyncMetadataStore.setPostAuthBootstrapCompleted(true);
 
-    await _pumpHost(tester, db: db, cloud: cloud);
-    await _openAndSubmitSignIn(tester);
+    await pumpHost(tester, db: db, cloud: cloud);
+    await openAndSubmitSignIn(tester);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pumpAndSettle(const Duration(seconds: 3));

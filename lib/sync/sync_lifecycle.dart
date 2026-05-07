@@ -20,7 +20,12 @@ class _SyncLifecycleState extends State<SyncLifecycle> {
     super.didChangeDependencies();
     if (_orchestrator != null) return;
     final s = AppServices.of(context);
-    final o = SyncOrchestrator(db: s.db, cloud: s.cloudSync, expenses: s.expenses);
+    final o = SyncOrchestrator(
+      db: s.db,
+      cloud: s.cloudSync,
+      expenses: s.expenses,
+      expenseLimits: s.expenseLimits,
+    );
     o.start();
     _orchestrator = o;
   }

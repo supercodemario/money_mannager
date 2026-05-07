@@ -14,10 +14,15 @@ class AppServices extends InheritedWidget {
     required super.child,
     required this.db,
     required this.cloudSync,
-  })  : profiles = UserProfileRepository(db) {
+  }) : profiles = UserProfileRepository(db) {
     expenses = ExpenseRepository(db, profiles, cloudSync);
     recurring = RecurringPaymentRepository(db, expenses);
-    expenseLimits = ExpenseLimitsRepository(db, recurring);
+    expenseLimits = ExpenseLimitsRepository(
+      db,
+      recurring,
+      profiles: profiles,
+      cloudSync: cloudSync,
+    );
     categories = CategoryRepository(db);
     preferences = UserPreferencesRepository(db);
   }
@@ -41,4 +46,3 @@ class AppServices extends InheritedWidget {
   bool updateShouldNotify(covariant AppServices oldWidget) =>
       db != oldWidget.db || cloudSync != oldWidget.cloudSync;
 }
-
