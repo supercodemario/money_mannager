@@ -6,18 +6,17 @@ import 'package:money_manager/data/remote/sync_constants.dart';
 import 'package:uuid/uuid.dart';
 
 class MonthlyCategoryTotal {
-  const MonthlyCategoryTotal({required this.categoryId, required this.totalMinor});
+  const MonthlyCategoryTotal({
+    required this.categoryId,
+    required this.totalMinor,
+  });
 
   final String categoryId;
   final int totalMinor;
 }
 
 class ExpenseRepository {
-  ExpenseRepository(
-    this._db,
-    this._profiles,
-    this._cloudSync,
-  );
+  ExpenseRepository(this._db, this._profiles, this._cloudSync);
 
   final AppDatabase _db;
   final UserProfileRepository _profiles;
@@ -36,7 +35,9 @@ class ExpenseRepository {
     final userId = await _profiles.getCurrentUserId();
     final id = const Uuid().v4();
 
-    await _db.into(_db.expenses).insert(
+    await _db
+        .into(_db.expenses)
+        .insert(
           ExpensesCompanion.insert(
             id: id,
             amountMinor: amountMinor,
@@ -62,17 +63,21 @@ class ExpenseRepository {
 
   Stream<List<Expense>> watchRecent({int limit = 50}) {
     return (_db.select(_db.expenses)
-          ..orderBy([(t) => OrderingTerm(expression: t.occurredAt, mode: OrderingMode.desc)])
+          ..orderBy([
+            (t) =>
+                OrderingTerm(expression: t.occurredAt, mode: OrderingMode.desc),
+          ])
           ..limit(limit))
         .watch();
   }
 
   /// Whether [userId] has recorded at least one expense.
   Future<bool> hasAnyExpenseForUser(String userId) async {
-    final row = await (_db.select(_db.expenses)
-          ..where((t) => t.createdByUserId.equals(userId))
-          ..limit(1))
-        .getSingleOrNull();
+    final row =
+        await (_db.select(_db.expenses)
+              ..where((t) => t.createdByUserId.equals(userId))
+              ..limit(1))
+            .getSingleOrNull();
     return row != null;
   }
 
@@ -92,7 +97,9 @@ class ExpenseRepository {
   }) {
     final q = _db.select(_db.expenses)
       ..where((t) => t.occurredAt.isBetweenValues(startUtcMs, endUtcMs))
-      ..orderBy([(t) => OrderingTerm(expression: t.occurredAt, mode: OrderingMode.desc)]);
+      ..orderBy([
+        (t) => OrderingTerm(expression: t.occurredAt, mode: OrderingMode.desc),
+      ]);
     if (limit != null) q.limit(limit);
     return q.watch();
   }
@@ -132,7 +139,9 @@ ORDER BY total_minor DESC
   /// Called by [SyncOrchestrator] after a successful remote upsert.
   Future<void> markRemoteSynced(String expenseId) async {
     final now = DateTime.now().millisecondsSinceEpoch;
-    await (_db.update(_db.expenses)..where((e) => e.id.equals(expenseId))).write(
+    await (_db.update(
+      _db.expenses,
+    )..where((e) => e.id.equals(expenseId))).write(
       ExpensesCompanion(
         remoteId: Value(expenseId),
         syncStatus: const Value(SyncStatusValue.synced),
@@ -143,10 +152,10 @@ ORDER BY total_minor DESC
 
   /// Called by [SyncOrchestrator] when push fails.
   Future<void> markRemoteError(String expenseId) async {
-    await (_db.update(_db.expenses)..where((e) => e.id.equals(expenseId))).write(
-      const ExpensesCompanion(
-        syncStatus: Value(SyncStatusValue.error),
-      ),
+    await (_db.update(
+      _db.expenses,
+    )..where((e) => e.id.equals(expenseId))).write(
+      const ExpensesCompanion(syncStatus: Value(SyncStatusValue.error)),
     );
   }
 
@@ -167,23 +176,26 @@ ORDER BY total_minor DESC
     });
   }
 
+  Future<int> countAllRows() async {
+    final q = _db.selectOnly(_db.expenses)
+      ..addColumns([_db.expenses.id.count()]);
+    final row = await q.getSingle();
+    return row.read(_db.expenses.id.count()) ?? 0;
+  }
+
   Future<int> promoteLocalOnlyToPending() async {
-    return (_db.update(_db.expenses)
-          ..where((e) => e.syncStatus.equals(SyncStatusValue.localOnly)))
-        .write(
-      const ExpensesCompanion(
-        syncStatus: Value(SyncStatusValue.pending),
-      ),
+    return (_db.update(
+      _db.expenses,
+    )..where((e) => e.syncStatus.equals(SyncStatusValue.localOnly))).write(
+      const ExpensesCompanion(syncStatus: Value(SyncStatusValue.pending)),
     );
   }
 
   Future<int> retryErroredAsPending() async {
-    return (_db.update(_db.expenses)
-          ..where((e) => e.syncStatus.equals(SyncStatusValue.error)))
-        .write(
-      const ExpensesCompanion(
-        syncStatus: Value(SyncStatusValue.pending),
-      ),
+    return (_db.update(
+      _db.expenses,
+    )..where((e) => e.syncStatus.equals(SyncStatusValue.error))).write(
+      const ExpensesCompanion(syncStatus: Value(SyncStatusValue.pending)),
     );
   }
 
@@ -191,7 +203,9 @@ ORDER BY total_minor DESC
   Future<void> applyRemoteExpenseRow(Map<String, dynamic> m) async {
     final id = m['id'] as String;
     final remoteUpdated = m['updated_at'] as int;
-    final existing = await (_db.select(_db.expenses)..where((e) => e.id.equals(id))).getSingleOrNull();
+    final existing = await (_db.select(
+      _db.expenses,
+    )..where((e) => e.id.equals(id))).getSingleOrNull();
     if (existing != null && existing.updatedAt > remoteUpdated) {
       return;
     }
@@ -210,7 +224,9 @@ ORDER BY total_minor DESC
       createdAt: Value(m['created_at'] as int),
       updatedAt: Value(remoteUpdated),
       createdByUserId: Value(localUserId),
-      recurringPaymentId: recurring != null ? Value(recurring) : const Value.absent(),
+      recurringPaymentId: recurring != null
+          ? Value(recurring)
+          : const Value.absent(),
       remoteId: Value(m['remote_id'] as String? ?? id),
       syncStatus: const Value(SyncStatusValue.synced),
       serverUpdatedAt: Value(m['server_updated_at'] as int? ?? remoteUpdated),
@@ -219,7 +235,9 @@ ORDER BY total_minor DESC
     if (existing == null) {
       await _db.into(_db.expenses).insert(companion);
     } else {
-      await (_db.update(_db.expenses)..where((e) => e.id.equals(id))).write(companion);
+      await (_db.update(
+        _db.expenses,
+      )..where((e) => e.id.equals(id))).write(companion);
     }
   }
 }

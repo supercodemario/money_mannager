@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/app/cloud_sync_controller.dart';
+import 'package:money_manager/data/local/sync_metadata_store.dart';
 import 'package:money_manager/data/remote/sync_constants.dart';
 import 'package:money_manager/features/auth/view/post_login_cloud_sync_screen.dart';
 import 'package:money_manager/features/auth/view/sync_before_logout_screen.dart';
@@ -17,8 +18,8 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  final _email = TextEditingController();
-  final _password = TextEditingController();
+  final _email = TextEditingController(text: 'dd@yopmail.com');
+  final _password = TextEditingController(text: 'Pass@123');
   bool _busy = false;
   bool _createAccountMode = false;
 
@@ -77,6 +78,15 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                         ),
                       ),
+                    const SizedBox(height: AppSpacing.s16),
+                    FilledButton(
+                      onPressed: _busy
+                          ? null
+                          : () => _openManualCloudRefresh(
+                              AppServices.of(context),
+                            ),
+                      child: const Text(AppStrings.cloudSyncRefreshCloudData),
+                    ),
                     const Spacer(),
                     FilledButton.tonal(
                       onPressed: _busy ? null : () => _signOut(cloud),
@@ -271,19 +281,29 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<bool> _handlePostAuthSyncScreen(AppServices services) async {
-    final localOnly = await services.expenses.countBySyncStatuses({
-      SyncStatusValue.localOnly,
-    });
-    if (!mounted || localOnly <= 0) return true;
+    final preview = await _loadSyncPreview(services);
+    final bootstrapDone =
+        await SyncMetadataStore.getPostAuthBootstrapCompleted();
+    if (!mounted) return true;
+    if (preview.unsynced <= 0 && bootstrapDone) return true;
+    final mode = preview.unsynced > 0
+        ? ManualSyncMode.pushThenPull
+        : ManualSyncMode.pullOnly;
+    final bootstrapOnly = mode == ManualSyncMode.pullOnly;
     final shouldClose =
         await Navigator.of(context).push<bool>(
           MaterialPageRoute<bool>(
             builder: (_) => PostLoginCloudSyncScreen(
-              totalRows: localOnly,
+              totalRows: preview.unsynced,
+              localRows: preview.localTotal,
+              remoteRows: preview.remoteRows,
+              isBootstrapOnly: bootstrapOnly,
               runSync: (onStage) => _runManualSync(
                 services,
-                includeLocalOnly: true,
-                includeError: false,
+                includeLocalOnly: preview.localOnly > 0,
+                includeError: mode == ManualSyncMode.pushThenPull,
+                mode: mode,
+                markBootstrapCompleteOnSuccess: true,
                 onStage: onStage,
               ),
             ),
@@ -297,6 +317,8 @@ class _AuthScreenState extends State<AuthScreen> {
     AppServices services, {
     required bool includeLocalOnly,
     required bool includeError,
+    ManualSyncMode mode = ManualSyncMode.pushThenPull,
+    bool markBootstrapCompleteOnSuccess = false,
     void Function(ManualSyncStage stage)? onStage,
   }) async {
     final o = SyncOrchestrator(
@@ -307,8 +329,59 @@ class _AuthScreenState extends State<AuthScreen> {
     await o.runManualSync(
       includeLocalOnly: includeLocalOnly,
       includeError: includeError,
+      mode: mode,
       failFast: true,
       onStage: onStage,
+    );
+    if (markBootstrapCompleteOnSuccess) {
+      await SyncMetadataStore.setPostAuthBootstrapCompleted(true);
+    }
+  }
+
+  Future<void> _openManualCloudRefresh(AppServices services) async {
+    final preview = await _loadSyncPreview(services);
+    if (!mounted) return;
+    final mode = preview.unsynced > 0
+        ? ManualSyncMode.pushThenPull
+        : ManualSyncMode.pullOnly;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => PostLoginCloudSyncScreen(
+          totalRows: preview.unsynced,
+          localRows: preview.localTotal,
+          remoteRows: preview.remoteRows,
+          isBootstrapOnly: mode == ManualSyncMode.pullOnly,
+          runSync: (onStage) => _runManualSync(
+            services,
+            includeLocalOnly: preview.localOnly > 0,
+            includeError: mode == ManualSyncMode.pushThenPull,
+            mode: mode,
+            markBootstrapCompleteOnSuccess: true,
+            onStage: onStage,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<({int localOnly, int unsynced, int localTotal, int? remoteRows})>
+  _loadSyncPreview(AppServices services) async {
+    final localOnly = await services.expenses.countBySyncStatuses({
+      SyncStatusValue.localOnly,
+    });
+    final unsynced = await services.expenses.countUnsynced();
+    final localTotal = await services.expenses.countAllRows();
+    final orchestrator = SyncOrchestrator(
+      db: services.db,
+      cloud: services.cloudSync,
+      expenses: services.expenses,
+    );
+    final remoteRows = await orchestrator.getRemoteExpenseCount();
+    return (
+      localOnly: localOnly,
+      unsynced: unsynced,
+      localTotal: localTotal,
+      remoteRows: remoteRows,
     );
   }
 

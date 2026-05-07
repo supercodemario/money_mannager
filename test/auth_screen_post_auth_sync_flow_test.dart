@@ -3,29 +3,27 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/app/cloud_sync_controller.dart';
 import 'package:money_manager/data/local/app_database.dart';
+import 'package:money_manager/data/local/sync_metadata_store.dart';
 import 'package:money_manager/data/remote/sync_constants.dart';
 import 'package:money_manager/data/repositories/expense_repository.dart';
 import 'package:money_manager/data/repositories/user_profile_repository.dart';
 import 'package:money_manager/features/auth/view/auth_screen.dart';
 import 'package:money_manager/features/auth/view/post_login_cloud_sync_screen.dart';
 import 'package:money_manager/share/share.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class _FakeCloudSyncController extends CloudSyncController {
+  _FakeCloudSyncController({bool signedIn = false}) {
+    if (signedIn) {
+      _session = _makeSession(email: 'signedin@example.com');
+    }
+  }
+
   Session? _session;
 
-  @override
-  bool get isSupabaseConfigured => true;
-
-  @override
-  Session? get session => _session;
-
-  @override
-  bool get syncAllowed => _session != null;
-
-  @override
-  Future<void> signInWithPassword({required String email, required String password}) async {
-    _session = Session(
+  Session _makeSession({required String email}) {
+    return Session(
       accessToken: 'token',
       tokenType: 'bearer',
       user: User(
@@ -37,11 +35,31 @@ class _FakeCloudSyncController extends CloudSyncController {
         createdAt: DateTime.now().toIso8601String(),
       ),
     );
+  }
+
+  @override
+  bool get isSupabaseConfigured => true;
+
+  @override
+  Session? get session => _session;
+
+  @override
+  bool get syncAllowed => _session != null;
+
+  @override
+  Future<void> signInWithPassword({
+    required String email,
+    required String password,
+  }) async {
+    _session = _makeSession(email: email);
     notifyListeners();
   }
 
   @override
-  Future<void> signUpWithPassword({required String email, required String password}) async {
+  Future<void> signUpWithPassword({
+    required String email,
+    required String password,
+  }) async {
     await signInWithPassword(email: email, password: password);
   }
 
@@ -62,9 +80,7 @@ class _AuthHost extends StatelessWidget {
         child: FilledButton(
           onPressed: () {
             Navigator.of(context).push<void>(
-              MaterialPageRoute<void>(
-                builder: (_) => const AuthScreen(),
-              ),
+              MaterialPageRoute<void>(builder: (_) => const AuthScreen()),
             );
           },
           child: const Text('open-auth'),
@@ -75,6 +91,10 @@ class _AuthHost extends StatelessWidget {
 }
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   test('memory insert yields local_only for auth fake cloud', () async {
     final db = AppDatabase.memory();
     addTearDown(db.close);
@@ -86,10 +106,7 @@ void main() {
       categoryId: 'grocery',
       occurredAt: DateTime.now(),
     );
-    expect(
-      await expenses.countBySyncStatuses({SyncStatusValue.localOnly}),
-      1,
-    );
+    expect(await expenses.countBySyncStatuses({SyncStatusValue.localOnly}), 1);
   });
 
   Future<void> _pumpHost(
@@ -112,11 +129,15 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     await tester.enterText(find.byType(TextField).at(0), 'test@example.com');
     await tester.enterText(find.byType(TextField).at(1), 'password123');
-    await tester.tap(find.widgetWithText(FilledButton, AppStrings.cloudSyncSignIn));
+    await tester.tap(
+      find.widgetWithText(FilledButton, AppStrings.cloudSyncSignIn),
+    );
     await tester.pump();
   }
 
-  testWidgets('pushes post-login sync when local-only count is positive', (tester) async {
+  testWidgets('pushes post-login sync when local-only count is positive', (
+    tester,
+  ) async {
     final db = AppDatabase.memory();
     final cloud = _FakeCloudSyncController();
     addTearDown(db.close);
@@ -169,13 +190,39 @@ void main() {
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
     expect(find.text(AppStrings.cloudSyncPostAuthTitle), findsOneWidget);
-    expect(find.text(AppStrings.cloudSyncPostAuthPromptBody(1)), findsOneWidget);
+    expect(
+      find.text(AppStrings.cloudSyncPostAuthPromptBody(1)),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('keeps normal flow when no local-only rows exist', (tester) async {
+  testWidgets('shows post-login bootstrap flow when no local-only rows exist', (
+    tester,
+  ) async {
     final db = AppDatabase.memory();
     final cloud = _FakeCloudSyncController();
     addTearDown(db.close);
+
+    await _pumpHost(tester, db: db, cloud: cloud);
+    await _openAndSubmitSignIn(tester);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle(const Duration(seconds: 3));
+
+    expect(find.byType(PostLoginCloudSyncScreen), findsOneWidget);
+    expect(
+      find.text(AppStrings.cloudSyncPostAuthBootstrapBody),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('skips post-login bootstrap flow when already completed', (
+    tester,
+  ) async {
+    final db = AppDatabase.memory();
+    final cloud = _FakeCloudSyncController();
+    addTearDown(db.close);
+    await SyncMetadataStore.setPostAuthBootstrapCompleted(true);
 
     await _pumpHost(tester, db: db, cloud: cloud);
     await _openAndSubmitSignIn(tester);
@@ -187,4 +234,33 @@ void main() {
     expect(find.byType(AuthScreen), findsNothing);
     expect(find.text(AppStrings.cloudSyncPostAuthTitle), findsNothing);
   });
+
+  testWidgets(
+    'signed-in auth screen exposes manual cloud refresh entry point',
+    (tester) async {
+      final db = AppDatabase.memory();
+      final cloud = _FakeCloudSyncController(signedIn: true);
+      addTearDown(db.close);
+
+      await tester.pumpWidget(
+        AppServices(
+          db: db,
+          cloudSync: cloud,
+          child: const MaterialApp(home: AuthScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(AppStrings.cloudSyncRefreshCloudData), findsOneWidget);
+
+      await tester.tap(find.text(AppStrings.cloudSyncRefreshCloudData));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PostLoginCloudSyncScreen), findsOneWidget);
+      expect(
+        find.text(AppStrings.cloudSyncPostAuthBootstrapBody),
+        findsOneWidget,
+      );
+    },
+  );
 }

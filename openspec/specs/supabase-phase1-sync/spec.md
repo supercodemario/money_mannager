@@ -91,44 +91,56 @@ When no authenticated Supabase session exists, newly saved sync-eligible entitie
 
 ### Requirement: Login/signup prompts for local-only data sync
 
-After a successful login or signup, if local-only expense rows exist, the app MUST present a dedicated **post-login cloud sync** screen before returning the user to the rest of the app. That screen MUST show the count of local-only expenses eligible for this flow (the same count used to decide that the screen is shown). The screen MUST offer an explicit primary control to **start sync** and an explicit control to **defer sync** without uploading. When the user starts sync, the app MUST show visible progress for the orchestrated stages **preparing** local data for upload, **uploading** local changes, and **downloading** latest cloud data, consistent with manual sync stage reporting used elsewhere in the app. When sync completes successfully, the screen MUST show a **completion** state and an explicit control to dismiss the flow. When sync fails, the screen MUST show the error reason and offer **Retry** (re-run the same sync path) and **defer** without signing out.
+After a successful login or signup, the app MUST provide a post-auth sync flow that supports both:
+1) uploading local-only expense rows when they exist, and
+2) pulling existing cloud expenses into local storage for authenticated users even when local-only rows are zero.
 
-When the user completes sync from this flow, the app MUST promote eligible local-only rows to uploadable state, perform sync push then pull, and keep the user signed in. When the user defers from this flow, the app MUST keep those rows in `local_only` state and MUST NOT upload them in that flow.
+The flow MUST show explicit progress stages for preparing, uploading (when applicable), and downloading latest cloud data, consistent with manual sync stage reporting used elsewhere in the app. On failure, the flow MUST show error reason and offer Retry and defer behavior without forcing sign-out.
 
-#### Scenario: User starts sync from post-login screen
+When the user starts sync from this flow, the app MUST run the orchestrated path for the current condition:
+- if local-only rows exist, promote eligible rows and execute push then pull;
+- if local-only rows do not exist, execute pull-only or cloud-first bootstrap behavior that merges remote data into local storage.
 
-- **WHEN** login or signup succeeds and local-only expense rows are present and the user opens the post-login cloud sync screen and chooses to start sync
+When the user defers from this flow, the app MUST keep `local_only` rows unchanged and MUST NOT upload them in that flow.
+
+#### Scenario: User starts sync from post-login screen with local-only rows
+
+- **WHEN** login or signup succeeds and local-only expense rows are present and the user chooses to start sync
 - **THEN** the app SHALL promote eligible local-only rows to uploadable state, perform sync push then pull, and keep the user signed in
+
+#### Scenario: Existing cloud user starts sync with zero local-only rows
+
+- **WHEN** login or signup succeeds and zero local-only rows exist and the user starts post-login sync
+- **THEN** the app SHALL perform a cloud-to-local pull that merges remote expenses into local storage
 
 #### Scenario: User defers sync from post-login screen
 
-- **WHEN** login or signup succeeds and local-only expense rows are present and the user chooses to defer sync from the post-login cloud sync screen
-- **THEN** the app SHALL keep those rows in `local_only` state and SHALL NOT upload them in that flow
-
-#### Scenario: Post-login sync shows eligible count
-
-- **WHEN** the post-login cloud sync screen is shown after authentication
-- **THEN** the user SHALL see the number of expenses currently in `local_only` sync status that are eligible for upload in this flow
+- **WHEN** login or signup succeeds and the user chooses to defer sync from the post-login sync flow
+- **THEN** the app SHALL keep local-only rows in `local_only` state and SHALL NOT upload them in that flow
 
 #### Scenario: Post-login sync shows stage progress
 
-- **WHEN** the user has started sync from the post-login cloud sync screen
-- **THEN** the user SHALL see progress feedback aligned to preparing, uploading, and downloading stages until the sync completes or fails
+- **WHEN** the user has started sync from the post-login sync flow
+- **THEN** the user SHALL see progress feedback aligned to preparing, uploading, and downloading stages until sync completes or fails
 
 #### Scenario: Post-login sync completes
 
-- **WHEN** sync started from the post-login cloud sync screen finishes without error
+- **WHEN** sync started from the post-login sync flow finishes without error
 - **THEN** the app SHALL show a completion state and SHALL allow the user to dismiss the screen explicitly
 
 #### Scenario: Post-login sync fails and user retries
 
-- **WHEN** sync started from the post-login cloud sync screen fails and the user selects **Retry**
+- **WHEN** sync started from the post-login sync flow fails and the user selects Retry
 - **THEN** the app SHALL attempt the same sync path again and update progress and error state accordingly
 
-#### Scenario: No local-only rows after auth
+### Requirement: Authenticated users can manually trigger cloud-to-local refresh
 
-- **WHEN** login or signup succeeds and no local-only expense rows exist
-- **THEN** the app SHALL NOT require the post-login cloud sync screen for that condition and SHALL follow the existing navigation behavior for closing or continuing the auth flow
+The system MUST allow an authenticated user to manually trigger a sync that refreshes local expenses from Supabase even when there are no local pending or local-only rows.
+
+#### Scenario: Manual refresh from signed-in state
+
+- **WHEN** an authenticated user invokes manual sync while local pending/local-only counts are zero
+- **THEN** the app SHALL run a cloud-to-local pull and merge remote expense rows into local storage
 
 ### Requirement: Logout with unsynced data uses guarded sync screen
 
