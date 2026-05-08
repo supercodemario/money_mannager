@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/app/cloud_sync_controller.dart';
+import 'package:money_manager/app/regional_material_app_root.dart';
 import 'package:money_manager/data/local/app_database.dart';
 import 'package:money_manager/data/remote/supabase_env.dart';
 import 'package:money_manager/features/shell/view/app_shell.dart';
@@ -32,7 +33,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final app = MaterialApp(
+    final app = RegionalMaterialAppRoot(
       title: AppStrings.appTitle,
       theme: AppTheme.light(),
       home: const AppShell(),

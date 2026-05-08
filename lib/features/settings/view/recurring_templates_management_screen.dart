@@ -109,7 +109,7 @@ class RecurringTemplatesManagementScreen extends StatelessWidget {
                         ),
                       ),
                       subtitle: Text(
-                        '${AppStrings.recurringDueEachMonthSummary(t.dayOfMonth)} · ${formatExpenseUsdMinor(t.amountMinorSuggested)}'
+                        '${AppStrings.recurringDueEachMonthSummary(t.dayOfMonth)} · ${formatExpenseMinor(context, t.amountMinorSuggested)}'
                         '${t.endMonthKey != null ? ' · ${AppStrings.recurringEndsInMonth(t.endMonthKey!)}' : ''}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.onSurfaceVariant,

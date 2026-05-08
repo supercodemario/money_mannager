@@ -50,7 +50,7 @@ class ExpenseTransactionRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                formatExpenseUsdMinor(expense.amountMinor),
+                formatExpenseMinor(context, expense.amountMinor),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: AppSpacing.s2),

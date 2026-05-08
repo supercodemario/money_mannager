@@ -3,6 +3,7 @@ import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/features/add_expense/data/category_visuals.dart';
 import 'package:money_manager/features/add_expense/widgets/add_expense_bento_field.dart';
 import 'package:money_manager/features/add_expense/widgets/add_expense_category_grid.dart';
+import 'package:money_manager/features/expenses/widgets/expenses_amount_format.dart';
 import 'package:money_manager/share/share.dart';
 
 class AddExpenseScreen extends StatefulWidget {
@@ -32,6 +33,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final services = AppServices.of(context);
+    final currencySymbol = currentExpenseCurrencySymbol(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -65,7 +67,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '\$',
+                currencySymbol,
                 style: textTheme.headlineLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: AppColors.primary,
@@ -199,6 +201,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     if (categoryId == null) return;
     final cents = _parseAmountToMinorUnits(_amountController.text);
     if (cents == null || cents <= 0) return;
+    final currencyCode = RegionalFormattingScope.of(context).currencyCode;
 
     setState(() => _saving = true);
     try {
@@ -206,7 +209,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       final category = await services.categories.getById(categoryId);
       await services.expenses.insertExpense(
         amountMinor: cents,
-        currencyCode: 'USD',
+        currencyCode: currencyCode,
         categoryId: categoryId,
         budgetBucket: category?.bucket,
         note: _noteController.text,
@@ -220,9 +223,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   int? _parseAmountToMinorUnits(String amount) {
-    final v = double.tryParse(amount.trim());
-    if (v == null) return null;
-    return (v * 100).round();
+    return parseExpenseMinorFromString(context, amount);
   }
 
   String _formatDate(DateTime dt) {

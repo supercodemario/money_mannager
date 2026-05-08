@@ -75,14 +75,15 @@ class _DashboardMonthlySpendingCardState extends State<DashboardMonthlySpendingC
                     final overBudget = hasLimits && remainingMinor < 0;
                     final overSpentMinor = overBudget ? remainingMinor.abs() : 0;
                     final remainingValue = hasLimits
-                        ? formatExpenseUsdMinor(overBudget ? overSpentMinor : remainingMinor)
+                        ? formatExpenseMinor(context, overBudget ? overSpentMinor : remainingMinor)
                         : AppStrings.expenseLimitsUnsetValue;
-                    final dailyValue =
-                        hasLimits ? formatExpenseUsdMinor(d.indicativeDailyMinor) : AppStrings.expenseLimitsUnsetValue;
+                    final dailyValue = hasLimits
+                        ? formatExpenseMinor(context, d.indicativeDailyMinor)
+                        : AppStrings.expenseLimitsUnsetValue;
                     final savingsMinor = prefs?.monthlySavingsMinor;
                     final savingsValue = savingsMinor == null
                         ? AppStrings.expenseLimitsUnsetValue
-                        : formatExpenseUsdMinor(savingsMinor);
+                        : formatExpenseMinor(context, savingsMinor);
                     final usedPercent = hasLimits && d.spendablePoolMinor > 0
                         ? (monthlyTotalExpenseMinor / d.spendablePoolMinor) * 100
                         : 0.0;
@@ -94,7 +95,7 @@ class _DashboardMonthlySpendingCardState extends State<DashboardMonthlySpendingC
                         : 0.0;
                     final progressPercentLabel = '${usedPercent.round()}%';
                     final exceededAmountLabel = overBudget
-                        ? '+${formatExpenseUsdMinor(overSpentMinor)} (${exceedPercent.round()}%) exceeded'
+                        ? '+${formatExpenseMinor(context, overSpentMinor)} (${exceedPercent.round()}%) exceeded'
                         : null;
                     final monthlySpendingSubtitle = hasLimits
                         ? overBudget
@@ -130,7 +131,7 @@ class _DashboardMonthlySpendingCardState extends State<DashboardMonthlySpendingC
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    formatExpenseUsdMinor(monthlyTotalExpenseMinor),
+                                    formatExpenseMinor(context, monthlyTotalExpenseMinor),
                                     style: textTheme.titleLarge?.copyWith(
                                       fontWeight: FontWeight.w800,
                                       color: overBudget ? AppColors.error : AppColors.secondary,

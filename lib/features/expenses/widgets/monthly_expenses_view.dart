@@ -58,7 +58,7 @@ class MonthlyExpensesView extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    formatExpenseUsdMinor(r.totalMinor),
+                    formatExpenseMinor(context, r.totalMinor),
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
                   ),
                 ],

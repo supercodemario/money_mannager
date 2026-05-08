@@ -10,7 +10,7 @@ Future<void> showMarkRecurringPaidSheet(
   required String monthKey,
 }) async {
   final controller = TextEditingController(
-    text: formatExpenseUsdMinor(row.template.amountMinorSuggested).replaceAll(r'$', ''),
+    text: formatExpenseMinorNumericOnly(context, row.template.amountMinorSuggested),
   );
   var occurredAt = DateTime.now();
 
@@ -71,7 +71,7 @@ Future<void> showMarkRecurringPaidSheet(
                 const SizedBox(height: AppSpacing.s16),
                 FilledButton(
                   onPressed: () async {
-                    final minor = parseUsdMinorFromString(controller.text);
+                    final minor = parseExpenseMinorFromString(ctx, controller.text);
                     if (minor == null || minor <= 0) {
                       ScaffoldMessenger.of(ctx).showSnackBar(
                         const SnackBar(content: Text('Enter a valid amount')),
