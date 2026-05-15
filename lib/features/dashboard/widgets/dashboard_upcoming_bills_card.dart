@@ -145,7 +145,7 @@ class _DashboardRecurringRow extends StatelessWidget {
               ),
             ),
             Text(
-              formatExpenseUsdMinor(row.template.amountMinorSuggested),
+              formatExpenseMinor(context, row.template.amountMinorSuggested),
               style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
             ),
           ],

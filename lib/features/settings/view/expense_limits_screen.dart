@@ -44,11 +44,11 @@ class _ExpenseLimitsScreenState extends State<ExpenseLimitsScreen> {
       _userId = uid;
       final im = prefs?.monthlyIncomeMinor;
       if (im != null) {
-        _incomeController.text = formatExpenseUsdMinor(im).replaceAll(r'$', '').trim();
+        _incomeController.text = formatExpenseMinorNumericOnly(context, im);
       }
       final sm = prefs?.monthlySavingsMinor;
       if (sm != null) {
-        _savingsController.text = formatExpenseUsdMinor(sm).replaceAll(r'$', '').trim();
+        _savingsController.text = formatExpenseMinorNumericOnly(context, sm);
       }
       _savingsGoalEnabled = (sm ?? 0) > 0;
       _excludeRecurring = prefs?.excludeUnpaidRecurring ?? false;
@@ -60,13 +60,7 @@ class _ExpenseLimitsScreenState extends State<ExpenseLimitsScreen> {
   int? _parseMoneyInput(String raw) {
     final trimmed = raw.trim();
     if (trimmed.isEmpty) return null;
-    final onlyNumeric = trimmed.replaceAll(RegExp(r'[^0-9.]'), '');
-    if (onlyNumeric.isEmpty) return null;
-    final firstDot = onlyNumeric.indexOf('.');
-    final normalized = firstDot == -1
-        ? onlyNumeric
-        : '${onlyNumeric.substring(0, firstDot + 1)}${onlyNumeric.substring(firstDot + 1).replaceAll('.', '')}';
-    return parseUsdMinorFromString(normalized);
+    return parseExpenseMinorFromString(context, trimmed);
   }
 
   void _syncSavingsRateFromInputs() {
@@ -129,6 +123,7 @@ class _ExpenseLimitsScreenState extends State<ExpenseLimitsScreen> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final services = AppServices.of(context);
+    final currencySymbol = currentExpenseCurrencySymbol(context);
 
     if (_loading || _userId == null) {
       return Scaffold(
@@ -178,7 +173,7 @@ class _ExpenseLimitsScreenState extends State<ExpenseLimitsScreen> {
                   Row(
                     children: [
                       Text(
-                        r'$',
+                        currencySymbol,
                         style: textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.w900,
                           color: AppColors.secondary,
@@ -230,7 +225,7 @@ class _ExpenseLimitsScreenState extends State<ExpenseLimitsScreen> {
                       child: _MetricCard(
                         icon: Icons.calendar_month_rounded,
                         label: AppStrings.expenseLimitsSpendableMonthlyLabel,
-                        value: hasIncome ? formatExpenseUsdMinor(livePoolMinor) : AppStrings.expenseLimitsUnsetValue,
+                        value: hasIncome ? formatExpenseMinor(context, livePoolMinor) : AppStrings.expenseLimitsUnsetValue,
                         background: AppColors.secondaryContainer.withValues(alpha: 0.26),
                         iconColor: AppColors.secondary,
                         valueColor: AppColors.onSecondaryContainer,
@@ -241,8 +236,7 @@ class _ExpenseLimitsScreenState extends State<ExpenseLimitsScreen> {
                       child: _MetricCard(
                         icon: Icons.today_rounded,
                         label: AppStrings.expenseLimitsIndicativeDailyLabel,
-                        value:
-                            hasIncome ? formatExpenseUsdMinor(liveDailyMinor) : AppStrings.expenseLimitsUnsetValue,
+                        value: hasIncome ? formatExpenseMinor(context, liveDailyMinor) : AppStrings.expenseLimitsUnsetValue,
                         background: AppColors.primaryContainer.withValues(alpha: 0.26),
                         iconColor: AppColors.primary,
                         valueColor: AppColors.onPrimaryContainer,
@@ -319,7 +313,7 @@ class _ExpenseLimitsScreenState extends State<ExpenseLimitsScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                r'$',
+                                currencySymbol,
                                 style: textTheme.titleMedium?.copyWith(
                                   color: AppColors.tertiary.withValues(alpha: 0.7),
                                   fontWeight: FontWeight.w700,
@@ -330,7 +324,7 @@ class _ExpenseLimitsScreenState extends State<ExpenseLimitsScreen> {
                                 () {
                                   final monthlySavingsMinor = _previewSavingsMinorFromPercent();
                                   if (monthlySavingsMinor == null) return AppStrings.expenseLimitsUnsetValue;
-                                  return formatExpenseUsdMinor(monthlySavingsMinor).replaceAll(r'$', '').trim();
+                                  return formatExpenseMinorNumericOnly(context, monthlySavingsMinor);
                                 }(),
                                 style: textTheme.headlineSmall?.copyWith(
                                   color: AppColors.tertiary,

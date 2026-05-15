@@ -56,7 +56,7 @@ class _DashboardBudgetHeroState extends State<DashboardBudgetHero> {
           builder: (context, prefSnap) {
             final incomeMinor = prefSnap.data?.monthlyIncomeMinor;
             final budgetValue = (incomeMinor != null && incomeMinor > 0)
-                ? formatExpenseUsdMinor(incomeMinor)
+                ? formatExpenseMinor(context, incomeMinor)
                 : AppStrings.expenseLimitsUnsetValue;
 
             return Column(

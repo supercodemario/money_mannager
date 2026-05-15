@@ -63,11 +63,12 @@ Any backend change (new columns, policies, or triggers) should keep these rules 
 
 Implemented in `lib/app/cloud_sync_controller.dart` → **`ensureHouseholdIfNeeded()`** (called from sync before push/pull):
 
-1. If a **household id** is already cached locally (`SyncMetadataStore`), return.
-2. Else query **`household_members`** for `user_id = current user id`; if a row exists, **reuse** that `household_id` (supports reinstall / new device without creating duplicate households).
-3. Else **insert** a new `households` row (client-generated uuid, name `"Home"`) and **`household_members`** linking the current user.
+1. If a **household id** is already cached locally (`SyncMetadataStore`) and the user is still a member of that household in Postgres, keep it.
+2. If the cached id is stale (no membership), clear it.
+3. If there is no valid cached id, query **`household_members`** for `user_id = current user id`; if a row exists, **cache** that `household_id` (supports reinstall / new device without creating rows from the client).
+4. The app **does not** insert new `households` or `household_members` rows. Those must exist from **Supabase-side** flows (e.g. `accept_family_invite`, other RPCs/migrations, or manual SQL). Until the user is a member of at least one household, expense sync will not run (no `household_id`).
 
-**Implication for backend:** You normally do **not** need a separate “create household” HTTP endpoint; the client uses PostgREST `insert` under RLS. If you add **triggers** or **defaults**, ensure they remain compatible with client-generated UUIDs and the insert policies.
+**Implication for backend:** Household and membership rows are created only where your SQL/RPCs allow; the client only resolves and caches an id the user already belongs to.
 
 ---
 

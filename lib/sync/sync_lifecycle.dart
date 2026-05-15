@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/sync/sync_orchestrator.dart';
@@ -29,6 +31,9 @@ class _SyncLifecycleState extends State<SyncLifecycle> {
     );
     o.start();
     _orchestrator = o;
+    if (s.cloudSync.syncAllowed) {
+      unawaited(s.profiles.hydrateDisplayNameFromAuthSession());
+    }
   }
 
   @override

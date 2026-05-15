@@ -1,6 +1,6 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-/// Supabase configuration: values from [assets/env/.env] (loaded at runtime) with
+/// Supabase configuration: values from [assets/env/supabase.env] (loaded at runtime) with
 /// optional `--dart-define` fallback when a key is missing or empty.
 ///
 /// Call [loadDotEnv] once after [WidgetsFlutterBinding.ensureInitialized].
@@ -10,9 +10,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class SupabaseEnv {
   SupabaseEnv._();
 
-  static const String _assetFile = 'assets/env/.env';
+  static const String _assetFile = 'assets/env/supabase.env';
 
-  /// Loads bundled `assets/env/.env`. Missing or empty file is ignored ([isOptional]).
+  /// Loads bundled `assets/env/supabase.env`. Missing or empty file is ignored ([isOptional]).
   static Future<void> loadDotEnv() async {
     await dotenv.load(fileName: _assetFile, isOptional: true);
   }

@@ -3,6 +3,7 @@ import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/features/add_expense/data/category_visuals.dart';
 import 'package:money_manager/features/add_expense/widgets/quick_add_category_pager.dart';
 import 'package:money_manager/features/add_expense/widgets/quick_add_keypad.dart';
+import 'package:money_manager/features/expenses/widgets/expenses_amount_format.dart';
 import 'package:money_manager/share/share.dart';
 
 enum _QuickAddMode { amount, category }
@@ -54,6 +55,7 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
     final textTheme = Theme.of(context).textTheme;
     final inCategoryMode = _mode == _QuickAddMode.category;
     final services = AppServices.of(context);
+    final currencySymbol = currentExpenseCurrencySymbol(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -115,7 +117,7 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      '\$',
+                                      currencySymbol,
                                       style: textTheme.headlineSmall?.copyWith(
                                         fontWeight: FontWeight.w800,
                                         color: AppColors.primary,
@@ -276,6 +278,7 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
 
   Future<void> _save() async {
     if (!_amountPositive || _selectedCategoryId == null) return;
+    final currencyCode = RegionalFormattingScope.of(context).currencyCode;
     setState(() => _saving = true);
     try {
       final services = AppServices.of(context);
@@ -284,7 +287,7 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
       final category = await services.categories.getById(_selectedCategoryId!);
       await services.expenses.insertExpense(
         amountMinor: cents,
-        currencyCode: 'USD',
+        currencyCode: currencyCode,
         categoryId: _selectedCategoryId!,
         budgetBucket: category?.bucket,
         note: _noteController.text,

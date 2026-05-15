@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:money_manager/core/logging/app_log.dart';
 import 'package:money_manager/data/repositories/recurring_payment_repository.dart';
 import 'package:money_manager/features/expenses/widgets/expenses_amount_format.dart';
 import 'package:money_manager/share/share.dart';
@@ -10,7 +11,7 @@ Future<void> showMarkRecurringPaidSheet(
   required String monthKey,
 }) async {
   final controller = TextEditingController(
-    text: formatExpenseUsdMinor(row.template.amountMinorSuggested).replaceAll(r'$', ''),
+    text: formatExpenseMinorNumericOnly(context, row.template.amountMinorSuggested),
   );
   var occurredAt = DateTime.now();
 
@@ -71,7 +72,7 @@ Future<void> showMarkRecurringPaidSheet(
                 const SizedBox(height: AppSpacing.s16),
                 FilledButton(
                   onPressed: () async {
-                    final minor = parseUsdMinorFromString(controller.text);
+                    final minor = parseExpenseMinorFromString(ctx, controller.text);
                     if (minor == null || minor <= 0) {
                       ScaffoldMessenger.of(ctx).showSnackBar(
                         const SnackBar(content: Text('Enter a valid amount')),
@@ -86,7 +87,8 @@ Future<void> showMarkRecurringPaidSheet(
                         occurredAtLocal: occurredAt,
                       );
                       if (ctx.mounted) Navigator.of(ctx).pop(true);
-                    } catch (e) {
+                    } catch (e, st) {
+                      logAppError('recurring.mark_paid', e, st);
                       if (ctx.mounted) {
                         ScaffoldMessenger.of(ctx).showSnackBar(
                           SnackBar(content: Text('$e')),

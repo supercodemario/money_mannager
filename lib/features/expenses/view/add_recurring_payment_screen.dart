@@ -56,7 +56,7 @@ class _AddRecurringPaymentScreenState extends State<AddRecurringPaymentScreen> {
     setState(() {
       _loadingEdit = false;
       _titleController.text = row.title;
-      _amountController.text = formatExpenseUsdMinor(row.amountMinorSuggested).replaceAll(r'$', '').trim();
+      _amountController.text = formatExpenseMinorNumericOnly(context, row.amountMinorSuggested);
       _categoryId = cats.any((c) => c.id == row.categoryId) ? row.categoryId : cats.first.id;
       _dueDate = DateTime(2020, 1, effectiveDueDayInMonth(2020, 1, row.dayOfMonth));
       if (row.endMonthKey != null) {
@@ -85,7 +85,7 @@ class _AddRecurringPaymentScreenState extends State<AddRecurringPaymentScreen> {
       );
       return;
     }
-    final minor = parseUsdMinorFromString(_amountController.text);
+    final minor = parseExpenseMinorFromString(context, _amountController.text);
     if (minor == null || minor <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text(AppStrings.recurringValidationAmount)),
@@ -96,6 +96,7 @@ class _AddRecurringPaymentScreenState extends State<AddRecurringPaymentScreen> {
     setState(() => _saving = true);
     try {
       final repo = AppServices.of(context).recurring;
+      final currencyCode = RegionalFormattingScope.of(context).currencyCode;
       final endMonthKey = _autoRecurring || _endMonthDate == null ? null : monthKeyForDate(_endMonthDate!);
       final editId = widget.editingTemplateId;
       if (editId != null) {
@@ -104,7 +105,7 @@ class _AddRecurringPaymentScreenState extends State<AddRecurringPaymentScreen> {
           title: title,
           categoryId: _categoryId,
           amountMinorSuggested: minor,
-          currencyCode: 'USD',
+          currencyCode: currencyCode,
           dayOfMonth: _dueDate.day,
           endMonthKey: endMonthKey,
         );
@@ -113,7 +114,7 @@ class _AddRecurringPaymentScreenState extends State<AddRecurringPaymentScreen> {
           title: title,
           categoryId: _categoryId,
           amountMinorSuggested: minor,
-          currencyCode: 'USD',
+          currencyCode: currencyCode,
           dayOfMonth: _dueDate.day,
           endMonthKey: endMonthKey,
         );
@@ -167,6 +168,7 @@ class _AddRecurringPaymentScreenState extends State<AddRecurringPaymentScreen> {
 
     final categories = defaultExpenseCategories();
     final textTheme = Theme.of(context).textTheme;
+    final currencySymbol = currentExpenseCurrencySymbol(context);
     final isEdit = widget.editingTemplateId != null;
 
     return Scaffold(
@@ -213,7 +215,7 @@ class _AddRecurringPaymentScreenState extends State<AddRecurringPaymentScreen> {
                             letterSpacing: -1.0,
                           ),
                           decoration: InputDecoration(
-                            prefixText: r'$ ',
+                            prefixText: '$currencySymbol ',
                             prefixStyle: textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: AppColors.primary,

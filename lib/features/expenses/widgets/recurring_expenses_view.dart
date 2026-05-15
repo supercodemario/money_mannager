@@ -110,7 +110,7 @@ class RecurringExpensesView extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        formatExpenseUsdMinor(r.template.amountMinorSuggested),
+                        formatExpenseMinor(context, r.template.amountMinorSuggested),
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
                       ),
                       const SizedBox(height: AppSpacing.s8),

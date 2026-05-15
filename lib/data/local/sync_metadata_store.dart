@@ -5,6 +5,7 @@ class SyncMetadataStore {
   SyncMetadataStore._();
 
   static const _householdIdKey = 'sync_household_id';
+  static const _defaultExpenseHouseholdIdKey = 'default_expense_household_id';
   static const _lastExpensePullMsKey = 'sync_last_expense_pull_ms';
   static const _lastRecurringTemplatePullMsKey =
       'sync_last_recurring_template_pull_ms';
@@ -25,6 +26,25 @@ class SyncMetadataStore {
   static Future<void> clearHouseholdId() async {
     final p = await SharedPreferences.getInstance();
     await p.remove(_householdIdKey);
+  }
+
+  /// Default household for new expense rows and sync orchestration.
+  ///
+  /// Changing this preference does **not** update [household_id] on existing
+  /// local or remote expenses; only new writes use the new default.
+  static Future<String?> getDefaultExpenseHouseholdId() async {
+    final p = await SharedPreferences.getInstance();
+    return p.getString(_defaultExpenseHouseholdIdKey);
+  }
+
+  static Future<void> setDefaultExpenseHouseholdId(String id) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setString(_defaultExpenseHouseholdIdKey, id);
+  }
+
+  static Future<void> clearDefaultExpenseHouseholdId() async {
+    final p = await SharedPreferences.getInstance();
+    await p.remove(_defaultExpenseHouseholdIdKey);
   }
 
   static Future<int> getLastExpensePullServerMs() async {
@@ -70,6 +90,7 @@ class SyncMetadataStore {
   static Future<void> clearAll() async {
     final p = await SharedPreferences.getInstance();
     await p.remove(_householdIdKey);
+    await p.remove(_defaultExpenseHouseholdIdKey);
     await p.remove(_lastExpensePullMsKey);
     await p.remove(_lastRecurringTemplatePullMsKey);
     await p.remove(_lastRecurringOccurrencePullMsKey);

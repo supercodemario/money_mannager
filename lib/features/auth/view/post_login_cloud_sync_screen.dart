@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:money_manager/core/logging/app_log.dart';
 import 'package:money_manager/share/share.dart';
 import 'package:money_manager/sync/sync_orchestrator.dart';
 
@@ -69,7 +70,8 @@ class _PostLoginCloudSyncScreenState extends State<PostLoginCloudSyncScreen> {
         _running = false;
         _success = true;
       });
-    } catch (e) {
+    } catch (e, st) {
+      logAppError('auth.post_login_sync', e, st);
       if (!mounted) return;
       setState(() {
         _running = false;

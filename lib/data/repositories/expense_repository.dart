@@ -3,7 +3,22 @@ import 'package:money_manager/app/cloud_sync_controller.dart';
 import 'package:money_manager/data/local/app_database.dart';
 import 'package:money_manager/data/repositories/user_profile_repository.dart';
 import 'package:money_manager/data/remote/sync_constants.dart';
+import 'package:money_manager/share/tokens/app_strings.dart';
+import 'package:money_manager/sync/expense_household_scope.dart';
 import 'package:uuid/uuid.dart';
+
+/// One expense with the creator profile resolved for list UI (left join).
+class ExpenseWithCreator {
+  const ExpenseWithCreator({
+    required this.expense,
+    required this.creatorUserId,
+    required this.creatorDisplayName,
+  });
+
+  final Expense expense;
+  final String creatorUserId;
+  final String creatorDisplayName;
+}
 
 class MonthlyCategoryTotal {
   const MonthlyCategoryTotal({
@@ -34,6 +49,7 @@ class ExpenseRepository {
     final now = DateTime.now().millisecondsSinceEpoch;
     final userId = await _profiles.getCurrentUserId();
     final id = const Uuid().v4();
+    final householdId = await resolveHouseholdForNewExpenseWrite(_cloudSync);
 
     await _db
         .into(_db.expenses)
@@ -51,6 +67,9 @@ class ExpenseRepository {
             createdByUserId: userId,
             recurringPaymentId: recurringPaymentId != null
                 ? Value(recurringPaymentId)
+                : const Value.absent(),
+            householdId: householdId != null
+                ? Value(householdId)
                 : const Value.absent(),
             syncStatus: _cloudSync.syncAllowed
                 ? Value(SyncStatusValue.pending)
@@ -102,6 +121,44 @@ class ExpenseRepository {
       ]);
     if (limit != null) q.limit(limit);
     return q.watch();
+  }
+
+  /// Same window as [watchExpensesInRange], with creator profile in one query.
+  Stream<List<ExpenseWithCreator>> watchExpensesInRangeWithCreator({
+    required int startUtcMs,
+    required int endUtcMs,
+    int? limit,
+  }) {
+    final expenses = _db.select(_db.expenses)
+      ..where((t) => t.occurredAt.isBetweenValues(startUtcMs, endUtcMs))
+      ..orderBy([
+        (t) => OrderingTerm(expression: t.occurredAt, mode: OrderingMode.desc),
+      ]);
+    if (limit != null) expenses.limit(limit);
+
+    final q = expenses.join([
+      leftOuterJoin(
+        _db.userProfiles,
+        _db.userProfiles.id.equalsExp(_db.expenses.createdByUserId),
+      ),
+    ]);
+
+    return q.watch().map(
+      (rows) => rows
+          .map((row) {
+            final expense = row.readTable(_db.expenses);
+            final profile = row.readTableOrNull(_db.userProfiles);
+            final creatorId = profile?.id ?? expense.createdByUserId;
+            final name =
+                profile?.displayName ?? AppStrings.expenseUnknownMember;
+            return ExpenseWithCreator(
+              expense: expense,
+              creatorUserId: creatorId,
+              creatorDisplayName: name,
+            );
+          })
+          .toList(growable: false),
+    );
   }
 
   Stream<List<MonthlyCategoryTotal>> watchMonthlyCategoryTotals({
@@ -184,6 +241,15 @@ ORDER BY total_minor DESC
   }
 
   Future<int> promoteLocalOnlyToPending() async {
+    final householdId = await resolveHouseholdForNewExpenseWrite(_cloudSync);
+    if (householdId != null) {
+      await (_db.update(_db.expenses)..where(
+            (e) =>
+                e.syncStatus.equals(SyncStatusValue.localOnly) &
+                e.householdId.isNull(),
+          ))
+          .write(ExpensesCompanion(householdId: Value(householdId)));
+    }
     return (_db.update(
       _db.expenses,
     )..where((e) => e.syncStatus.equals(SyncStatusValue.localOnly))).write(
@@ -210,8 +276,11 @@ ORDER BY total_minor DESC
       return;
     }
 
-    final localUserId = await _profiles.getCurrentUserId();
     final recurring = m['recurring_payment_id'] as String?;
+    final remoteAuthUserId = m['auth_user_id'] as String?;
+    final creatorProfileId = (remoteAuthUserId == null || remoteAuthUserId.isEmpty)
+        ? await _profiles.getCurrentUserId()
+        : await _profiles.resolveProfileIdForExpenseAuthor(remoteAuthUserId);
 
     final companion = ExpensesCompanion(
       id: Value(id),
@@ -223,13 +292,14 @@ ORDER BY total_minor DESC
       occurredAt: Value(m['occurred_at'] as int),
       createdAt: Value(m['created_at'] as int),
       updatedAt: Value(remoteUpdated),
-      createdByUserId: Value(localUserId),
+      createdByUserId: Value(creatorProfileId),
       recurringPaymentId: recurring != null
           ? Value(recurring)
           : const Value.absent(),
       remoteId: Value(m['remote_id'] as String? ?? id),
       syncStatus: const Value(SyncStatusValue.synced),
       serverUpdatedAt: Value(m['server_updated_at'] as int? ?? remoteUpdated),
+      householdId: Value(m['household_id'] as String?),
     );
 
     if (existing == null) {

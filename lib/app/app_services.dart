@@ -7,6 +7,7 @@ import 'package:money_manager/data/repositories/expense_repository.dart';
 import 'package:money_manager/data/repositories/recurring_payment_repository.dart';
 import 'package:money_manager/data/repositories/user_preferences_repository.dart';
 import 'package:money_manager/data/repositories/user_profile_repository.dart';
+import 'package:money_manager/data/remote/household_remote_gateway.dart';
 
 class AppServices extends InheritedWidget {
   AppServices({
@@ -14,7 +15,8 @@ class AppServices extends InheritedWidget {
     required super.child,
     required this.db,
     required this.cloudSync,
-  }) : profiles = UserProfileRepository(db) {
+  }) : profiles = UserProfileRepository(db),
+       household = HouseholdRemoteGateway() {
     expenses = ExpenseRepository(db, profiles, cloudSync);
     recurring = RecurringPaymentRepository(db, expenses, cloudSync);
     expenseLimits = ExpenseLimitsRepository(
@@ -30,6 +32,7 @@ class AppServices extends InheritedWidget {
   final AppDatabase db;
   final CloudSyncController cloudSync;
   final UserProfileRepository profiles;
+  final HouseholdRemoteGateway household;
   late final ExpenseRepository expenses;
   late final RecurringPaymentRepository recurring;
   late final ExpenseLimitsRepository expenseLimits;
