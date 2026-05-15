@@ -16,6 +16,6 @@
 
 ## 4. Verification
 
-- [ ] 4.1 Manual pass: set currency to EUR and INR; confirm symbols and grouping change on Dashboard, Expenses, Quick Add, and Limits.
-- [ ] 4.2 Manual pass: change language and confirm `MaterialApp` locale updates (dates/numbers as visible) without restart.
+- [x] 4.1 Manual pass: set currency to EUR and INR; confirm symbols and grouping change on Dashboard, Expenses, Quick Add, and Limits.
+- [x] 4.2 Manual pass: change language and confirm `MaterialApp` locale updates (dates/numbers as visible) without restart.
 - [x] 4.3 Run existing widget/tests; fix failures from constructor or context assumptions.

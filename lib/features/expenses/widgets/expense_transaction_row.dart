@@ -5,10 +5,18 @@ import 'package:money_manager/features/expenses/widgets/expenses_amount_format.d
 import 'package:money_manager/share/share.dart';
 
 class ExpenseTransactionRow extends StatelessWidget {
-  const ExpenseTransactionRow({super.key, required this.expense, required this.category});
+  const ExpenseTransactionRow({
+    super.key,
+    required this.expense,
+    required this.category,
+    required this.creatorUserId,
+    required this.creatorDisplayName,
+  });
 
   final Expense expense;
   final ExpenseCategory? category;
+  final String creatorUserId;
+  final String creatorDisplayName;
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +51,21 @@ class ExpenseTransactionRow extends StatelessWidget {
                   const SizedBox(height: AppSpacing.s2),
                   Text(note, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.onSurfaceVariant)),
                 ],
+                const SizedBox(height: AppSpacing.s6),
+                Row(
+                  children: [
+                    MemberAvatar(userId: creatorUserId, size: AppSpacing.s20),
+                    const SizedBox(width: AppSpacing.s8),
+                    Expanded(
+                      child: Text(
+                        '${AppStrings.expenseRecordedBy} · $creatorDisplayName',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.onSurfaceVariant),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),

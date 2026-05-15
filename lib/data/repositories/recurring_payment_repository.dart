@@ -4,6 +4,7 @@ import 'package:money_manager/data/local/app_database.dart';
 import 'package:money_manager/data/remote/sync_constants.dart';
 import 'package:money_manager/data/recurring/recurring_calendar.dart';
 import 'package:money_manager/data/repositories/expense_repository.dart';
+import 'package:money_manager/sync/expense_household_scope.dart';
 import 'package:uuid/uuid.dart';
 
 /// One recurring template joined with an optional occurrence row for [monthKey].
@@ -53,6 +54,9 @@ class RecurringPaymentRepository {
       ? SyncStatusValue.pending
       : SyncStatusValue.localOnly;
 
+  Future<String?> _householdIdForNewWrite() =>
+      resolveHouseholdForNewExpenseWrite(_cloudSync);
+
   Future<String> insertTemplate({
     required String title,
     required String categoryId,
@@ -63,6 +67,7 @@ class RecurringPaymentRepository {
   }) async {
     final now = _nowProvider().millisecondsSinceEpoch;
     final id = const Uuid().v4();
+    final householdId = await _householdIdForNewWrite();
     await _db
         .into(_db.recurringPayments)
         .insert(
@@ -80,6 +85,9 @@ class RecurringPaymentRepository {
             isDeleted: const Value(false),
             createdAt: now,
             updatedAt: now,
+            householdId: householdId != null
+                ? Value(householdId)
+                : const Value.absent(),
             syncStatus: Value(_writeSyncStatus),
           ),
         );
@@ -396,6 +404,17 @@ class RecurringPaymentRepository {
   }
 
   Future<int> promoteLocalOnlyToPending() async {
+    final householdId = await _householdIdForNewWrite();
+    if (householdId != null) {
+      await (_db.update(_db.recurringPayments)..where(
+            (t) =>
+                t.syncStatus.equals(SyncStatusValue.localOnly) &
+                t.householdId.isNull(),
+          ))
+          .write(
+            RecurringPaymentsCompanion(householdId: Value(householdId)),
+          );
+    }
     final templates =
         await (_db.update(
           _db.recurringPayments,
@@ -502,6 +521,7 @@ class RecurringPaymentRepository {
       remoteId: Value(m['remote_id'] as String? ?? id),
       syncStatus: const Value(SyncStatusValue.synced),
       serverUpdatedAt: Value(m['server_updated_at'] as int? ?? remoteUpdated),
+      householdId: Value(m['household_id'] as String?),
     );
 
     if (existing == null) {

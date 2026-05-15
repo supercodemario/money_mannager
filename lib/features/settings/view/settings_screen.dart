@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:money_manager/app/app_services.dart';
+import 'package:money_manager/app/profile_details_scope.dart';
+import 'package:money_manager/features/family_list/view/family_list_screen.dart';
 import 'package:money_manager/features/settings/view/expense_limits_screen.dart';
-import 'package:money_manager/features/settings/widgets/cloud_sync_settings_section.dart';
 import 'package:money_manager/features/settings/view/preferences_details_screen.dart';
 import 'package:money_manager/features/settings/view/recurring_templates_management_screen.dart';
 import 'package:money_manager/share/share.dart';
@@ -14,15 +15,8 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final _controller = TextEditingController();
   bool _biometricEnabled = true;
   bool _pushEnabled = true;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,120 +36,169 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Text(
                   AppStrings.settingsSubtitle,
-                  style: textTheme.bodySmall?.copyWith(color: AppColors.onSurfaceVariant),
+                  style: textTheme.bodySmall?.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.s16),
                 Text(
                   AppStrings.profileTitle,
-                  style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.s12),
                 AppCard(
                   padding: const EdgeInsets.all(AppSpacing.s16),
                   borderRadius: AppRadius.xl,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Semantics(
+                    label: AppStrings.profileDetailsOpenSemanticsLabel,
+                    button: true,
+                    child: InkWell(
+                      onTap: profile == null
+                          ? null
+                          : () {
+                              ProfileDetailsScope.of(
+                                context,
+                              ).pushProfileDetails(context);
+                            },
+                      borderRadius: BorderRadius.circular(AppRadius.r12),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.s4,
+                        ),
+                        child: Row(
                           children: [
-                            Text(
-                              AppStrings.displayNameLabel,
-                              style: textTheme.labelSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.onSurfaceVariant,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    AppStrings.displayNameLabel,
+                                    style: textTheme.labelSmall?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  const SizedBox(height: AppSpacing.s4),
+                                  Text(
+                                    profile?.displayName ?? '…',
+                                    style: textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: AppSpacing.s4),
-                            Text(
-                              profile?.displayName ?? '…',
-                              style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              color: AppColors.onSurfaceVariant,
                             ),
                           ],
                         ),
                       ),
-                      TextButton(
-                        onPressed: profile == null ? null : () => _editName(context, profile.displayName),
-                        child: const Text(AppStrings.edit),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.s16),
-                const CloudSyncSettingsSection(),
-                const SizedBox(height: AppSpacing.s20),
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: AppSpacing.s12,
-                  crossAxisSpacing: AppSpacing.s12,
-                  childAspectRatio: 1.05,
-                  children: [
-                    StreamBuilder<int>(
-                      stream: services.recurring.watchEnabledTemplateCount(),
-                      builder: (context, countSnap) {
-                        final active = countSnap.data ?? 0;
-                        return _SettingsGridCard(
-                          icon: Icons.autorenew_rounded,
-                          iconBackground: AppColors.secondaryContainer.withValues(alpha: 0.5),
-                          iconColor: AppColors.secondaryDim,
-                          title: AppStrings.settingsCardRecurring,
-                          subtitle: AppStrings.settingsCardRecurringAmount,
-                          badge: AppStrings.settingsCardRecurringActiveBadge(active),
-                          badgeStyle: _BadgeStyle.emerald,
+                ListenableBuilder(
+                  listenable: services.cloudSync,
+                  builder: (context, _) {
+                    final showFamily = services.cloudSync.syncAllowed;
+                    return GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      mainAxisSpacing: AppSpacing.s12,
+                      crossAxisSpacing: AppSpacing.s12,
+                      childAspectRatio: 1.05,
+                      children: [
+                        StreamBuilder<int>(
+                          stream: services.recurring
+                              .watchEnabledTemplateCount(),
+                          builder: (context, countSnap) {
+                            final active = countSnap.data ?? 0;
+                            return _SettingsGridCard(
+                              icon: Icons.autorenew_rounded,
+                              iconBackground: AppColors.secondaryContainer
+                                  .withValues(alpha: 0.5),
+                              iconColor: AppColors.secondaryDim,
+                              title: AppStrings.settingsCardRecurring,
+                              subtitle: AppStrings.settingsCardRecurringAmount,
+                              badge:
+                                  AppStrings.settingsCardRecurringActiveBadge(
+                                    active,
+                                  ),
+                              badgeStyle: _BadgeStyle.emerald,
+                              onTap: () {
+                                Navigator.of(context).push<void>(
+                                  MaterialPageRoute<void>(
+                                    builder: (context) =>
+                                        const RecurringTemplatesManagementScreen(),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                        if (showFamily)
+                          _SettingsGridCard(
+                            icon: Icons.group_rounded,
+                            iconBackground: AppColors.primaryContainer
+                                .withValues(alpha: 0.35),
+                            iconColor: AppColors.primary,
+                            title: AppStrings.settingsCardFamily,
+                            subtitle: AppStrings.settingsCardFamilySubtitle,
+                            trailingAvatars: true,
+                            onTap: () {
+                              Navigator.of(context).push<void>(
+                                MaterialPageRoute<void>(
+                                  builder: (context) =>
+                                      const FamilyListScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        _SettingsGridCard(
+                          icon: Icons.speed_rounded,
+                          iconBackground: AppColors.tertiaryContainer
+                              .withValues(alpha: 0.35),
+                          iconColor: AppColors.tertiary,
+                          title: AppStrings.settingsCardLimits,
+                          badge: AppStrings.settingsCardLimitsBadge,
+                          badgeStyle: _BadgeStyle.teal,
+                          progress: 0.45,
                           onTap: () {
                             Navigator.of(context).push<void>(
                               MaterialPageRoute<void>(
-                                builder: (context) => const RecurringTemplatesManagementScreen(),
+                                builder: (context) =>
+                                    const ExpenseLimitsScreen(),
                               ),
                             );
                           },
-                        );
-                      },
-                    ),
-                    _SettingsGridCard(
-                      icon: Icons.group_rounded,
-                      iconBackground: AppColors.primaryContainer.withValues(alpha: 0.35),
-                      iconColor: AppColors.primary,
-                      title: AppStrings.settingsCardFamily,
-                      subtitle: AppStrings.settingsCardFamilySubtitle,
-                      trailingAvatars: true,
-                      onTap: () {},
-                    ),
-                    _SettingsGridCard(
-                      icon: Icons.speed_rounded,
-                      iconBackground: AppColors.tertiaryContainer.withValues(alpha: 0.35),
-                      iconColor: AppColors.tertiary,
-                      title: AppStrings.settingsCardLimits,
-                      badge: AppStrings.settingsCardLimitsBadge,
-                      badgeStyle: _BadgeStyle.teal,
-                      progress: 0.45,
-                      onTap: () {
-                        Navigator.of(context).push<void>(
-                          MaterialPageRoute<void>(
-                            builder: (context) => const ExpenseLimitsScreen(),
+                        ),
+                        _SettingsGridCard(
+                          icon: Icons.tune_rounded,
+                          iconBackground: AppColors.surfaceVariant.withValues(
+                            alpha: 0.5,
                           ),
-                        );
-                      },
-                    ),
-                    _SettingsGridCard(
-                      icon: Icons.tune_rounded,
-                      iconBackground: AppColors.surfaceVariant.withValues(alpha: 0.5),
-                      iconColor: AppColors.onSurfaceVariant,
-                      title: AppStrings.settingsCardPreferences,
-                      subtitle: AppStrings.settingsCardPreferencesSubtitle,
-                      badge: AppStrings.settingsCardPreferencesBadge,
-                      badgeStyle: _BadgeStyle.neutral,
-                      onTap: () {
-                        Navigator.of(context).push<void>(
-                          MaterialPageRoute<void>(
-                            builder: (context) => const PreferencesDetailsScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                          iconColor: AppColors.onSurfaceVariant,
+                          title: AppStrings.settingsCardPreferences,
+                          subtitle: AppStrings.settingsCardPreferencesSubtitle,
+                          badge: AppStrings.settingsCardPreferencesBadge,
+                          badgeStyle: _BadgeStyle.neutral,
+                          onTap: () {
+                            Navigator.of(context).push<void>(
+                              MaterialPageRoute<void>(
+                                builder: (context) =>
+                                    const PreferencesDetailsScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: AppSpacing.s12),
                 _BiometricToggleCard(
@@ -173,41 +216,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _editName(BuildContext context, String current) async {
-    final services = AppServices.of(context);
-    _controller.text = current;
-
-    final res = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text(AppStrings.displayNameLabel),
-          content: TextField(
-            controller: _controller,
-            autofocus: true,
-            textInputAction: TextInputAction.done,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(AppStrings.cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, _controller.text),
-              child: const Text(AppStrings.save),
-            ),
-          ],
-        );
-      },
-    );
-
-    final name = res?.trim();
-    if (name == null || name.isEmpty) return;
-    await services.profiles.updateDisplayName(name);
-    if (!mounted) return;
-    setState(() {});
   }
 }
 
@@ -295,7 +303,10 @@ class _SettingsGridCard extends StatelessWidget {
                     )
                   else if (badge != null && badgeStyle != _BadgeStyle.teal)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s8, vertical: AppSpacing.s4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.s8,
+                        vertical: AppSpacing.s4,
+                      ),
                       decoration: BoxDecoration(
                         color: badgeBg,
                         borderRadius: BorderRadius.circular(AppSpacing.s32),
@@ -320,12 +331,19 @@ class _SettingsGridCard extends StatelessWidget {
                 ],
               ),
               const Spacer(),
-              Text(title, style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+              Text(
+                title,
+                style: textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               if (subtitle != null) ...[
                 const SizedBox(height: AppSpacing.s4),
                 Text(
                   subtitle!,
-                  style: textTheme.labelSmall?.copyWith(color: AppColors.onSurfaceVariant),
+                  style: textTheme.labelSmall?.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
                 ),
               ],
               if (progress != null) ...[
@@ -356,7 +374,11 @@ class _SettingsGridCard extends StatelessWidget {
         border: Border.all(color: AppColors.surfaceContainerLowest, width: 2),
         color: AppColors.surfaceContainer,
       ),
-      child: Icon(Icons.person_rounded, size: AppSpacing.s14, color: AppColors.onSurfaceVariant),
+      child: Icon(
+        Icons.person_rounded,
+        size: AppSpacing.s14,
+        color: AppColors.onSurfaceVariant,
+      ),
     );
   }
 }
@@ -398,7 +420,11 @@ class _BiometricToggleCard extends StatelessWidget {
               ),
               child: const Padding(
                 padding: EdgeInsets.all(AppSpacing.s8),
-                child: Icon(Icons.verified_user_rounded, size: AppSpacing.s20, color: AppColors.onPrimary),
+                child: Icon(
+                  Icons.verified_user_rounded,
+                  size: AppSpacing.s20,
+                  color: AppColors.onPrimary,
+                ),
               ),
             ),
             const SizedBox(width: AppSpacing.s12),
@@ -416,7 +442,9 @@ class _BiometricToggleCard extends StatelessWidget {
                   const SizedBox(height: AppSpacing.s4),
                   Text(
                     AppStrings.settingsBiometricSubtitle,
-                    style: textTheme.labelSmall?.copyWith(color: AppColors.onSecondary),
+                    style: textTheme.labelSmall?.copyWith(
+                      color: AppColors.onSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -466,14 +494,20 @@ class _PushToggleRow extends StatelessWidget {
             ),
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.s8),
-              child: Icon(Icons.notifications_outlined, size: AppSpacing.s24, color: AppColors.secondaryDim),
+              child: Icon(
+                Icons.notifications_outlined,
+                size: AppSpacing.s24,
+                color: AppColors.secondaryDim,
+              ),
             ),
           ),
           const SizedBox(width: AppSpacing.s12),
           Expanded(
             child: Text(
               AppStrings.settingsPushNotifications,
-              style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+              style: textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
           Switch(

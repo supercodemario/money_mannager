@@ -67,7 +67,135 @@ class AppStrings {
   static String settingsCardRecurringActiveBadge(int activeCount) =>
       '$activeCount ACTIVE';
   static const settingsCardFamily = 'Family';
-  static const settingsCardFamilySubtitle = 'Your household';
+  static const settingsCardFamilySubtitle = 'Households you belong to';
+  static const familyListTitle = 'Family';
+  static const familyListEmptyTitle = 'No households yet';
+  static const familyListEmptySubtitle =
+      'Sign in and sync once to create your home household, or open Family again '
+      'after an owner adds you.';
+  static const familyListLoadError =
+      'Could not load households. Pull to try again.';
+  static const familyListSyncHouseholdBadge = 'Sync';
+  static const familyListYourRoleOwner = 'You are the owner';
+  static const familyListYourRoleMember = 'You are a member';
+  static const familyJoinWithQrTooltip = 'Scan to join a family';
+  static const familyJoinHouseholdScanTitle = 'Scan family code';
+  static const familyJoinHouseholdScanHint =
+      'Scan the QR from Share on the family members screen, or paste the household id.';
+  static const familyJoinHouseholdWebLead =
+      'Paste the household id from the owner (Share on their family members screen shows it).';
+  static const familyJoinPasteHouseholdLabel = 'Household id';
+  static const familyJoinHouseholdPasteSheetTitle = 'Enter household id';
+  static const familyJoinEmptyScanButton = 'Scan family QR';
+  static const familyJoinSuccess = 'Joined family';
+  static const familyJoinAlreadyIn = 'You are already in that family.';
+  static const familyJoinInvalidHousehold = 'That family code is not valid.';
+  static const familyJoinGenericError = 'Could not join. Try again.';
+  static const familyJoinCannotUseOwnUserId =
+      'That is your account id, not a family code. Ask the owner to share their family code from '
+      'Family → Share, or scan someone else\'s code.';
+  static const familyJoinSoloOwnHouseholdQrInvalid =
+      'That code is only for your own home with no one else yet. A family needs at least two people. '
+      'Invite someone first, or scan another family\'s code.';
+  static const familyValidationMinTwoMembers =
+      'A family needs at least two people. Invite someone with Share or scan their Profile invite.';
+  static const familyShareHouseholdQrTooltip = 'Share family code';
+  static const familyShareHouseholdQrTitle = 'Family code';
+  static const familyShareHouseholdQrBody =
+      'Others can open Settings → Family and scan this QR, or paste the id below.';
+  static const familyShareHouseholdCopyId = 'Copy id';
+  static const familyShareHouseholdCopied = 'Household id copied';
+  static const familyListCreateFamilyButton = 'Create family';
+  static const familyListShowQrTooltip = 'Show family QR';
+  static const familyCreateTitle = 'Create family';
+  static const familyCreateNameLabel = 'Family name';
+  static const familyCreateNameRequired = 'Enter a family name.';
+  static const familyCreateSubmitButton = 'Save and show invite';
+  static const familyCreateQrHelp =
+      'The household is created only after someone else scans this QR from Family and confirms.';
+  static const familyCreateRegisterError = 'Could not save invite. Try again.';
+  static const familyCreateInviteIdTaken =
+      'That invite id is already in use. Close and open Create family again.';
+  static const familyCreateUpdateNameButton = 'Update name on invite';
+  static const familyCreateUpdateSuccess = 'Name updated.';
+  static const familyCreateUpdateError = 'Could not update name.';
+  static const familyCreateCancelInviteButton = 'Cancel invite';
+  static const familyCreateCancelInviteConfirmTitle = 'Cancel invite?';
+  static const familyCreateCancelInviteConfirmBody =
+      'The QR code will stop working until you create a new invite.';
+  static const familyCreateCancelSuccess = 'Invite cancelled.';
+  static const familyCreateCancelError = 'Could not cancel invite.';
+  static const familyJoinConfirmTitle = 'Join family';
+  static String familyJoinConfirmBody(String familyName) {
+    final safe = familyName.replaceAll('"', "'");
+    return 'Join "$safe" as a member? Confirming creates this family and adds you.';
+  }
+
+  static const familyJoinConfirmButton = 'Confirm and join';
+  static const familyAcceptInviteSuccess = 'You joined the family.';
+  static const familyAcceptInviteNotFound =
+      'That invite is no longer available.';
+  static const familyAcceptInviteOwnInvite =
+      'You cannot accept your own invite.';
+  static const familyAcceptInviteHouseholdExists =
+      'That family already exists.';
+  static const familyAcceptInviteGenericError = 'Could not join. Try again.';
+  static const familyScanOwnPendingInvite =
+      'This is your own invite. Share the QR with someone else to create the family.';
+  static const familyDetailsSignInRequired =
+      'Sign in to your cloud account to view household members and invites.';
+  static const familyDetailsNoHousehold =
+      'Your household is not ready yet. Try syncing after sign-in.';
+  static const familyDetailsEmptyTitle = 'No other members yet';
+  static const familyDetailsEmptySubtitle =
+      'Add someone by scanning their profile invite code.';
+  static const familyDetailsMemberLabel = 'Member';
+  static const familyDetailsOwnerLabel = 'Owner';
+  static const familyDetailsYouSuffix = ' (you)';
+  static const familyAddMemberTooltip = 'Add member';
+
+  /// Primary CTA — scan another person's Profile invite QR.
+  static const familyScanOtherQrButton = 'Scan QR code';
+  static const familyScanOtherQrSubtitle =
+      'Scan the invite QR shown on someone else\'s Profile screen to add them to your household.';
+  static const familyScanOtherQrTooltip = 'Scan someone\'s invite QR code';
+
+  /// Shown under the scan button when the current user is not the household owner (RPC still enforces).
+  static const familyScanQrOwnerNote =
+      'Only the household owner can complete adding a member. Ask the owner to scan if needed.';
+  static const familyScanInviteButton = 'Scan invite code';
+  static const familyDetailsNonOwnerInviteHint =
+      'Only the household owner can scan an invite and add someone to this family. Ask your owner to open Family here and use Scan invite code.';
+  static const familyScanTitle = 'Scan invite code';
+
+  /// Web and simulators often lack a usable camera — paste works everywhere.
+  static const familyScanWebUnavailable =
+      'Camera scanning is not available here. Paste the invite ID from the other '
+      'person\'s Profile screen (iOS/Android also support scanning).';
+  static const familyScanPointCameraHint =
+      'Point at the QR code on their Profile screen.';
+  static const familyScanEnterInviteManually = 'Enter invite ID';
+  static const familyScanPasteInviteLabel = 'Invite ID';
+  static const familyScanPasteInviteHint =
+      'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+  static const familyScanSubmitInvite = 'Use invite';
+  static const familyScanCameraError =
+      'Could not use the camera. Try Enter invite ID or check permissions.';
+  static const familyScanInvalidCode = 'That is not a valid invite code.';
+  static const familyInviteSuccess = 'Member added';
+  static const familyInviteAlreadyMember =
+      'That person is already in your family.';
+  static const familyInviteNotOwner =
+      'Only the household owner can add members.';
+  static const familyInviteGenericError = 'Could not add member. Try again.';
+  static const familyPersonalNoInvite =
+      'Self expense does not support invite, join, or QR sharing.';
+
+  /// Scanned id is not a Supabase auth user (e.g. local-only Profile QR).
+  static const familyInviteInvalidAuthUser =
+      'That invite is not a cloud account id. Ask the other person to sign in '
+      'with cloud sync enabled, then open Profile so their QR shows their account id.';
+  static const familyInviteSelfError = 'You cannot add yourself.';
   static const settingsCardLimits = 'Limits';
   static const settingsCardLimitsBadge = '\$12k Limit';
   static const settingsCardPreferences = 'Preferences';
@@ -133,7 +261,7 @@ class AppStrings {
   static const cloudSyncSyncBeforeLogoutPulling =
       'Downloading latest cloud data';
   static const cloudSyncSyncBeforeLogoutFailureTitle =
-      'Sync failed before logout';
+      'xSync failed before logout';
   static const cloudSyncRetry = 'Retry';
   static const cloudSyncLogoutWithoutSync = 'Logout without sync';
   static const cloudSyncLogoutWithoutSyncWarning =
@@ -148,6 +276,14 @@ class AppStrings {
   static const preferencesLanguageLabel = 'Language';
   static const preferencesNumberFormatLabel = 'Number format';
   static const preferencesCategorySection = 'Categories';
+  static const preferencesExpenseScopeSection = 'Expense scope';
+  static const preferencesDefaultHouseholdLabel = 'Default family';
+  static const preferencesDefaultHouseholdHint =
+      'New expenses and cloud sync use this household. '
+      'Changing this does not move past expenses.';
+  static const preferencesDefaultHouseholdSelf = 'Self expense';
+  static const preferencesDefaultHouseholdNoOptions =
+      'Sign in to choose a default family.';
   static const preferencesManageCategories = 'Manage categories';
   static const categoryManagementTitle = 'Category list';
 
@@ -222,6 +358,11 @@ class AppStrings {
   static const expensesNextDayTooltip = 'Next day';
   static const expensesPreviousMonthTooltip = 'Previous month';
   static const expensesNextMonthTooltip = 'Next month';
+  static const expenseRecordedBy = 'by';
+  static const expenseUnknownMember = 'Unknown member';
+
+  /// Shown for expenses created by another signed-in household member (no local display name yet).
+  static const expenseHouseholdMemberDisplayName = 'Household member';
 
   // Add Expense
   static const newExpenseTitle = 'New Expense';
@@ -241,6 +382,16 @@ class AppStrings {
   // User profile
   static const defaultUserDisplayName = 'You';
   static const profileTitle = 'Profile';
+  static const profileDetailsTitle = 'Profile';
+  static const profileDetailsLoadError = 'Could not load profile.';
+  static const profileDetailsAvatarSemanticsLabel = 'Profile avatar';
+  static const profileDetailsOpenSemanticsLabel = 'Open profile details';
+  static const profileDetailsSignOut = 'Sign out';
+  static const profileDetailsDeleteLocalData = 'Clear all data';
+  static const profileDetailsDeleteConfirmTitle = 'Clear all data?';
+  static const profileDetailsDeleteConfirmBody =
+      'If you are signed in: deletes your app-owned rows from the cloud (expenses, recurring templates, expense preferences), removes you from households, clears pending family invites you created, then signs out and wipes this device. Your Supabase login is not deleted. Households with no members left may still exist on the server. If you are signed out: only local data on this device is wiped.';
+  static const profileDetailsDeleteConfirmButton = 'Clear';
   static const displayNameLabel = 'Display name';
   static const edit = 'Edit';
   static const save = 'Save';

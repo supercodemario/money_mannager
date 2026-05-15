@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:money_manager/core/logging/app_log.dart';
 import 'package:money_manager/share/share.dart';
 import 'package:money_manager/sync/sync_orchestrator.dart';
 
@@ -46,7 +47,8 @@ class _SyncBeforeLogoutScreenState extends State<SyncBeforeLogoutScreen> {
       });
       if (!mounted) return;
       await widget.onSyncSuccess();
-    } catch (e) {
+    } catch (e, st) {
+      logAppError('auth.sync_before_logout', e, st);
       if (!mounted) return;
       setState(() {
         _busy = false;

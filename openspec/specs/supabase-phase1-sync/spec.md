@@ -3,9 +3,7 @@
 ## Purpose
 
 Phase-1 cloud sync using Supabase: client bootstrap, auth-gated remote access, household-scoped RLS, incremental sync, conflict rules, local-first behavior, and repository/orchestrator boundaries so the presentation layer does not call remote sync APIs directly.
-
 ## Requirements
-
 ### Requirement: Supabase client initialization
 
 The system MUST initialize the Supabase Flutter client when the application starts, using configuration supplied at build or runtime (for example environment-backed URL and anon key), without embedding secrets in source control.
@@ -146,7 +144,9 @@ The system MUST allow an authenticated user to manually trigger a sync that refr
 
 ### Requirement: Logout with unsynced data uses guarded sync screen
 
-If the user requests logout while unsynced rows exist, the app MUST show a dedicated sync progress screen before logout. On failure, the screen MUST show error reason and provide `Retry` and `Logout without sync` actions.
+If the user requests logout while unsynced rows exist **and** household-scoped cloud upload **can** run for the user’s resolved **default expense household** (including the personal household), the app MUST show a dedicated sync progress screen before logout. On failure, the screen MUST show error reason and provide `Retry` and `Logout without sync` actions.
+
+If unsynced rows exist **and** household-scoped upload **cannot** run (for example the client cannot resolve any expense household), the app MUST NOT present a sync progress screen that retries the same failing precondition indefinitely; it MUST offer completing logout with an explicit warning that unsynced local changes may be lost.
 
 #### Scenario: Logout sync succeeds
 
@@ -162,6 +162,11 @@ If the user requests logout while unsynced rows exist, the app MUST show a dedic
 
 - **WHEN** pre-logout sync fails and the user taps `Logout without sync`
 - **THEN** the app SHALL complete logout, wipe local database, and MAY lose unsynced local-only or pending rows
+
+#### Scenario: Logout skips guarded sync when upload cannot run
+
+- **WHEN** logout is requested and unsynced rows exist but no expense household can be resolved for upload
+- **THEN** the app SHALL NOT enter an unbounded sync retry loop and SHALL offer logout with explicit data-loss acknowledgment
 
 ### Requirement: Presentation layer does not call remote APIs for domain sync
 
@@ -186,3 +191,18 @@ User interface and feature modules MUST NOT invoke the network layer or Supabase
 
 - **WHEN** local rows are eligible for upload or a scheduled sync cycle runs
 - **THEN** the system SHALL perform Supabase-backed entity operations only from the documented sync or remote orchestration layer based on persisted pending state, not from feature UI code
+
+### Requirement: Sync resolves household from default expense preference
+
+The sync orchestration layer SHALL determine the active `household_id` for household-scoped push and pull using the persisted **default expense household** when that id is valid for the current session user. When the preference is missing or invalid, the system SHALL fall back to the user’s **personal** household. The system SHALL NOT override an explicit valid preference with an arbitrary `LIMIT 1` membership selection.
+
+#### Scenario: Manual sync uses stored default
+
+- **WHEN** an authenticated user runs manual sync and a valid default expense household id is stored
+- **THEN** household-scoped entities SHALL use that id for the sync cycle
+
+#### Scenario: Fallback to personal household
+
+- **WHEN** the stored default is absent or no longer valid for membership
+- **THEN** the system SHALL use the user’s personal household id for household-scoped sync after persisting the corrected preference
+

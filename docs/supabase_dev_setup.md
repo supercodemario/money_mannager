@@ -33,3 +33,11 @@ Use this when wiring local builds to a **development** Supabase project. Do not 
 ## 5. Smoke checklist (manual)
 
 See OpenSpec task **6.2** in `openspec/changes/supabase-integration-phase1/tasks.md`.
+
+## 6. Profile “Clear all data” (cloud purge RPC)
+
+The app calls RPC **`cancel_all_my_family_invites`** before deleting other rows (clients cannot `SELECT` `family_invites` under RLS). Apply:
+
+`supabase/migrations/20260515100000_cancel_all_my_family_invites.sql`
+
+If this migration is missing, clearing signed-in data fails at the first RPC step until you run it on the project.

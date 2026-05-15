@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:money_manager/data/local/app_database.dart' hide ExpenseCategory;
 import 'package:money_manager/data/repositories/expense_repository.dart';
 import 'package:money_manager/features/add_expense/models/expense_category/expense_category.dart';
 import 'package:money_manager/features/expenses/widgets/expense_transaction_row.dart';
@@ -26,26 +25,31 @@ class DailyExpensesView extends StatelessWidget {
     final startUtcMs = start.toUtc().millisecondsSinceEpoch;
     final endUtcMs = end.toUtc().millisecondsSinceEpoch;
 
-    return StreamBuilder<List<Expense>>(
-      stream: repo.watchExpensesInRange(
+    return StreamBuilder<List<ExpenseWithCreator>>(
+      stream: repo.watchExpensesInRangeWithCreator(
         startUtcMs: startUtcMs,
         endUtcMs: endUtcMs,
       ),
       builder: (context, snapshot) {
-        final rows = snapshot.data ?? const <Expense>[];
+        final rows = snapshot.data ?? const <ExpenseWithCreator>[];
         if (rows.isEmpty) {
           return const ExpensesEmptyState();
         }
 
-        final sorted = List<Expense>.of(rows)
-          ..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
+        final sorted = List<ExpenseWithCreator>.of(rows)
+          ..sort((a, b) => b.expense.occurredAt.compareTo(a.expense.occurredAt));
 
         return ListView.builder(
           padding: EdgeInsets.zero,
           itemCount: sorted.length,
           itemBuilder: (context, i) {
-            final e = sorted[i];
-            return ExpenseTransactionRow(expense: e, category: categoryById[e.categoryId]);
+            final row = sorted[i];
+            return ExpenseTransactionRow(
+              expense: row.expense,
+              category: categoryById[row.expense.categoryId],
+              creatorUserId: row.creatorUserId,
+              creatorDisplayName: row.creatorDisplayName,
+            );
           },
         );
       },

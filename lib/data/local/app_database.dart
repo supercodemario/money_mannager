@@ -45,6 +45,9 @@ class RecurringPayments extends Table {
   TextColumn get syncStatus => text().nullable()();
   IntColumn get serverUpdatedAt => integer().nullable()();
 
+  /// Cloud household scope for sync; set when [syncAllowed] at write time.
+  TextColumn get householdId => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -71,6 +74,9 @@ class Expenses extends Table {
   TextColumn get remoteId => text().nullable()();
   TextColumn get syncStatus => text().nullable()();
   IntColumn get serverUpdatedAt => integer().nullable()();
+
+  /// Cloud household scope for sync; set when [syncAllowed] at write time.
+  TextColumn get householdId => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -155,7 +161,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -224,6 +230,10 @@ class AppDatabase extends _$AppDatabase {
           recurringPaymentOccurrences,
           recurringPaymentOccurrences.serverUpdatedAt,
         );
+      }
+      if (from < 9) {
+        await m.addColumn(expenses, expenses.householdId);
+        await m.addColumn(recurringPayments, recurringPayments.householdId);
       }
     },
     beforeOpen: (OpeningDetails details) async {

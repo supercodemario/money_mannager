@@ -2,18 +2,16 @@
 
 ## Purpose
 
-Settings tab presents a compact, dashboard-like layout with summary cards and key toggles, aligned with the Stitch compact settings reference, while preserving profile editing.
-
+Settings tab presents a compact, dashboard-like layout with summary cards and key toggles, aligned with the Stitch compact settings reference, while preserving display-name editing via **profile details** reached from the profile summary.
 ## Requirements
-
 ### Requirement: Compact Settings Overview Layout
 
-The system SHALL render a compact settings overview on the Settings tab that includes a profile summary/edit section, a two-column card grid, and quick-toggle rows in a vertically scrollable layout.
+The system SHALL render a compact settings overview on the Settings tab that includes a profile summary section (navigation into profile details), a two-column card grid, and quick-toggle rows in a vertically scrollable layout. The compact Settings overview SHALL **not** include a **standalone cloud sync account card** on this screen; cloud sync sign-in and manage-account affordances SHALL be provided from **profile details** instead.
 
 #### Scenario: Settings screen renders compact structure
 
 - **WHEN** the user opens the Settings tab
-- **THEN** the screen shows profile information and edit action, four summary cards in a 2x2 grid, and quick-toggle rows below the grid
+- **THEN** the screen shows profile summary information with navigation into profile details, four summary cards in a 2x2 grid, and quick-toggle rows below the grid, and **does not** show the standalone cloud sync section that was relocated to profile details
 
 ### Requirement: Summary Cards and Iconography
 
@@ -43,14 +41,37 @@ The system SHALL include Biometric Lock and Push Notifications toggle rows and S
 - **WHEN** the Settings screen is displayed
 - **THEN** no button or call-to-action with "Add Recurring Cost" is shown
 
-### Requirement: Existing Profile Edit Behavior Remains Available
+### Requirement: Display-name editing remains available from profile details
 
-The system SHALL retain display-name editing from the current Settings implementation.
+The system SHALL retain display-name editing via the flow that begins at the compact Settings profile summary and continues on the **profile details** screen.
 
-#### Scenario: User updates display name from compact settings
+#### Scenario: User updates display name from profile details
 
-- **WHEN** the user taps Edit in the profile section and saves a valid name
+- **WHEN** the user opens profile details from the Settings profile summary and uses the Edit affordance for display name and saves a valid name
 - **THEN** the profile display name is updated via the existing profile service flow
+
+### Requirement: Profile summary opens profile details
+
+The system SHALL navigate to the **profile details** screen when the user activates the **profile summary** section on the compact Settings overview.
+
+#### Scenario: Profile section navigates to profile details
+
+- **WHEN** the user activates the profile summary area on the Settings tab (per implementation: card tap or explicit control)
+- **THEN** the app SHALL present the profile details screen that satisfies the `profile-details-family-invite` capability (identity, cloud sync account, and account actions per that capability’s requirements)
+
+### Requirement: Family summary card opens family details when available
+
+The system SHALL navigate to the **family details** screen (household member list and owner-gated actions per `household-family-details`) when the user activates the **Family** summary card on the compact Settings overview, subject to session and household readiness rules defined in that capability.
+
+#### Scenario: Tap Family card opens family details when eligible
+
+- **WHEN** the user taps the Family summary card on the Settings tab and the user is eligible per `household-family-details`
+- **THEN** the app SHALL present the family details experience
+
+#### Scenario: Ineligible user receives appropriate UX
+
+- **WHEN** the user taps the Family summary card but is not eligible (e.g. not signed in)
+- **THEN** the app SHALL present sign-in guidance, a blocking screen, or equivalent behavior consistent with `household-family-details` and SHALL NOT silently fail
 
 ### Requirement: Recurring summary card opens recurring templates management
 
@@ -118,7 +139,7 @@ The system SHALL navigate to a dedicated preferences details screen when the use
 
 ### Requirement: Preferences details screen includes regional preferences and category listing entry
 
-The preferences details screen MUST include settings for Currency, Language, and Number Format, and MUST provide an entry point to category listing management.
+The preferences details screen MUST include settings for Currency, Language, and Number Format, MUST provide an entry point to category listing management, and MUST include **default expense household** selection for signed-in users (personal household and shared households) per capability `personal-household-expense-scope`.
 
 #### Scenario: Regional preferences are visible
 
@@ -129,3 +150,9 @@ The preferences details screen MUST include settings for Currency, Language, and
 
 - **WHEN** the user is on preferences details
 - **THEN** the screen SHALL provide navigation to category listing management
+
+#### Scenario: Default expense household is configurable when signed in
+
+- **WHEN** the user is signed in and opens preferences details
+- **THEN** the screen SHALL present a control to select the default expense household among the personal household (e.g. labeled Self) and shared households the user belongs to
+

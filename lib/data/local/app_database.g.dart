@@ -647,6 +647,17 @@ class $RecurringPaymentsTable extends RecurringPayments
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _householdIdMeta = const VerificationMeta(
+    'householdId',
+  );
+  @override
+  late final GeneratedColumn<String> householdId = GeneratedColumn<String>(
+    'household_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -663,6 +674,7 @@ class $RecurringPaymentsTable extends RecurringPayments
     remoteId,
     syncStatus,
     serverUpdatedAt,
+    householdId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -788,6 +800,15 @@ class $RecurringPaymentsTable extends RecurringPayments
         ),
       );
     }
+    if (data.containsKey('household_id')) {
+      context.handle(
+        _householdIdMeta,
+        householdId.isAcceptableOrUnknown(
+          data['household_id']!,
+          _householdIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -853,6 +874,10 @@ class $RecurringPaymentsTable extends RecurringPayments
         DriftSqlType.int,
         data['${effectivePrefix}server_updated_at'],
       ),
+      householdId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}household_id'],
+      ),
     );
   }
 
@@ -883,6 +908,9 @@ class RecurringPayment extends DataClass
   final String? remoteId;
   final String? syncStatus;
   final int? serverUpdatedAt;
+
+  /// Cloud household scope for sync; set when [syncAllowed] at write time.
+  final String? householdId;
   const RecurringPayment({
     required this.id,
     required this.title,
@@ -898,6 +926,7 @@ class RecurringPayment extends DataClass
     this.remoteId,
     this.syncStatus,
     this.serverUpdatedAt,
+    this.householdId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -923,6 +952,9 @@ class RecurringPayment extends DataClass
     }
     if (!nullToAbsent || serverUpdatedAt != null) {
       map['server_updated_at'] = Variable<int>(serverUpdatedAt);
+    }
+    if (!nullToAbsent || householdId != null) {
+      map['household_id'] = Variable<String>(householdId);
     }
     return map;
   }
@@ -951,6 +983,9 @@ class RecurringPayment extends DataClass
       serverUpdatedAt: serverUpdatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(serverUpdatedAt),
+      householdId: householdId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(householdId),
     );
   }
 
@@ -976,6 +1011,7 @@ class RecurringPayment extends DataClass
       remoteId: serializer.fromJson<String?>(json['remoteId']),
       syncStatus: serializer.fromJson<String?>(json['syncStatus']),
       serverUpdatedAt: serializer.fromJson<int?>(json['serverUpdatedAt']),
+      householdId: serializer.fromJson<String?>(json['householdId']),
     );
   }
   @override
@@ -996,6 +1032,7 @@ class RecurringPayment extends DataClass
       'remoteId': serializer.toJson<String?>(remoteId),
       'syncStatus': serializer.toJson<String?>(syncStatus),
       'serverUpdatedAt': serializer.toJson<int?>(serverUpdatedAt),
+      'householdId': serializer.toJson<String?>(householdId),
     };
   }
 
@@ -1014,6 +1051,7 @@ class RecurringPayment extends DataClass
     Value<String?> remoteId = const Value.absent(),
     Value<String?> syncStatus = const Value.absent(),
     Value<int?> serverUpdatedAt = const Value.absent(),
+    Value<String?> householdId = const Value.absent(),
   }) => RecurringPayment(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -1031,6 +1069,7 @@ class RecurringPayment extends DataClass
     serverUpdatedAt: serverUpdatedAt.present
         ? serverUpdatedAt.value
         : this.serverUpdatedAt,
+    householdId: householdId.present ? householdId.value : this.householdId,
   );
   RecurringPayment copyWithCompanion(RecurringPaymentsCompanion data) {
     return RecurringPayment(
@@ -1062,6 +1101,9 @@ class RecurringPayment extends DataClass
       serverUpdatedAt: data.serverUpdatedAt.present
           ? data.serverUpdatedAt.value
           : this.serverUpdatedAt,
+      householdId: data.householdId.present
+          ? data.householdId.value
+          : this.householdId,
     );
   }
 
@@ -1081,7 +1123,8 @@ class RecurringPayment extends DataClass
           ..write('updatedAt: $updatedAt, ')
           ..write('remoteId: $remoteId, ')
           ..write('syncStatus: $syncStatus, ')
-          ..write('serverUpdatedAt: $serverUpdatedAt')
+          ..write('serverUpdatedAt: $serverUpdatedAt, ')
+          ..write('householdId: $householdId')
           ..write(')'))
         .toString();
   }
@@ -1102,6 +1145,7 @@ class RecurringPayment extends DataClass
     remoteId,
     syncStatus,
     serverUpdatedAt,
+    householdId,
   );
   @override
   bool operator ==(Object other) =>
@@ -1120,7 +1164,8 @@ class RecurringPayment extends DataClass
           other.updatedAt == this.updatedAt &&
           other.remoteId == this.remoteId &&
           other.syncStatus == this.syncStatus &&
-          other.serverUpdatedAt == this.serverUpdatedAt);
+          other.serverUpdatedAt == this.serverUpdatedAt &&
+          other.householdId == this.householdId);
 }
 
 class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
@@ -1138,6 +1183,7 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
   final Value<String?> remoteId;
   final Value<String?> syncStatus;
   final Value<int?> serverUpdatedAt;
+  final Value<String?> householdId;
   final Value<int> rowid;
   const RecurringPaymentsCompanion({
     this.id = const Value.absent(),
@@ -1154,6 +1200,7 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
     this.remoteId = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.serverUpdatedAt = const Value.absent(),
+    this.householdId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RecurringPaymentsCompanion.insert({
@@ -1171,6 +1218,7 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
     this.remoteId = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.serverUpdatedAt = const Value.absent(),
+    this.householdId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        title = Value(title),
@@ -1195,6 +1243,7 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
     Expression<String>? remoteId,
     Expression<String>? syncStatus,
     Expression<int>? serverUpdatedAt,
+    Expression<String>? householdId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1213,6 +1262,7 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
       if (remoteId != null) 'remote_id': remoteId,
       if (syncStatus != null) 'sync_status': syncStatus,
       if (serverUpdatedAt != null) 'server_updated_at': serverUpdatedAt,
+      if (householdId != null) 'household_id': householdId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1232,6 +1282,7 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
     Value<String?>? remoteId,
     Value<String?>? syncStatus,
     Value<int?>? serverUpdatedAt,
+    Value<String?>? householdId,
     Value<int>? rowid,
   }) {
     return RecurringPaymentsCompanion(
@@ -1249,6 +1300,7 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
       remoteId: remoteId ?? this.remoteId,
       syncStatus: syncStatus ?? this.syncStatus,
       serverUpdatedAt: serverUpdatedAt ?? this.serverUpdatedAt,
+      householdId: householdId ?? this.householdId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1298,6 +1350,9 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
     if (serverUpdatedAt.present) {
       map['server_updated_at'] = Variable<int>(serverUpdatedAt.value);
     }
+    if (householdId.present) {
+      map['household_id'] = Variable<String>(householdId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1321,6 +1376,7 @@ class RecurringPaymentsCompanion extends UpdateCompanion<RecurringPayment> {
           ..write('remoteId: $remoteId, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('serverUpdatedAt: $serverUpdatedAt, ')
+          ..write('householdId: $householdId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1488,6 +1544,17 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _householdIdMeta = const VerificationMeta(
+    'householdId',
+  );
+  @override
+  late final GeneratedColumn<String> householdId = GeneratedColumn<String>(
+    'household_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1504,6 +1571,7 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
     remoteId,
     syncStatus,
     serverUpdatedAt,
+    householdId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1632,6 +1700,15 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
         ),
       );
     }
+    if (data.containsKey('household_id')) {
+      context.handle(
+        _householdIdMeta,
+        householdId.isAcceptableOrUnknown(
+          data['household_id']!,
+          _householdIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1697,6 +1774,10 @@ class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
         DriftSqlType.int,
         data['${effectivePrefix}server_updated_at'],
       ),
+      householdId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}household_id'],
+      ),
     );
   }
 
@@ -1721,6 +1802,9 @@ class Expense extends DataClass implements Insertable<Expense> {
   final String? remoteId;
   final String? syncStatus;
   final int? serverUpdatedAt;
+
+  /// Cloud household scope for sync; set when [syncAllowed] at write time.
+  final String? householdId;
   const Expense({
     required this.id,
     required this.amountMinor,
@@ -1736,6 +1820,7 @@ class Expense extends DataClass implements Insertable<Expense> {
     this.remoteId,
     this.syncStatus,
     this.serverUpdatedAt,
+    this.householdId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1766,6 +1851,9 @@ class Expense extends DataClass implements Insertable<Expense> {
     if (!nullToAbsent || serverUpdatedAt != null) {
       map['server_updated_at'] = Variable<int>(serverUpdatedAt);
     }
+    if (!nullToAbsent || householdId != null) {
+      map['household_id'] = Variable<String>(householdId);
+    }
     return map;
   }
 
@@ -1795,6 +1883,9 @@ class Expense extends DataClass implements Insertable<Expense> {
       serverUpdatedAt: serverUpdatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(serverUpdatedAt),
+      householdId: householdId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(householdId),
     );
   }
 
@@ -1820,6 +1911,7 @@ class Expense extends DataClass implements Insertable<Expense> {
       remoteId: serializer.fromJson<String?>(json['remoteId']),
       syncStatus: serializer.fromJson<String?>(json['syncStatus']),
       serverUpdatedAt: serializer.fromJson<int?>(json['serverUpdatedAt']),
+      householdId: serializer.fromJson<String?>(json['householdId']),
     );
   }
   @override
@@ -1840,6 +1932,7 @@ class Expense extends DataClass implements Insertable<Expense> {
       'remoteId': serializer.toJson<String?>(remoteId),
       'syncStatus': serializer.toJson<String?>(syncStatus),
       'serverUpdatedAt': serializer.toJson<int?>(serverUpdatedAt),
+      'householdId': serializer.toJson<String?>(householdId),
     };
   }
 
@@ -1858,6 +1951,7 @@ class Expense extends DataClass implements Insertable<Expense> {
     Value<String?> remoteId = const Value.absent(),
     Value<String?> syncStatus = const Value.absent(),
     Value<int?> serverUpdatedAt = const Value.absent(),
+    Value<String?> householdId = const Value.absent(),
   }) => Expense(
     id: id ?? this.id,
     amountMinor: amountMinor ?? this.amountMinor,
@@ -1877,6 +1971,7 @@ class Expense extends DataClass implements Insertable<Expense> {
     serverUpdatedAt: serverUpdatedAt.present
         ? serverUpdatedAt.value
         : this.serverUpdatedAt,
+    householdId: householdId.present ? householdId.value : this.householdId,
   );
   Expense copyWithCompanion(ExpensesCompanion data) {
     return Expense(
@@ -1912,6 +2007,9 @@ class Expense extends DataClass implements Insertable<Expense> {
       serverUpdatedAt: data.serverUpdatedAt.present
           ? data.serverUpdatedAt.value
           : this.serverUpdatedAt,
+      householdId: data.householdId.present
+          ? data.householdId.value
+          : this.householdId,
     );
   }
 
@@ -1931,7 +2029,8 @@ class Expense extends DataClass implements Insertable<Expense> {
           ..write('recurringPaymentId: $recurringPaymentId, ')
           ..write('remoteId: $remoteId, ')
           ..write('syncStatus: $syncStatus, ')
-          ..write('serverUpdatedAt: $serverUpdatedAt')
+          ..write('serverUpdatedAt: $serverUpdatedAt, ')
+          ..write('householdId: $householdId')
           ..write(')'))
         .toString();
   }
@@ -1952,6 +2051,7 @@ class Expense extends DataClass implements Insertable<Expense> {
     remoteId,
     syncStatus,
     serverUpdatedAt,
+    householdId,
   );
   @override
   bool operator ==(Object other) =>
@@ -1970,7 +2070,8 @@ class Expense extends DataClass implements Insertable<Expense> {
           other.recurringPaymentId == this.recurringPaymentId &&
           other.remoteId == this.remoteId &&
           other.syncStatus == this.syncStatus &&
-          other.serverUpdatedAt == this.serverUpdatedAt);
+          other.serverUpdatedAt == this.serverUpdatedAt &&
+          other.householdId == this.householdId);
 }
 
 class ExpensesCompanion extends UpdateCompanion<Expense> {
@@ -1988,6 +2089,7 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
   final Value<String?> remoteId;
   final Value<String?> syncStatus;
   final Value<int?> serverUpdatedAt;
+  final Value<String?> householdId;
   final Value<int> rowid;
   const ExpensesCompanion({
     this.id = const Value.absent(),
@@ -2004,6 +2106,7 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     this.remoteId = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.serverUpdatedAt = const Value.absent(),
+    this.householdId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ExpensesCompanion.insert({
@@ -2021,6 +2124,7 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     this.remoteId = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.serverUpdatedAt = const Value.absent(),
+    this.householdId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        amountMinor = Value(amountMinor),
@@ -2045,6 +2149,7 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     Expression<String>? remoteId,
     Expression<String>? syncStatus,
     Expression<int>? serverUpdatedAt,
+    Expression<String>? householdId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2063,6 +2168,7 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
       if (remoteId != null) 'remote_id': remoteId,
       if (syncStatus != null) 'sync_status': syncStatus,
       if (serverUpdatedAt != null) 'server_updated_at': serverUpdatedAt,
+      if (householdId != null) 'household_id': householdId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2082,6 +2188,7 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     Value<String?>? remoteId,
     Value<String?>? syncStatus,
     Value<int?>? serverUpdatedAt,
+    Value<String?>? householdId,
     Value<int>? rowid,
   }) {
     return ExpensesCompanion(
@@ -2099,6 +2206,7 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
       remoteId: remoteId ?? this.remoteId,
       syncStatus: syncStatus ?? this.syncStatus,
       serverUpdatedAt: serverUpdatedAt ?? this.serverUpdatedAt,
+      householdId: householdId ?? this.householdId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2148,6 +2256,9 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
     if (serverUpdatedAt.present) {
       map['server_updated_at'] = Variable<int>(serverUpdatedAt.value);
     }
+    if (householdId.present) {
+      map['household_id'] = Variable<String>(householdId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2171,6 +2282,7 @@ class ExpensesCompanion extends UpdateCompanion<Expense> {
           ..write('remoteId: $remoteId, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('serverUpdatedAt: $serverUpdatedAt, ')
+          ..write('householdId: $householdId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4802,6 +4914,7 @@ typedef $$RecurringPaymentsTableCreateCompanionBuilder =
       Value<String?> remoteId,
       Value<String?> syncStatus,
       Value<int?> serverUpdatedAt,
+      Value<String?> householdId,
       Value<int> rowid,
     });
 typedef $$RecurringPaymentsTableUpdateCompanionBuilder =
@@ -4820,6 +4933,7 @@ typedef $$RecurringPaymentsTableUpdateCompanionBuilder =
       Value<String?> remoteId,
       Value<String?> syncStatus,
       Value<int?> serverUpdatedAt,
+      Value<String?> householdId,
       Value<int> rowid,
     });
 
@@ -4968,6 +5082,11 @@ class $$RecurringPaymentsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get householdId => $composableBuilder(
+    column: $table.householdId,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> expensesRefs(
     Expression<bool> Function($$ExpensesTableFilterComposer f) f,
   ) {
@@ -5101,6 +5220,11 @@ class $$RecurringPaymentsTableOrderingComposer
     column: $table.serverUpdatedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get householdId => $composableBuilder(
+    column: $table.householdId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$RecurringPaymentsTableAnnotationComposer
@@ -5165,6 +5289,11 @@ class $$RecurringPaymentsTableAnnotationComposer
 
   GeneratedColumn<int> get serverUpdatedAt => $composableBuilder(
     column: $table.serverUpdatedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get householdId => $composableBuilder(
+    column: $table.householdId,
     builder: (column) => column,
   );
 
@@ -5273,6 +5402,7 @@ class $$RecurringPaymentsTableTableManager
                 Value<String?> remoteId = const Value.absent(),
                 Value<String?> syncStatus = const Value.absent(),
                 Value<int?> serverUpdatedAt = const Value.absent(),
+                Value<String?> householdId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RecurringPaymentsCompanion(
                 id: id,
@@ -5289,6 +5419,7 @@ class $$RecurringPaymentsTableTableManager
                 remoteId: remoteId,
                 syncStatus: syncStatus,
                 serverUpdatedAt: serverUpdatedAt,
+                householdId: householdId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5307,6 +5438,7 @@ class $$RecurringPaymentsTableTableManager
                 Value<String?> remoteId = const Value.absent(),
                 Value<String?> syncStatus = const Value.absent(),
                 Value<int?> serverUpdatedAt = const Value.absent(),
+                Value<String?> householdId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RecurringPaymentsCompanion.insert(
                 id: id,
@@ -5323,6 +5455,7 @@ class $$RecurringPaymentsTableTableManager
                 remoteId: remoteId,
                 syncStatus: syncStatus,
                 serverUpdatedAt: serverUpdatedAt,
+                householdId: householdId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -5431,6 +5564,7 @@ typedef $$ExpensesTableCreateCompanionBuilder =
       Value<String?> remoteId,
       Value<String?> syncStatus,
       Value<int?> serverUpdatedAt,
+      Value<String?> householdId,
       Value<int> rowid,
     });
 typedef $$ExpensesTableUpdateCompanionBuilder =
@@ -5449,6 +5583,7 @@ typedef $$ExpensesTableUpdateCompanionBuilder =
       Value<String?> remoteId,
       Value<String?> syncStatus,
       Value<int?> serverUpdatedAt,
+      Value<String?> householdId,
       Value<int> rowid,
     });
 
@@ -5592,6 +5727,11 @@ class $$ExpensesTableFilterComposer
 
   ColumnFilters<int> get serverUpdatedAt => $composableBuilder(
     column: $table.serverUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get householdId => $composableBuilder(
+    column: $table.householdId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5740,6 +5880,11 @@ class $$ExpensesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get householdId => $composableBuilder(
+    column: $table.householdId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$UserProfilesTableOrderingComposer get createdByUserId {
     final $$UserProfilesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -5843,6 +5988,11 @@ class $$ExpensesTableAnnotationComposer
 
   GeneratedColumn<int> get serverUpdatedAt => $composableBuilder(
     column: $table.serverUpdatedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get householdId => $composableBuilder(
+    column: $table.householdId,
     builder: (column) => column,
   );
 
@@ -5969,6 +6119,7 @@ class $$ExpensesTableTableManager
                 Value<String?> remoteId = const Value.absent(),
                 Value<String?> syncStatus = const Value.absent(),
                 Value<int?> serverUpdatedAt = const Value.absent(),
+                Value<String?> householdId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ExpensesCompanion(
                 id: id,
@@ -5985,6 +6136,7 @@ class $$ExpensesTableTableManager
                 remoteId: remoteId,
                 syncStatus: syncStatus,
                 serverUpdatedAt: serverUpdatedAt,
+                householdId: householdId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6003,6 +6155,7 @@ class $$ExpensesTableTableManager
                 Value<String?> remoteId = const Value.absent(),
                 Value<String?> syncStatus = const Value.absent(),
                 Value<int?> serverUpdatedAt = const Value.absent(),
+                Value<String?> householdId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ExpensesCompanion.insert(
                 id: id,
@@ -6019,6 +6172,7 @@ class $$ExpensesTableTableManager
                 remoteId: remoteId,
                 syncStatus: syncStatus,
                 serverUpdatedAt: serverUpdatedAt,
+                householdId: householdId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

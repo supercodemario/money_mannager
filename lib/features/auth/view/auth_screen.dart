@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/app/cloud_sync_controller.dart';
+import 'package:money_manager/core/logging/app_log.dart';
 import 'package:money_manager/data/local/sync_metadata_store.dart';
-import 'package:money_manager/data/remote/sync_constants.dart';
+import 'package:money_manager/features/auth/account_session_flow.dart';
 import 'package:money_manager/features/auth/view/post_login_cloud_sync_screen.dart';
-import 'package:money_manager/features/auth/view/sync_before_logout_screen.dart';
 import 'package:money_manager/share/share.dart';
+import 'package:money_manager/sync/manual_sync_helper.dart';
 import 'package:money_manager/sync/sync_orchestrator.dart';
 
 /// Full-screen Supabase email/password sign-in and sign-up.
@@ -192,9 +193,12 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       await cloud.signInWithPassword(email: email, password: password);
       if (!mounted) return;
+      await services.profiles.hydrateDisplayNameFromAuthSession();
+      if (!mounted) return;
       final allowClose = await _handlePostAuthSyncScreen(services);
       if (mounted && allowClose) Navigator.of(context).pop();
-    } catch (e) {
+    } catch (e, st) {
+      logAppError('auth.sign_in', e, st);
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -215,6 +219,8 @@ class _AuthScreenState extends State<AuthScreen> {
       await cloud.signUpWithPassword(email: email, password: password);
       if (mounted) {
         if (cloud.session != null) {
+          await services.profiles.hydrateDisplayNameFromAuthSession();
+          if (!mounted) return;
           final allowClose = await _handlePostAuthSyncScreen(services);
           if (mounted && allowClose) {
             Navigator.of(context).pop();
@@ -229,7 +235,8 @@ class _AuthScreenState extends State<AuthScreen> {
           setState(() => _createAccountMode = false);
         }
       }
-    } catch (e) {
+    } catch (e, st) {
+      logAppError('auth.sign_up', e, st);
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -248,47 +255,20 @@ class _AuthScreenState extends State<AuthScreen> {
       if (!mounted) return;
       if (unsynced > 0) {
         setState(() => _busy = false);
-        await Navigator.of(context).push<void>(
-          MaterialPageRoute<void>(
-            builder: (_) => SyncBeforeLogoutScreen(
-              runSync: (onStage) => _runManualSync(
-                services,
-                includeLocalOnly: true,
-                includeError: true,
-                onStage: onStage,
-              ),
-              onSyncSuccess: () async {
-                await _performLogoutAndWipe(services, cloud);
-                if (mounted) Navigator.of(context).pop();
-              },
-              onLogoutWithoutSync: () async {
-                await _performLogoutAndWipe(services, cloud);
-                if (mounted) Navigator.of(context).pop();
-              },
-            ),
-          ),
-        );
-        if (mounted && cloud.session == null) {
-          Navigator.of(context).pop();
-        }
-        return;
       }
-      await _performLogoutAndWipe(services, cloud);
-      if (mounted) Navigator.of(context).pop();
+      await signOutWithSyncBeforeLogout(context, services, cloud);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
   Future<bool> _handlePostAuthSyncScreen(AppServices services) async {
-    final preview = await _loadSyncPreview(services);
+    final preview = await ManualSyncHelper.loadAggregatePreview(services);
     final bootstrapDone =
         await SyncMetadataStore.getPostAuthBootstrapCompleted();
     if (!mounted) return true;
     if (preview.unsynced <= 0 && bootstrapDone) return true;
-    final mode = preview.unsynced > 0
-        ? ManualSyncMode.pushThenPull
-        : ManualSyncMode.pullOnly;
+    final mode = ManualSyncHelper.modeFromUnsynced(preview.unsynced);
     final bootstrapOnly = mode == ManualSyncMode.pullOnly;
     final shouldClose =
         await Navigator.of(context).push<bool>(
@@ -298,7 +278,7 @@ class _AuthScreenState extends State<AuthScreen> {
               localRows: preview.localTotal,
               remoteRows: preview.remoteRows,
               isBootstrapOnly: bootstrapOnly,
-              runSync: (onStage) => _runManualSync(
+              runSync: (onStage) => ManualSyncHelper.runManualSync(
                 services,
                 includeLocalOnly: preview.localOnly > 0,
                 includeError: mode == ManualSyncMode.pushThenPull,
@@ -313,39 +293,10 @@ class _AuthScreenState extends State<AuthScreen> {
     return shouldClose;
   }
 
-  Future<void> _runManualSync(
-    AppServices services, {
-    required bool includeLocalOnly,
-    required bool includeError,
-    ManualSyncMode mode = ManualSyncMode.pushThenPull,
-    bool markBootstrapCompleteOnSuccess = false,
-    void Function(ManualSyncStage stage)? onStage,
-  }) async {
-    final o = SyncOrchestrator(
-      db: services.db,
-      cloud: services.cloudSync,
-      expenses: services.expenses,
-      expenseLimits: services.expenseLimits,
-      recurring: services.recurring,
-    );
-    await o.runManualSync(
-      includeLocalOnly: includeLocalOnly,
-      includeError: includeError,
-      mode: mode,
-      failFast: true,
-      onStage: onStage,
-    );
-    if (markBootstrapCompleteOnSuccess) {
-      await SyncMetadataStore.setPostAuthBootstrapCompleted(true);
-    }
-  }
-
   Future<void> _openManualCloudRefresh(AppServices services) async {
-    final preview = await _loadSyncPreview(services);
+    final preview = await ManualSyncHelper.loadAggregatePreview(services);
     if (!mounted) return;
-    final mode = preview.unsynced > 0
-        ? ManualSyncMode.pushThenPull
-        : ManualSyncMode.pullOnly;
+    final mode = ManualSyncHelper.modeFromUnsynced(preview.unsynced);
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (_) => PostLoginCloudSyncScreen(
@@ -353,7 +304,7 @@ class _AuthScreenState extends State<AuthScreen> {
           localRows: preview.localTotal,
           remoteRows: preview.remoteRows,
           isBootstrapOnly: mode == ManualSyncMode.pullOnly,
-          runSync: (onStage) => _runManualSync(
+          runSync: (onStage) => ManualSyncHelper.runManualSync(
             services,
             includeLocalOnly: preview.localOnly > 0,
             includeError: mode == ManualSyncMode.pushThenPull,
@@ -364,48 +315,5 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
       ),
     );
-  }
-
-  Future<({int localOnly, int unsynced, int localTotal, int? remoteRows})>
-  _loadSyncPreview(AppServices services) async {
-    final expenseLocalOnly = await services.expenses.countBySyncStatuses({
-      SyncStatusValue.localOnly,
-    });
-    final profileLocalOnly = await services.expenseLimits.countBySyncStatuses({
-      SyncStatusValue.localOnly,
-    });
-    final recurringLocalOnly = await services.recurring.countBySyncStatuses({
-      SyncStatusValue.localOnly,
-    });
-    final localOnly = expenseLocalOnly + profileLocalOnly + recurringLocalOnly;
-    final expenseUnsynced = await services.expenses.countUnsynced();
-    final profileUnsynced = await services.expenseLimits.countUnsynced();
-    final recurringUnsynced = await services.recurring.countUnsynced();
-    final unsynced = expenseUnsynced + profileUnsynced + recurringUnsynced;
-    final localTotal =
-        await services.expenses.countAllRows() +
-        await services.recurring.countAllRows();
-    final orchestrator = SyncOrchestrator(
-      db: services.db,
-      cloud: services.cloudSync,
-      expenses: services.expenses,
-      expenseLimits: services.expenseLimits,
-      recurring: services.recurring,
-    );
-    final remoteRows = await orchestrator.getRemoteExpenseCount();
-    return (
-      localOnly: localOnly,
-      unsynced: unsynced,
-      localTotal: localTotal,
-      remoteRows: remoteRows,
-    );
-  }
-
-  Future<void> _performLogoutAndWipe(
-    AppServices services,
-    CloudSyncController cloud,
-  ) async {
-    await cloud.signOut();
-    await services.db.wipeLocalData();
   }
 }

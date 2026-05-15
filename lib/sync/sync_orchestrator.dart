@@ -1,7 +1,8 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
-import 'package:flutter/foundation.dart';
 import 'package:money_manager/app/cloud_sync_controller.dart';
+import 'package:money_manager/core/logging/app_log.dart';
 import 'package:money_manager/data/local/app_database.dart';
 import 'package:money_manager/data/local/sync_metadata_store.dart';
 import 'package:money_manager/data/remote/expense_profile_remote_gateway.dart';
@@ -93,7 +94,7 @@ class SyncOrchestrator {
     try {
       await runManualSync();
     } catch (e, st) {
-      debugPrint('[sync] background sync failed: $e\n$st');
+      logAppError('sync.background_cycle', e, st);
     }
   }
 
@@ -107,7 +108,7 @@ class SyncOrchestrator {
       if (hid == null) return null;
       return await _remote.countExpenses(householdId: hid);
     } catch (e, st) {
-      debugPrint('[sync] preview count failed: $e\n$st');
+      logAppError('sync.remote_expense_count', e, st);
       return null;
     }
   }
@@ -124,7 +125,9 @@ class SyncOrchestrator {
     void Function(ManualSyncStage stage)? onStage,
   }) {
     final completer = Completer<void>();
-    _syncQueue = _syncQueue.catchError((_) {}).then((_) async {
+    _syncQueue = _syncQueue.catchError((Object e, StackTrace st) {
+      logAppError('sync.queue_prev', e, st);
+    }).then((_) async {
       try {
         await _runManualSyncNow(
           includeLocalOnly: includeLocalOnly,
@@ -135,6 +138,7 @@ class SyncOrchestrator {
         );
         completer.complete();
       } catch (e, st) {
+        logAppError('sync.manual_sync', e, st);
         completer.completeError(e, st);
       }
     });
@@ -163,7 +167,7 @@ class SyncOrchestrator {
     try {
       await _cloud.ensureHouseholdIfNeeded();
     } catch (e, st) {
-      debugPrint('[sync] ensureHousehold failed: $e\n$st');
+      logAppError('sync.ensure_household', e, st);
       if (failFast) rethrow;
       return;
     }
@@ -191,11 +195,15 @@ class SyncOrchestrator {
       _db.expenses,
     )..where((e) => e.syncStatus.equals(SyncStatusValue.pending))).get();
     for (final row in pending) {
+      final effectiveHouseholdId = row.householdId ?? householdId;
       try {
-        await _remote.upsertExpense(row: row, householdId: householdId);
+        await _remote.upsertExpense(
+          row: row,
+          householdId: effectiveHouseholdId,
+        );
         await _expenses.markRemoteSynced(row.id);
       } catch (e, st) {
-        debugPrint('[sync] push failed ${row.id}: $e\n$st');
+        logAppError('sync.push_expense', e, st);
         await _expenses.markRemoteError(row.id);
         if (failFast) {
           throw StateError('Failed to sync expense ${row.id}: $e');
@@ -214,7 +222,7 @@ class SyncOrchestrator {
           authUserId: _profileRemote.currentAuthUserId,
         );
       } catch (e, st) {
-        debugPrint('[sync] profile push failed ${row.userId}: $e\n$st');
+        logAppError('sync.push_profile', e, st);
         await _expenseLimits.markRemoteError(row.userId);
         if (failFast) {
           throw StateError('Failed to sync expense profile ${row.userId}: $e');
@@ -229,14 +237,15 @@ class SyncOrchestrator {
   }) async {
     final pending = await _recurring.getPendingTemplates();
     for (final row in pending) {
+      final effectiveHouseholdId = row.householdId ?? householdId;
       try {
         await _recurringRemote.upsertTemplate(
           row: row,
-          householdId: householdId,
+          householdId: effectiveHouseholdId,
         );
         await _recurring.markTemplateRemoteSynced(row.id);
       } catch (e, st) {
-        debugPrint('[sync] recurring template push failed ${row.id}: $e\n$st');
+        logAppError('sync.push_recurring_template', e, st);
         await _recurring.markTemplateRemoteError(row.id);
         if (failFast) {
           throw StateError('Failed to sync recurring template ${row.id}: $e');
@@ -258,9 +267,7 @@ class SyncOrchestrator {
         );
         await _recurring.markOccurrenceRemoteSynced(row.id);
       } catch (e, st) {
-        debugPrint(
-          '[sync] recurring occurrence push failed ${row.id}: $e\n$st',
-        );
+        logAppError('sync.push_recurring_occurrence', e, st);
         await _recurring.markOccurrenceRemoteError(row.id);
         if (failFast) {
           throw StateError('Failed to sync recurring occurrence ${row.id}: $e');
@@ -276,7 +283,7 @@ class SyncOrchestrator {
         await _expenseLimits.applyRemoteProfileRow(profile);
       }
     } catch (e, st) {
-      debugPrint('[sync] profile pull failed: $e\n$st');
+      logAppError('sync.pull_profile', e, st);
       if (failFast) rethrow;
     }
 
@@ -299,7 +306,7 @@ class SyncOrchestrator {
         );
       }
     } catch (e, st) {
-      debugPrint('[sync] recurring template pull failed: $e\n$st');
+      logAppError('sync.pull_recurring_templates', e, st);
       if (failFast) rethrow;
     }
 
@@ -319,7 +326,7 @@ class SyncOrchestrator {
         await SyncMetadataStore.setLastExpensePullServerMs(maxUpdated);
       }
     } catch (e, st) {
-      debugPrint('[sync] expense pull failed: $e\n$st');
+      logAppError('sync.pull_expenses', e, st);
       if (failFast) rethrow;
     }
 
@@ -336,8 +343,9 @@ class SyncOrchestrator {
         if (u != null && u > maxUpdated) maxUpdated = u;
         final applied = await _recurring.applyRemoteOccurrenceRow(m);
         if (!applied) {
-          debugPrint(
+          developer.log(
             '[sync] recurring occurrence skipped due to missing dependency: ${m['id']}',
+            name: 'sync',
           );
         }
       }
@@ -347,7 +355,7 @@ class SyncOrchestrator {
         );
       }
     } catch (e, st) {
-      debugPrint('[sync] recurring occurrence pull failed: $e\n$st');
+      logAppError('sync.pull_recurring_occurrences', e, st);
       if (failFast) rethrow;
     }
   }

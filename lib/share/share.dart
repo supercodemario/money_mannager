@@ -1,3 +1,4 @@
+export 'utils/uuid_utils.dart';
 export 'tokens/tokens.dart';
 export 'theme/app_theme.dart';
 export 'widgets/widgets.dart';
