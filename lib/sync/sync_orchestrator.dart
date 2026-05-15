@@ -3,10 +3,12 @@ import 'dart:developer' as developer;
 
 import 'package:money_manager/app/cloud_sync_controller.dart';
 import 'package:money_manager/core/logging/app_log.dart';
+import 'package:money_manager/data/household/household_display_cache.dart';
 import 'package:money_manager/data/local/app_database.dart';
 import 'package:money_manager/data/local/sync_metadata_store.dart';
 import 'package:money_manager/data/remote/expense_profile_remote_gateway.dart';
 import 'package:money_manager/data/remote/expense_remote_gateway.dart';
+import 'package:money_manager/data/remote/household_remote_gateway.dart';
 import 'package:money_manager/data/remote/recurring_remote_gateway.dart';
 import 'package:money_manager/data/remote/sync_constants.dart';
 import 'package:money_manager/data/repositories/expense_limits_repository.dart';
@@ -28,6 +30,7 @@ class SyncOrchestrator {
     ExpenseRemoteGateway? remote,
     ExpenseProfileRemoteGateway? profileRemote,
     RecurringRemoteGateway? recurringRemote,
+    HouseholdRemoteGateway? householdRemote,
   }) : _db = db,
        _cloud = cloud,
        _expenses = expenses,
@@ -35,7 +38,8 @@ class SyncOrchestrator {
        _recurring = recurring,
        _remote = remote ?? ExpenseRemoteGateway(),
        _profileRemote = profileRemote ?? ExpenseProfileRemoteGateway(),
-       _recurringRemote = recurringRemote ?? RecurringRemoteGateway();
+       _recurringRemote = recurringRemote ?? RecurringRemoteGateway(),
+       _householdRemote = householdRemote ?? HouseholdRemoteGateway();
 
   final AppDatabase _db;
   final CloudSyncController _cloud;
@@ -45,6 +49,7 @@ class SyncOrchestrator {
   final ExpenseRemoteGateway _remote;
   final ExpenseProfileRemoteGateway _profileRemote;
   final RecurringRemoteGateway _recurringRemote;
+  final HouseholdRemoteGateway _householdRemote;
 
   StreamSubscription<List<Expense>>? _pendingSub;
   StreamSubscription<List<ExpenseLimitPreference>>? _profilePendingSub;
@@ -98,15 +103,12 @@ class SyncOrchestrator {
     }
   }
 
-  /// Returns remote expense row count for the signed-in household.
-  /// Returns null when sync cannot run or household cannot be resolved.
+  /// Returns remote expense row count visible to the signed-in user (all member households).
+  /// Returns null when sync cannot run.
   Future<int?> getRemoteExpenseCount() async {
     if (!_cloud.syncAllowed) return null;
     try {
-      await _cloud.ensureHouseholdIfNeeded();
-      final hid = await SyncMetadataStore.getHouseholdId();
-      if (hid == null) return null;
-      return await _remote.countExpenses(householdId: hid);
+      return await _remote.countExpenses();
     } catch (e, st) {
       logAppError('sync.remote_expense_count', e, st);
       return null;
@@ -165,42 +167,47 @@ class SyncOrchestrator {
       await _recurring.retryErroredAsPending();
     }
     try {
-      await _cloud.ensureHouseholdIfNeeded();
+      await _cloud.ensureDefaultExpenseHouseholdPreference();
     } catch (e, st) {
-      logAppError('sync.ensure_household', e, st);
+      logAppError('sync.ensure_default_household', e, st);
       if (failFast) rethrow;
-      return;
-    }
-    final hid = await SyncMetadataStore.getHouseholdId();
-    if (hid == null) {
-      if (failFast) {
-        throw StateError('Sync household not available.');
-      }
-      return;
     }
 
     if (mode == ManualSyncMode.pushThenPull) {
       onStage?.call(ManualSyncStage.pushing);
       await _pushPendingProfiles(failFast: failFast);
-      await _pushPendingRecurringTemplates(hid, failFast: failFast);
-      await _pushPending(hid, failFast: failFast);
-      await _pushPendingRecurringOccurrences(hid, failFast: failFast);
+      await _pushPendingRecurringTemplates(failFast: failFast);
+      await _pushPending(failFast: failFast);
+      await _pushPendingRecurringOccurrences(failFast: failFast);
     }
     onStage?.call(ManualSyncStage.pulling);
-    await _pullRemote(hid, failFast: failFast);
+    await _pullRemote(failFast: failFast);
+    try {
+      await HouseholdDisplayCache.load(_householdRemote);
+    } catch (e, st) {
+      logAppError('sync.refresh_household_labels', e, st);
+    }
   }
 
-  Future<void> _pushPending(String householdId, {bool failFast = false}) async {
+  Future<void> _pushPending({bool failFast = false}) async {
     final pending = await (_db.select(
       _db.expenses,
     )..where((e) => e.syncStatus.equals(SyncStatusValue.pending))).get();
     for (final row in pending) {
-      final effectiveHouseholdId = row.householdId ?? householdId;
-      try {
-        await _remote.upsertExpense(
-          row: row,
-          householdId: effectiveHouseholdId,
+      if (row.householdId == null || row.householdId!.isEmpty) {
+        logAppError(
+          'sync.push_expense',
+          StateError('Pending expense ${row.id} missing household_id'),
+          StackTrace.current,
         );
+        await _expenses.markRemoteError(row.id);
+        if (failFast) {
+          throw StateError('Pending expense ${row.id} missing household_id');
+        }
+        continue;
+      }
+      try {
+        await _remote.upsertExpense(row: row);
         await _expenses.markRemoteSynced(row.id);
       } catch (e, st) {
         logAppError('sync.push_expense', e, st);
@@ -231,18 +238,23 @@ class SyncOrchestrator {
     }
   }
 
-  Future<void> _pushPendingRecurringTemplates(
-    String householdId, {
-    bool failFast = false,
-  }) async {
+  Future<void> _pushPendingRecurringTemplates({bool failFast = false}) async {
     final pending = await _recurring.getPendingTemplates();
     for (final row in pending) {
-      final effectiveHouseholdId = row.householdId ?? householdId;
-      try {
-        await _recurringRemote.upsertTemplate(
-          row: row,
-          householdId: effectiveHouseholdId,
+      if (row.householdId == null || row.householdId!.isEmpty) {
+        logAppError(
+          'sync.push_recurring_template',
+          StateError('Pending template ${row.id} missing household_id'),
+          StackTrace.current,
         );
+        await _recurring.markTemplateRemoteError(row.id);
+        if (failFast) {
+          throw StateError('Pending template ${row.id} missing household_id');
+        }
+        continue;
+      }
+      try {
+        await _recurringRemote.upsertTemplate(row: row);
         await _recurring.markTemplateRemoteSynced(row.id);
       } catch (e, st) {
         logAppError('sync.push_recurring_template', e, st);
@@ -254,12 +266,25 @@ class SyncOrchestrator {
     }
   }
 
-  Future<void> _pushPendingRecurringOccurrences(
-    String householdId, {
-    bool failFast = false,
-  }) async {
+  Future<void> _pushPendingRecurringOccurrences({bool failFast = false}) async {
     final pending = await _recurring.getPendingOccurrences();
     for (final row in pending) {
+      final template = await _recurring.getTemplateById(row.recurringPaymentId);
+      final householdId = template?.householdId;
+      if (householdId == null || householdId.isEmpty) {
+        logAppError(
+          'sync.push_recurring_occurrence',
+          StateError(
+            'Occurrence ${row.id} missing household_id on template ${row.recurringPaymentId}',
+          ),
+          StackTrace.current,
+        );
+        await _recurring.markOccurrenceRemoteError(row.id);
+        if (failFast) {
+          throw StateError('Occurrence ${row.id} missing template household_id');
+        }
+        continue;
+      }
       try {
         await _recurringRemote.upsertOccurrence(
           row: row,
@@ -276,7 +301,7 @@ class SyncOrchestrator {
     }
   }
 
-  Future<void> _pullRemote(String householdId, {bool failFast = false}) async {
+  Future<void> _pullRemote({bool failFast = false}) async {
     try {
       final profile = await _profileRemote.fetchProfile();
       if (profile != null) {
@@ -291,7 +316,6 @@ class SyncOrchestrator {
       final since =
           await SyncMetadataStore.getLastRecurringTemplatePullServerMs();
       final maps = await _recurringRemote.fetchTemplatesSince(
-        householdId: householdId,
         sinceUpdatedAtMs: since,
       );
       var maxUpdated = since;
@@ -312,10 +336,7 @@ class SyncOrchestrator {
 
     try {
       final since = await SyncMetadataStore.getLastExpensePullServerMs();
-      final maps = await _remote.fetchExpensesSince(
-        householdId: householdId,
-        sinceUpdatedAtMs: since,
-      );
+      final maps = await _remote.fetchExpensesSince(sinceUpdatedAtMs: since);
       var maxUpdated = since;
       for (final m in maps) {
         final u = m['updated_at'] as int?;
@@ -334,7 +355,6 @@ class SyncOrchestrator {
       final since =
           await SyncMetadataStore.getLastRecurringOccurrencePullServerMs();
       final maps = await _recurringRemote.fetchOccurrencesSince(
-        householdId: householdId,
         sinceUpdatedAtMs: since,
       );
       var maxUpdated = since;

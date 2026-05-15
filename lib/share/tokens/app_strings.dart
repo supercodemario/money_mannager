@@ -359,7 +359,9 @@ class AppStrings {
   static const expensesPreviousMonthTooltip = 'Previous month';
   static const expensesNextMonthTooltip = 'Next month';
   static const expenseRecordedBy = 'by';
+  static const expenseFamilyLabel = 'Family';
   static const expenseUnknownMember = 'Unknown member';
+  static const expenseUnknownHousehold = 'Unknown family';
 
   /// Shown for expenses created by another signed-in household member (no local display name yet).
   static const expenseHouseholdMemberDisplayName = 'Household member';

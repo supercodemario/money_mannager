@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:money_manager/data/household/household_display_cache.dart';
 import 'package:money_manager/data/repositories/expense_repository.dart';
 import 'package:money_manager/features/add_expense/models/expense_category/expense_category.dart';
 import 'package:money_manager/features/expenses/widgets/expense_transaction_row.dart';
@@ -10,10 +11,12 @@ class DailyExpensesView extends StatelessWidget {
     required this.repo,
     required this.categoryById,
     required this.selectedDay,
+    required this.householdLabelsById,
   });
 
   final ExpenseRepository repo;
   final Map<String, ExpenseCategory> categoryById;
+  final Map<String, HouseholdDisplayInfo> householdLabelsById;
 
   /// Local calendar day to show (date portion only matters).
   final DateTime selectedDay;
@@ -49,6 +52,10 @@ class DailyExpensesView extends StatelessWidget {
               category: categoryById[row.expense.categoryId],
               creatorUserId: row.creatorUserId,
               creatorDisplayName: row.creatorDisplayName,
+              householdDisplayLabel: HouseholdDisplayCache.labelFor(
+                row.expense.householdId,
+                householdLabelsById,
+              ),
             );
           },
         );

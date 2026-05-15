@@ -61,14 +61,13 @@ Any backend change (new columns, policies, or triggers) should keep these rules 
 
 ## 4. Household lifecycle (client-driven)
 
-Implemented in `lib/app/cloud_sync_controller.dart` → **`ensureHouseholdIfNeeded()`** (called from sync before push/pull):
+**Default expense household** (`SyncMetadataStore.default_expense_household_id`) is set from Preferences and used when **creating** new local expenses (`household_id` on the row). `CloudSyncController.ensureDefaultExpenseHouseholdPreference()` validates membership and falls back to the personal household.
 
-1. If a **household id** is already cached locally (`SyncMetadataStore`) and the user is still a member of that household in Postgres, keep it.
-2. If the cached id is stale (no membership), clear it.
-3. If there is no valid cached id, query **`household_members`** for `user_id = current user id`; if a row exists, **cache** that `household_id` (supports reinstall / new device without creating rows from the client).
-4. The app **does not** insert new `households` or `household_members` rows. Those must exist from **Supabase-side** flows (e.g. `accept_family_invite`, other RPCs/migrations, or manual SQL). Until the user is a member of at least one household, expense sync will not run (no `household_id`).
+**Sync scope** is **not** a single active household. Pull queries for `expenses` / recurring tables omit a `household_id` filter; Postgres RLS (`expenses_select_member`: `household_id in user_household_ids()`) returns rows for **all** households the signed-in user belongs to. Push upserts each pending row with its stored `household_id` and `auth_user_id = auth.uid()`.
 
-**Implication for backend:** Household and membership rows are created only where your SQL/RPCs allow; the client only resolves and caches an id the user already belongs to.
+**RLS reference:** `supabase/migrations/20260417120000_phase1.sql` — policy `expenses_select_member`.
+
+The app **does not** insert new `households` or `household_members` rows except via documented RPCs (e.g. `ensure_personal_household`, `accept_family_invite`).
 
 ---
 
@@ -84,8 +83,8 @@ All remote expense I/O is centralized in **`lib/data/remote/expense_remote_gatew
 
 ### 5.2 Pull (incremental)
 
-- **First sync / full catch-up:** `sinceUpdatedAtMs <= 0` → `select` all rows for `household_id`, ordered by `updated_at` ascending.
-- **Incremental:** `select` where `household_id` matches and **`updated_at` > sinceUpdatedAtMs**, same ordering.
+- **First sync / full catch-up:** `sinceUpdatedAtMs <= 0` → `select` all rows visible under RLS (all member households), ordered by `updated_at` ascending.
+- **Incremental:** `select` where **`updated_at` > sinceUpdatedAtMs** (no `household_id` filter on the client), same ordering.
 - **Watermark:** After a successful pull, the client stores **`max(updated_at)`** from returned rows (see `SyncMetadataStore` + orchestrator) for the next pull.
 
 **Implication for backend:** Any server-side update to an expense row should bump **`updated_at`** in milliseconds, or the client may miss changes on incremental pull.

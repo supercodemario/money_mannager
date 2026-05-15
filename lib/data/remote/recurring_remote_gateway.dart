@@ -3,16 +3,21 @@ import 'package:money_manager/data/remote/sync_constants.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Remote recurring payment rows — only called from [SyncOrchestrator].
+///
+/// Pull queries rely on RLS membership policies. Push uses each row's [householdId].
 class RecurringRemoteGateway {
   RecurringRemoteGateway();
 
-  Future<void> upsertTemplate({
-    required RecurringPayment row,
-    required String householdId,
-  }) async {
+  Future<void> upsertTemplate({required RecurringPayment row}) async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
       throw StateError('Cannot upsert recurring template without auth session');
+    }
+    final householdId = row.householdId;
+    if (householdId == null || householdId.isEmpty) {
+      throw StateError(
+        'Cannot upsert recurring template without household_id on row ${row.id}',
+      );
     }
 
     await Supabase.instance.client
@@ -41,6 +46,11 @@ class RecurringRemoteGateway {
     required RecurringPaymentOccurrence row,
     required String householdId,
   }) async {
+    if (householdId.isEmpty) {
+      throw StateError(
+        'Cannot upsert recurring occurrence without household_id for ${row.id}',
+      );
+    }
     await Supabase.instance.client
         .from('recurring_payment_occurrences')
         .upsert(<String, dynamic>{
@@ -59,13 +69,9 @@ class RecurringRemoteGateway {
   }
 
   Future<List<Map<String, dynamic>>> fetchTemplatesSince({
-    required String householdId,
     required int sinceUpdatedAtMs,
   }) async {
-    final query = Supabase.instance.client
-        .from('recurring_payments')
-        .select()
-        .eq('household_id', householdId);
+    final query = Supabase.instance.client.from('recurring_payments').select();
     final List<dynamic> raw = sinceUpdatedAtMs <= 0
         ? await query.order('updated_at', ascending: true) as List<dynamic>
         : await query
@@ -78,13 +84,11 @@ class RecurringRemoteGateway {
   }
 
   Future<List<Map<String, dynamic>>> fetchOccurrencesSince({
-    required String householdId,
     required int sinceUpdatedAtMs,
   }) async {
     final query = Supabase.instance.client
         .from('recurring_payment_occurrences')
-        .select()
-        .eq('household_id', householdId);
+        .select();
     final List<dynamic> raw = sinceUpdatedAtMs <= 0
         ? await query.order('updated_at', ascending: true) as List<dynamic>
         : await query

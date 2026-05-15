@@ -35,14 +35,14 @@ class ManualSyncHelper {
   static ManualSyncMode modeFromUnsynced(int unsynced) =>
       unsynced > 0 ? ManualSyncMode.pushThenPull : ManualSyncMode.pullOnly;
 
-  /// True when signed in and [ensureHouseholdIfNeeded] can resolve a household id.
-  /// Expense/recurring cloud sync requires this; users with no family membership
-  /// cannot push household-scoped rows.
-  static Future<bool> canRunHouseholdScopedSync(AppServices services) async {
-    if (!services.cloudSync.syncAllowed) return false;
-    await services.cloudSync.ensureHouseholdIfNeeded();
-    return (await SyncMetadataStore.getHouseholdId()) != null;
+  /// True when cloud sync can run (signed in, Supabase ready).
+  static Future<bool> canRunCloudSync(AppServices services) async {
+    return services.cloudSync.syncAllowed;
   }
+
+  /// @deprecated Use [canRunCloudSync].
+  static Future<bool> canRunHouseholdScopedSync(AppServices services) =>
+      canRunCloudSync(services);
 
   /// Expenses + profiles + recurring: same basis as auth post-login / refresh.
   static Future<ManualSyncPreview> loadAggregatePreview(
