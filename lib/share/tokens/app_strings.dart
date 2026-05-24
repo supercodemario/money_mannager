@@ -358,10 +358,16 @@ class AppStrings {
   static const expensesNextDayTooltip = 'Next day';
   static const expensesPreviousMonthTooltip = 'Previous month';
   static const expensesNextMonthTooltip = 'Next month';
-  static const expenseRecordedBy = 'by';
+  static const expenseCategoryDetailTransactionsTab = 'Transactions';
+  static const expenseCategoryDetailTrendTab = 'Trend';
+  static const expensePaidByLabel = 'Paid by';
   static const expenseFamilyLabel = 'Family';
+  static const expenseFamilyUnset = '—';
+  static const expenseFamilyUnknown = 'Unknown';
+  static const expenseCategoryDetailTrendEmpty =
+      'No spending on this category this month.';
+  static const expenseRecordedBy = 'by';
   static const expenseUnknownMember = 'Unknown member';
-  static const expenseUnknownHousehold = 'Unknown family';
 
   /// Shown for expenses created by another signed-in household member (no local display name yet).
   static const expenseHouseholdMemberDisplayName = 'Household member';

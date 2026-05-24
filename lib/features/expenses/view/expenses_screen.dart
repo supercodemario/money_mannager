@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:money_manager/app/app_services.dart';
-import 'package:money_manager/data/household/household_display_cache.dart';
 import 'package:money_manager/features/add_expense/data/default_expense_categories.dart';
 import 'package:money_manager/features/expenses/view/add_recurring_payment_screen.dart';
 import 'package:money_manager/features/expenses/widgets/daily_expenses_view.dart';
@@ -21,32 +20,6 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   ExpensesMode _mode = ExpensesMode.daily;
   DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
   DateTime _selectedDay = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-  Map<String, HouseholdDisplayInfo> _householdLabelsById = const {};
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshHouseholdLabels());
-  }
-
-  Future<void> _refreshHouseholdLabels() async {
-    final services = AppServices.of(context);
-    if (!services.cloudSync.syncAllowed) {
-      if (_householdLabelsById.isNotEmpty && mounted) {
-        setState(() => _householdLabelsById = const {});
-      }
-      return;
-    }
-    try {
-      final labels = await HouseholdDisplayCache.load(services.household);
-      if (mounted) setState(() => _householdLabelsById = labels);
-    } catch (_) {
-      final cached = HouseholdDisplayCache.cached;
-      if (cached != null && mounted) {
-        setState(() => _householdLabelsById = cached);
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +86,6 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     repo: services.expenses,
                     categoryById: categoryById,
                     selectedDay: _selectedDay,
-                    householdLabelsById: _householdLabelsById,
                   ),
                 ExpensesMode.monthly => MonthlyExpensesView(
                     repo: services.expenses,

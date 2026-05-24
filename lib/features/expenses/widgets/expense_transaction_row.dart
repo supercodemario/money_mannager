@@ -11,21 +11,18 @@ class ExpenseTransactionRow extends StatelessWidget {
     required this.category,
     required this.creatorUserId,
     required this.creatorDisplayName,
-    this.householdDisplayLabel = '',
   });
 
   final Expense expense;
   final ExpenseCategory? category;
   final String creatorUserId;
   final String creatorDisplayName;
-  final String householdDisplayLabel;
 
   @override
   Widget build(BuildContext context) {
     final local = DateTime.fromMillisecondsSinceEpoch(expense.occurredAt, isUtc: true).toLocal();
     final time = '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
     final note = expense.note?.trim();
-    final textTheme = Theme.of(context).textTheme;
 
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.s16),
@@ -53,17 +50,6 @@ class ExpenseTransactionRow extends StatelessWidget {
                 if (note != null && note.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.s2),
                   Text(note, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.onSurfaceVariant)),
-                ],
-                if (householdDisplayLabel.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.s2),
-                  Text(
-                    '${AppStrings.expenseFamilyLabel} · $householdDisplayLabel',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.labelSmall?.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  ),
                 ],
                 const SizedBox(height: AppSpacing.s6),
                 Row(

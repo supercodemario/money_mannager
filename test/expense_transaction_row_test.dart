@@ -44,7 +44,6 @@ void main() {
             category: category,
             creatorUserId: profile.id,
             creatorDisplayName: profile.displayName,
-            householdDisplayLabel: 'Smith Family',
           ),
         ),
       ),
@@ -52,10 +51,6 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('${AppStrings.expenseFamilyLabel} · Smith Family'),
-      findsOneWidget,
-    );
     expect(
       find.text('${AppStrings.expenseRecordedBy} · ${profile.displayName}'),
       findsOneWidget,

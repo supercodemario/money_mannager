@@ -30,6 +30,17 @@ class MonthlyCategoryTotal {
   final int totalMinor;
 }
 
+/// One calendar day within a month and total spend for a category (minor units).
+class CategoryDayTotal {
+  const CategoryDayTotal({
+    required this.dayOfMonth,
+    required this.totalMinor,
+  });
+
+  final int dayOfMonth;
+  final int totalMinor;
+}
+
 class ExpenseRepository {
   ExpenseRepository(this._db, this._profiles, this._cloudSync);
 
@@ -158,6 +169,88 @@ class ExpenseRepository {
             );
           })
           .toList(growable: false),
+    );
+  }
+
+  /// Expenses in `[startUtcMs, endUtcMs)` for [categoryId] with creator profile join.
+  Stream<List<ExpenseWithCreator>> watchCategoryExpensesInMonthWithCreator({
+    required String categoryId,
+    required int startUtcMs,
+    required int endUtcMs,
+    int? limit,
+  }) {
+    final expenses = _db.select(_db.expenses)
+      ..where((t) =>
+          t.occurredAt.isBetweenValues(startUtcMs, endUtcMs) &
+          t.categoryId.equals(categoryId))
+      ..orderBy([
+        (t) => OrderingTerm(expression: t.occurredAt, mode: OrderingMode.desc),
+      ]);
+    if (limit != null) expenses.limit(limit);
+
+    final q = expenses.join([
+      leftOuterJoin(
+        _db.userProfiles,
+        _db.userProfiles.id.equalsExp(_db.expenses.createdByUserId),
+      ),
+    ]);
+
+    return q.watch().map(
+      (rows) => rows
+          .map((row) {
+            final expense = row.readTable(_db.expenses);
+            final profile = row.readTableOrNull(_db.userProfiles);
+            final creatorId = profile?.id ?? expense.createdByUserId;
+            final name =
+                profile?.displayName ?? AppStrings.expenseUnknownMember;
+            return ExpenseWithCreator(
+              expense: expense,
+              creatorUserId: creatorId,
+              creatorDisplayName: name,
+            );
+          })
+          .toList(growable: false),
+    );
+  }
+
+  /// Per-local-calendar-day totals for [categoryId] in the month of [monthLocal] (year + month).
+  Stream<List<CategoryDayTotal>> watchCategoryDailyTotalsInMonth({
+    required String categoryId,
+    required DateTime monthLocal,
+    required int startUtcMs,
+    required int endUtcMs,
+  }) {
+    return watchCategoryExpensesInMonthWithCreator(
+      categoryId: categoryId,
+      startUtcMs: startUtcMs,
+      endUtcMs: endUtcMs,
+    ).map((rows) => _aggregateCategoryDailyTotals(monthLocal, rows));
+  }
+
+  static List<CategoryDayTotal> _aggregateCategoryDailyTotals(
+    DateTime monthLocal,
+    List<ExpenseWithCreator> rows,
+  ) {
+    final y = monthLocal.year;
+    final m = monthLocal.month;
+    final lastDay = DateTime(y, m + 1, 0).day;
+    final totals = List<int>.filled(lastDay, 0);
+    for (final row in rows) {
+      final local = DateTime.fromMillisecondsSinceEpoch(
+        row.expense.occurredAt,
+        isUtc: true,
+      ).toLocal();
+      if (local.year == y && local.month == m) {
+        final day = local.day;
+        if (day >= 1 && day <= lastDay) {
+          totals[day - 1] += row.expense.amountMinor;
+        }
+      }
+    }
+    return List.generate(
+      lastDay,
+      (i) => CategoryDayTotal(dayOfMonth: i + 1, totalMinor: totals[i]),
+      growable: false,
     );
   }
 
