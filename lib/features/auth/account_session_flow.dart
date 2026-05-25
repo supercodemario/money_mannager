@@ -26,7 +26,7 @@ Future<void> signOutWithSyncBeforeLogout(
   final navigator = Navigator.of(context);
   final unsynced = await services.expenses.countUnsynced();
   if (!context.mounted) return;
-  final canSync = unsynced > 0 && await ManualSyncHelper.canRunHouseholdScopedSync(services);
+  final canSync = unsynced > 0 && await ManualSyncHelper.canRunCloudSync(services);
   if (canSync) {
     await navigator.push<void>(
       MaterialPageRoute<void>(

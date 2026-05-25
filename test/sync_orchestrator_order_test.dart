@@ -19,7 +19,9 @@ class _AlwaysAllowedCloudSyncController extends CloudSyncController {
   bool get syncAllowed => true;
 
   @override
-  Future<void> ensureHouseholdIfNeeded() async {}
+  Future<void> ensureDefaultExpenseHouseholdPreference() async {
+    await SyncMetadataStore.setDefaultExpenseHouseholdId('hid-test');
+  }
 }
 
 class _RecordingExpenseRemoteGateway extends ExpenseRemoteGateway {
@@ -29,16 +31,12 @@ class _RecordingExpenseRemoteGateway extends ExpenseRemoteGateway {
   List<Map<String, dynamic>> remoteRows = const [];
 
   @override
-  Future<void> upsertExpense({
-    required Expense row,
-    required String householdId,
-  }) async {
+  Future<void> upsertExpense({required Expense row}) async {
     calls.add('push');
   }
 
   @override
   Future<List<Map<String, dynamic>>> fetchExpensesSince({
-    required String householdId,
     required int sinceUpdatedAtMs,
   }) async {
     calls.add('pull');
@@ -79,10 +77,7 @@ class _RecordingRecurringRemoteGateway extends RecurringRemoteGateway {
   List<Map<String, dynamic>> remoteOccurrences = const [];
 
   @override
-  Future<void> upsertTemplate({
-    required RecurringPayment row,
-    required String householdId,
-  }) async {
+  Future<void> upsertTemplate({required RecurringPayment row}) async {
     calls?.add('push-template');
     pushedTemplates.add(row);
   }
@@ -98,7 +93,6 @@ class _RecordingRecurringRemoteGateway extends RecurringRemoteGateway {
 
   @override
   Future<List<Map<String, dynamic>>> fetchTemplatesSince({
-    required String householdId,
     required int sinceUpdatedAtMs,
   }) async {
     calls?.add('pull-template');
@@ -107,7 +101,6 @@ class _RecordingRecurringRemoteGateway extends RecurringRemoteGateway {
 
   @override
   Future<List<Map<String, dynamic>>> fetchOccurrencesSince({
-    required String householdId,
     required int sinceUpdatedAtMs,
   }) async {
     calls?.add('pull-occurrence');
@@ -139,14 +132,10 @@ class _SerializedRemoteGateway extends ExpenseRemoteGateway {
   int pullCalls = 0;
 
   @override
-  Future<void> upsertExpense({
-    required Expense row,
-    required String householdId,
-  }) async {}
+  Future<void> upsertExpense({required Expense row}) async {}
 
   @override
   Future<List<Map<String, dynamic>>> fetchExpensesSince({
-    required String householdId,
     required int sinceUpdatedAtMs,
   }) async {
     pullCalls++;
@@ -178,7 +167,7 @@ ExpenseLimitsRepository _expenseLimitsRepository({
 void main() {
   test('Manual sync preserves push-before-pull ordering', () async {
     SharedPreferences.setMockInitialValues({
-      'sync_household_id': 'hid-test',
+      'default_expense_household_id': 'hid-test',
       'sync_last_expense_pull_ms': 0,
     });
     final calls = <String>[];
@@ -228,7 +217,7 @@ void main() {
 
   test('Manual pull-only sync skips push and keeps stage order', () async {
     SharedPreferences.setMockInitialValues({
-      'sync_household_id': 'hid-test',
+      'default_expense_household_id': 'hid-test',
       'sync_last_expense_pull_ms': 0,
     });
     final calls = <String>[];
@@ -280,7 +269,7 @@ void main() {
     'Manual sync pushes recurring templates before expenses and occurrences after expenses',
     () async {
       SharedPreferences.setMockInitialValues({
-        'sync_household_id': 'hid-test',
+        'default_expense_household_id': 'hid-test',
         'sync_last_expense_pull_ms': 0,
       });
       final calls = <String>[];
@@ -343,7 +332,7 @@ void main() {
     'Manual pull restores recurring templates before expenses and occurrences',
     () async {
       SharedPreferences.setMockInitialValues({
-        'sync_household_id': 'hid-test',
+        'default_expense_household_id': 'hid-test',
         'sync_last_expense_pull_ms': 0,
       });
       final calls = <String>[];
@@ -440,7 +429,7 @@ void main() {
     'manual sync calls are serialized to one in-flight run at a time',
     () async {
       SharedPreferences.setMockInitialValues({
-        'sync_household_id': 'hid-test',
+        'default_expense_household_id': 'hid-test',
         'sync_last_expense_pull_ms': 0,
       });
       final maxConcurrent = ValueNotifier<int>(0);
@@ -490,7 +479,7 @@ void main() {
     'Manual sync uploads pending expense profile and marks it synced',
     () async {
       SharedPreferences.setMockInitialValues({
-        'sync_household_id': 'hid-test',
+        'default_expense_household_id': 'hid-test',
         'sync_last_expense_pull_ms': 0,
       });
       final db = AppDatabase.memory();
@@ -540,7 +529,7 @@ void main() {
     'Manual pull-only sync hydrates remote expense profile with zero expenses',
     () async {
       SharedPreferences.setMockInitialValues({
-        'sync_household_id': 'hid-test',
+        'default_expense_household_id': 'hid-test',
         'sync_last_expense_pull_ms': 0,
       });
       final db = AppDatabase.memory();
@@ -597,7 +586,7 @@ void main() {
     'Non-failfast pull continues expense pull when profile pull fails',
     () async {
       SharedPreferences.setMockInitialValues({
-        'sync_household_id': 'hid-test',
+        'default_expense_household_id': 'hid-test',
         'sync_last_expense_pull_ms': 0,
       });
       final calls = <String>[];

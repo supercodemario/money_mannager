@@ -19,8 +19,8 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  final _email = TextEditingController(text: 'dd@yopmail.com');
-  final _password = TextEditingController(text: 'Pass@123');
+  final _email = TextEditingController(text: '');
+  final _password = TextEditingController(text: '');
   bool _busy = false;
   bool _createAccountMode = false;
 

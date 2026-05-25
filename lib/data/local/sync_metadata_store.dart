@@ -1,10 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Pilot metadata for cloud sync (household scope, pull watermarks).
+/// Pilot metadata for cloud sync (pull watermarks, default expense household).
 class SyncMetadataStore {
   SyncMetadataStore._();
 
-  static const _householdIdKey = 'sync_household_id';
   static const _defaultExpenseHouseholdIdKey = 'default_expense_household_id';
   static const _lastExpensePullMsKey = 'sync_last_expense_pull_ms';
   static const _lastRecurringTemplatePullMsKey =
@@ -13,22 +12,7 @@ class SyncMetadataStore {
       'sync_last_recurring_occurrence_pull_ms';
   static const _postAuthBootstrapDoneKey = 'sync_post_auth_bootstrap_done';
 
-  static Future<String?> getHouseholdId() async {
-    final p = await SharedPreferences.getInstance();
-    return p.getString(_householdIdKey);
-  }
-
-  static Future<void> setHouseholdId(String id) async {
-    final p = await SharedPreferences.getInstance();
-    await p.setString(_householdIdKey, id);
-  }
-
-  static Future<void> clearHouseholdId() async {
-    final p = await SharedPreferences.getInstance();
-    await p.remove(_householdIdKey);
-  }
-
-  /// Default household for new expense rows and sync orchestration.
+  /// Default household for **new** expense rows (Preferences). Not used as sync pull filter.
   ///
   /// Changing this preference does **not** update [household_id] on existing
   /// local or remote expenses; only new writes use the new default.
@@ -89,8 +73,8 @@ class SyncMetadataStore {
 
   static Future<void> clearAll() async {
     final p = await SharedPreferences.getInstance();
-    await p.remove(_householdIdKey);
     await p.remove(_defaultExpenseHouseholdIdKey);
+    await p.remove('sync_household_id');
     await p.remove(_lastExpensePullMsKey);
     await p.remove(_lastRecurringTemplatePullMsKey);
     await p.remove(_lastRecurringOccurrencePullMsKey);

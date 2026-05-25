@@ -8,6 +8,6 @@ Future<String?> resolveHouseholdForNewExpenseWrite(
   CloudSyncController cloud,
 ) async {
   if (!cloud.syncAllowed) return null;
-  await cloud.ensureHouseholdIfNeeded();
-  return SyncMetadataStore.getHouseholdId();
+  await cloud.ensureDefaultExpenseHouseholdPreference();
+  return SyncMetadataStore.getDefaultExpenseHouseholdId();
 }

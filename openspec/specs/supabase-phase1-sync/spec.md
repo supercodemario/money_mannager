@@ -60,6 +60,12 @@ The system MUST synchronize application domain entities between local storage an
 - **WHEN** a sync pull runs after a recorded cursor or since a known watermark
 - **THEN** the system SHALL merge remote changes into local storage per the documented conflict strategy for phase 1
 
+#### Scenario: Automatic expense push does not pull
+
+- **WHEN** the automatic expense sync cycle runs for pending expenses
+- **THEN** the system SHALL upsert those pending expenses when session and OS connectivity allow
+- **AND** SHALL NOT perform a remote pull in that same automatic cycle
+
 ### Requirement: Conflict handling for phase 1
 
 The system MUST apply a single documented conflict resolution strategy for concurrent updates to the same logical row during phase 1 (for example last-write-wins by server-observed update time) and MUST NOT silently drop updates without applying that strategy.
@@ -144,9 +150,9 @@ The system MUST allow an authenticated user to manually trigger a sync that refr
 
 ### Requirement: Logout with unsynced data uses guarded sync screen
 
-If the user requests logout while unsynced rows exist **and** household-scoped cloud upload **can** run for the user’s resolved **default expense household** (including the personal household), the app MUST show a dedicated sync progress screen before logout. On failure, the screen MUST show error reason and provide `Retry` and `Logout without sync` actions.
+If the user requests logout while unsynced rows exist **and** cloud sync is allowed for the current session (Supabase configured and authenticated), the app MUST show a dedicated sync progress screen before logout when upload can run. The gate MUST NOT depend on resolving a single active `household_id` for sync scope.
 
-If unsynced rows exist **and** household-scoped upload **cannot** run (for example the client cannot resolve any expense household), the app MUST NOT present a sync progress screen that retries the same failing precondition indefinitely; it MUST offer completing logout with an explicit warning that unsynced local changes may be lost.
+If unsynced rows exist **and** cloud sync cannot run (for example the user is not signed in), the app MUST NOT present a sync progress screen that retries indefinitely; it MUST offer completing logout with an explicit warning that unsynced local changes may be lost where applicable.
 
 #### Scenario: Logout sync succeeds
 
@@ -163,9 +169,9 @@ If unsynced rows exist **and** household-scoped upload **cannot** run (for examp
 - **WHEN** pre-logout sync fails and the user taps `Logout without sync`
 - **THEN** the app SHALL complete logout, wipe local database, and MAY lose unsynced local-only or pending rows
 
-#### Scenario: Logout skips guarded sync when upload cannot run
+#### Scenario: Logout skips guarded sync when cloud sync cannot run
 
-- **WHEN** logout is requested and unsynced rows exist but no expense household can be resolved for upload
+- **WHEN** logout is requested and unsynced rows exist but the user has no authenticated cloud session
 - **THEN** the app SHALL NOT enter an unbounded sync retry loop and SHALL offer logout with explicit data-loss acknowledgment
 
 ### Requirement: Presentation layer does not call remote APIs for domain sync
@@ -192,17 +198,48 @@ User interface and feature modules MUST NOT invoke the network layer or Supabase
 - **WHEN** local rows are eligible for upload or a scheduled sync cycle runs
 - **THEN** the system SHALL perform Supabase-backed entity operations only from the documented sync or remote orchestration layer based on persisted pending state, not from feature UI code
 
-### Requirement: Sync resolves household from default expense preference
+#### Scenario: Background expense upload uses auto push path
 
-The sync orchestration layer SHALL determine the active `household_id` for household-scoped push and pull using the persisted **default expense household** when that id is valid for the current session user. When the preference is missing or invalid, the system SHALL fall back to the user’s **personal** household. The system SHALL NOT override an explicit valid preference with an arbitrary `LIMIT 1` membership selection.
+- **WHEN** local expense rows become `pending` and the orchestrator schedules background work
+- **THEN** expense upload SHALL be performed only through the automatic expense push orchestration path
+- **AND** feature UI code SHALL NOT invoke Supabase for that upload
 
-#### Scenario: Manual sync uses stored default
+### Requirement: Expense and recurring sync uses all member households
 
-- **WHEN** an authenticated user runs manual sync and a valid default expense household id is stored
-- **THEN** household-scoped entities SHALL use that id for the sync cycle
+The sync orchestration layer SHALL pull household-scoped entities (expenses, recurring templates, recurring occurrences) for **every** household the authenticated user belongs to in a single incremental sync cycle. The client SHALL NOT restrict pull queries to a single active `household_id`. Row Level Security SHALL remain the authority for which rows are visible.
 
-#### Scenario: Fallback to personal household
+#### Scenario: User in multiple families receives merged pull
 
-- **WHEN** the stored default is absent or no longer valid for membership
-- **THEN** the system SHALL use the user’s personal household id for household-scoped sync after persisting the corrected preference
+- **WHEN** an authenticated user is a member of more than one household and runs **manual** sync
+- **THEN** the client SHALL pull remote rows from all those households (including expenses created by other members) subject to RLS
+
+#### Scenario: Push sends per-row household
+
+- **WHEN** the client uploads a pending local expense or recurring row
+- **THEN** the upsert SHALL include that row’s stored `household_id` and `auth_user_id` equal to the signed-in user
+
+#### Scenario: Pull does not require resolved sync household id
+
+- **WHEN** manual sync runs and the user has at least one household membership
+- **THEN** sync SHALL proceed without requiring a persisted single-household sync scope key
+
+#### Scenario: Automatic expense push does not pull households
+
+- **WHEN** the automatic expense sync cycle runs
+- **THEN** the client SHALL NOT perform a household-scoped pull in that cycle
+
+### Requirement: Background sync uses automatic expense push only
+
+When the sync orchestrator reacts to local database pending state or session changes outside an explicit user-initiated manual sync, it SHALL run the automatic expense push cycle (expenses only, no pull) rather than a full push-then-pull cycle for all entity types.
+
+#### Scenario: Pending expense watch triggers auto push
+
+- **WHEN** a new or updated expense row becomes `pending` and the orchestrator schedules a background cycle
+- **THEN** the orchestrator SHALL invoke automatic expense push only
+- **AND** SHALL NOT pull remote entities in that background cycle
+
+#### Scenario: Manual sync remains full cycle
+
+- **WHEN** the user or app invokes explicit manual sync (for example settings sync, post-login sync, or logout preflight)
+- **THEN** the orchestrator SHALL run full push-then-pull for all phase-1 in-scope entities per existing requirements
 

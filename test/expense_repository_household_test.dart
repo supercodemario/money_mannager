@@ -11,11 +11,8 @@ class _SyncAllowedCloud extends CloudSyncController {
   bool get syncAllowed => true;
 
   @override
-  Future<void> ensureHouseholdIfNeeded() async {
-    await SyncMetadataStore.setHouseholdId('household-attach-test');
-    await SyncMetadataStore.setDefaultExpenseHouseholdId(
-      'household-attach-test',
-    );
+  Future<void> ensureDefaultExpenseHouseholdPreference() async {
+    await SyncMetadataStore.setDefaultExpenseHouseholdId('household-attach-test');
   }
 }
 

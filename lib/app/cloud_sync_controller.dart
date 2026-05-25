@@ -58,7 +58,6 @@ class CloudSyncController extends ChangeNotifier {
     required String password,
   }) async {
     await _auth.signInWithPassword(email: email, password: password);
-    // `onAuthStateChange` may emit after this await; sync reads `syncAllowed` immediately.
     if (_supabaseInitialized) {
       _session = Supabase.instance.client.auth.currentSession;
       notifyListeners();
@@ -77,6 +76,7 @@ class CloudSyncController extends ChangeNotifier {
       await ensurePersonalHousehold();
     }
   }
+
   Future<String?> ensurePersonalHousehold() async {
     if (!syncAllowed) return null;
     return _household.ensurePersonalHousehold();
@@ -87,9 +87,7 @@ class CloudSyncController extends ChangeNotifier {
     final stillMember = await _currentUserIsMemberOfHousehold(householdId);
     if (!stillMember) return;
     await SyncMetadataStore.setDefaultExpenseHouseholdId(householdId);
-    await SyncMetadataStore.setHouseholdId(householdId);
   }
-
 
   Future<void> signOut() async {
     await _auth.signOut();
@@ -98,24 +96,17 @@ class CloudSyncController extends ChangeNotifier {
     await SyncMetadataStore.clearAll();
   }
 
-  /// Resolves the active household id for sync from local cache and/or
-  /// `household_members` for the signed-in user. Does **not** insert new
-  /// `households` or `household_members` rows (those come from your Supabase
-  /// flows only, e.g. `accept_family_invite`, join RPCs, or manual SQL).
+  /// Ensures personal household exists and default expense household preference is valid.
   ///
-  /// Uses default expense household preference first, then personal household,
-  /// then an existing membership fallback for migration safety.
-  Future<void> ensureHouseholdIfNeeded() async {
+  /// Does **not** set a single-household sync scope; cloud pull uses RLS across all memberships.
+  Future<void> ensureDefaultExpenseHouseholdPreference() async {
     if (!syncAllowed) return;
     await ensurePersonalHousehold();
 
     final preferred = await SyncMetadataStore.getDefaultExpenseHouseholdId();
     if (preferred != null) {
       final stillMember = await _currentUserIsMemberOfHousehold(preferred);
-      if (stillMember) {
-        await SyncMetadataStore.setHouseholdId(preferred);
-        return;
-      }
+      if (stillMember) return;
       await SyncMetadataStore.clearDefaultExpenseHouseholdId();
       if (kDebugMode) {
         debugPrint(
@@ -127,18 +118,7 @@ class CloudSyncController extends ChangeNotifier {
     final personalHouseholdId = await _household.ensurePersonalHousehold();
     if (personalHouseholdId != null) {
       await SyncMetadataStore.setDefaultExpenseHouseholdId(personalHouseholdId);
-      await SyncMetadataStore.setHouseholdId(personalHouseholdId);
       return;
-    }
-
-    final existing = await SyncMetadataStore.getHouseholdId();
-    if (existing != null) {
-      final stillMember = await _currentUserIsMemberOfHousehold(existing);
-      if (stillMember) {
-        await SyncMetadataStore.setDefaultExpenseHouseholdId(existing);
-        return;
-      }
-      await SyncMetadataStore.clearHouseholdId();
     }
 
     final uid = Supabase.instance.client.auth.currentUser?.id;
@@ -154,9 +134,12 @@ class CloudSyncController extends ChangeNotifier {
       final hid =
           (memberRows.first as Map<String, dynamic>)['household_id'] as String;
       await SyncMetadataStore.setDefaultExpenseHouseholdId(hid);
-      await SyncMetadataStore.setHouseholdId(hid);
     }
   }
+
+  /// @deprecated Use [ensureDefaultExpenseHouseholdPreference].
+  Future<void> ensureHouseholdIfNeeded() =>
+      ensureDefaultExpenseHouseholdPreference();
 
   Future<bool> _currentUserIsMemberOfHousehold(String householdId) async {
     final uid = Supabase.instance.client.auth.currentUser?.id;

@@ -25,6 +25,26 @@ String formatDayStepperLabel(DateTime dateLocal) {
   return '${months[d.month - 1]} ${d.day}';
 }
 
+/// Local calendar date for expense detail rows (e.g. "Apr 3"), never "Today".
+String formatExpenseDetailDateLabel(DateTime dateLocal) {
+  final d = DateTime(dateLocal.year, dateLocal.month, dateLocal.day);
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  return '${months[d.month - 1]} ${d.day}';
+}
+
 /// Label for a calendar month in the stepper (e.g. "Jan 2026").
 String formatMonthStepperLabel(DateTime month) {
   const names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

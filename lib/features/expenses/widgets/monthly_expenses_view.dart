@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:money_manager/data/repositories/expense_repository.dart';
 import 'package:money_manager/features/add_expense/models/expense_category/expense_category.dart';
+import 'package:money_manager/features/expenses/view/monthly_category_detail_screen.dart';
 import 'package:money_manager/features/expenses/widgets/expenses_amount_format.dart';
 import 'package:money_manager/features/expenses/widgets/expenses_empty_state.dart';
 import 'package:money_manager/share/share.dart';
@@ -36,32 +37,50 @@ class MonthlyExpensesView extends StatelessWidget {
           itemBuilder: (context, i) {
             final r = rows[i];
             final c = categoryById[r.categoryId];
-            return AppCard(
-              padding: const EdgeInsets.all(AppSpacing.s16),
-              borderRadius: AppRadius.xl,
-              child: Row(
-                children: [
-                  if (c != null)
-                    AppCard(
-                      padding: const EdgeInsets.all(AppSpacing.s12),
-                      borderRadius: AppRadius.xl,
-                      color: c.backgroundColor,
-                      child: Icon(c.icon, color: c.foregroundColor, size: AppSpacing.s20),
-                    )
-                  else
-                    const Icon(Icons.category),
-                  const SizedBox(width: AppSpacing.s12),
-                  Expanded(
-                    child: Text(
-                      c?.label ?? r.categoryId,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+            return Material(
+              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppRadius.xl),
+                onTap: () {
+                  Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (ctx) => MonthlyCategoryDetailScreen(
+                        repo: repo,
+                        categoryId: r.categoryId,
+                        category: c,
+                        initialMonth: month,
+                      ),
                     ),
+                  );
+                },
+                child: AppCard(
+                  padding: const EdgeInsets.all(AppSpacing.s16),
+                  borderRadius: AppRadius.xl,
+                  child: Row(
+                    children: [
+                      if (c != null)
+                        AppCard(
+                          padding: const EdgeInsets.all(AppSpacing.s12),
+                          borderRadius: AppRadius.xl,
+                          color: c.backgroundColor,
+                          child: Icon(c.icon, color: c.foregroundColor, size: AppSpacing.s20),
+                        )
+                      else
+                        const Icon(Icons.category),
+                      const SizedBox(width: AppSpacing.s12),
+                      Expanded(
+                        child: Text(
+                          c?.label ?? r.categoryId,
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                      Text(
+                        formatExpenseMinor(context, r.totalMinor),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+                      ),
+                    ],
                   ),
-                  Text(
-                    formatExpenseMinor(context, r.totalMinor),
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
-                  ),
-                ],
+                ),
               ),
             );
           },
