@@ -1,3 +1,4 @@
+import 'package:money_manager/core/navigation/app_route_pop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:money_manager/data/remote/household_remote_gateway.dart';
@@ -20,32 +21,32 @@ class JoinFamilyConfirmCubit extends Cubit<bool> {
     switch (r) {
       case AcceptFamilyInviteResult.success:
         messenger.showSnackBar(const SnackBar(content: Text(AppStrings.familyAcceptInviteSuccess)));
-        Navigator.of(context).pop(true);
+        context.popRoute(true);
       case AcceptFamilyInviteResult.inviteNotFound:
         messenger.showSnackBar(
           const SnackBar(content: Text(AppStrings.familyAcceptInviteNotFound)),
         );
-        Navigator.of(context).pop(false);
+        context.popRoute(false);
       case AcceptFamilyInviteResult.cannotAcceptOwnInvite:
         messenger.showSnackBar(
           const SnackBar(content: Text(AppStrings.familyAcceptInviteOwnInvite)),
         );
-        Navigator.of(context).pop(false);
+        context.popRoute(false);
       case AcceptFamilyInviteResult.householdExists:
         messenger.showSnackBar(
           const SnackBar(content: Text(AppStrings.familyAcceptInviteHouseholdExists)),
         );
-        Navigator.of(context).pop(false);
+        context.popRoute(false);
       case AcceptFamilyInviteResult.notAuthenticated:
         messenger.showSnackBar(
           const SnackBar(content: Text(AppStrings.familyDetailsSignInRequired)),
         );
-        Navigator.of(context).pop(false);
+        context.popRoute(false);
       case AcceptFamilyInviteResult.error:
         messenger.showSnackBar(
           const SnackBar(content: Text(AppStrings.familyAcceptInviteGenericError)),
         );
-        Navigator.of(context).pop(false);
+        context.popRoute(false);
     }
   }
 }

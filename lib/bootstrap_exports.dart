@@ -1,3 +1,18 @@
-// This file is used to export all @RoutePage screens for auto_route codegen stability.
-// Add exports here as new features/screens are created.
+// Exports all @RoutePage screens for auto_route codegen stability.
+export 'package:money_manager/features/shell/view/app_shell.dart';
+export 'package:money_manager/features/add_expense/view/quick_add_screen.dart';
+export 'package:money_manager/features/settings/settings-preferences/view/preferences_details_screen.dart';
+export 'package:money_manager/features/settings/view/expense_limits_screen.dart';
+export 'package:money_manager/features/settings/view/category_management_screen.dart';
+export 'package:money_manager/features/settings/view/recurring_templates_management_screen.dart';
+export 'package:money_manager/features/expenses/view/add_recurring_payment_screen.dart';
+export 'package:money_manager/features/expenses/view/monthly_category_detail_screen.dart';
+export 'package:money_manager/features/auth/view/auth_screen.dart';
+export 'package:money_manager/features/auth/view/post_login_cloud_sync_screen.dart';
+export 'package:money_manager/features/auth/view/sync_before_logout_screen.dart';
+export 'package:money_manager/features/create_family/view/create_family_screen.dart';
+export 'package:money_manager/features/household_scan/view/household_scan_screen.dart';
+export 'package:money_manager/features/join_family_confirm/view/join_family_confirm_screen.dart';
+export 'package:money_manager/features/family_members/view/family_members_screen.dart';
+export 'package:money_manager/features/family_list/view/family_list_screen.dart';
 export 'package:money_manager/features/profile_details/view/profile_details_screen.dart';

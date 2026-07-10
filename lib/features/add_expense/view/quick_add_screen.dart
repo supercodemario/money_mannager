@@ -1,3 +1,5 @@
+import 'package:auto_route/auto_route.dart';
+import 'package:money_manager/core/navigation/app_route_pop.dart';
 import 'package:flutter/material.dart';
 import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/features/add_expense/data/category_visuals.dart';
@@ -8,6 +10,7 @@ import 'package:money_manager/share/share.dart';
 
 enum _QuickAddMode { amount, category }
 
+@RoutePage()
 class QuickAddScreen extends StatefulWidget {
   const QuickAddScreen({super.key, this.onClose});
 
@@ -273,7 +276,7 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
       onClose();
       return;
     }
-    Navigator.maybePop(context);
+    context.popRoute();
   }
 
   Future<void> _save() async {
@@ -294,7 +297,7 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
         occurredAt: _date,
       );
       if (!mounted) return;
-      Navigator.maybePop(context);
+      context.popRoute();
     } finally {
       if (mounted) setState(() => _saving = false);
     }

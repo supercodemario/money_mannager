@@ -1,3 +1,4 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:money_manager/app/app_services.dart';
@@ -10,6 +11,7 @@ import 'package:uuid/uuid.dart';
 
 /// Registers a pending invite ([family_invites]) with a new UUID; household is created when
 /// someone else accepts via the join confirm flow.
+@RoutePage()
 class CreateFamilyScreen extends StatelessWidget {
   const CreateFamilyScreen({super.key});
 

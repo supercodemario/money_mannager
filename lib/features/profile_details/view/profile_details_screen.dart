@@ -1,3 +1,4 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:money_manager/app/app_services.dart';
@@ -7,6 +8,7 @@ import 'package:money_manager/features/profile_details/data/profile_details_repo
 import 'package:money_manager/features/profile_details/models/profile_details_state/profile_details_state.dart';
 import 'package:money_manager/share/share.dart';
 
+@RoutePage()
 class ProfileDetailsScreen extends StatelessWidget {
   const ProfileDetailsScreen({super.key});
 

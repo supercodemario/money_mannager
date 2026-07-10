@@ -1,10 +1,8 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:money_manager/app/app_router.dart';
 import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/app/profile_details_scope.dart';
-import 'package:money_manager/features/family_list/view/family_list_screen.dart';
-import 'package:money_manager/features/settings/view/expense_limits_screen.dart';
-import 'package:money_manager/features/settings/settings-preferences/view/preferences_details_screen.dart';
-import 'package:money_manager/features/settings/view/recurring_templates_management_screen.dart';
 import 'package:money_manager/share/share.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -131,11 +129,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                               badgeStyle: _BadgeStyle.emerald,
                               onTap: () {
-                                Navigator.of(context).push<void>(
-                                  MaterialPageRoute<void>(
-                                    builder: (context) =>
-                                        const RecurringTemplatesManagementScreen(),
-                                  ),
+                                context.router.push<void>(
+                                  const RecurringTemplatesManagementRoute(),
                                 );
                               },
                             );
@@ -151,12 +146,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             subtitle: AppStrings.settingsCardFamilySubtitle,
                             trailingAvatars: true,
                             onTap: () {
-                              Navigator.of(context).push<void>(
-                                MaterialPageRoute<void>(
-                                  builder: (context) =>
-                                      const FamilyListScreen(),
-                                ),
-                              );
+                              context.router.push<void>(const FamilyListRoute());
                             },
                           ),
                         _SettingsGridCard(
@@ -169,12 +159,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           badgeStyle: _BadgeStyle.teal,
                           progress: 0.45,
                           onTap: () {
-                            Navigator.of(context).push<void>(
-                              MaterialPageRoute<void>(
-                                builder: (context) =>
-                                    const ExpenseLimitsScreen(),
-                              ),
-                            );
+                            context.router.push<void>(const ExpenseLimitsRoute());
                           },
                         ),
                         _SettingsGridCard(
@@ -188,11 +173,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           badge: AppStrings.settingsCardPreferencesBadge,
                           badgeStyle: _BadgeStyle.neutral,
                           onTap: () {
-                            Navigator.of(context).push<void>(
-                              MaterialPageRoute<void>(
-                                builder: (context) =>
-                                    const PreferencesDetailsScreen(),
-                              ),
+                            context.router.push<void>(
+                              const PreferencesDetailsRoute(),
                             );
                           },
                         ),

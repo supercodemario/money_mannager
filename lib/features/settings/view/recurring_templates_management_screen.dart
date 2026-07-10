@@ -1,16 +1,17 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/data/local/app_database.dart'
     hide ExpenseCategory;
 import 'package:money_manager/features/add_expense/data/default_expense_categories.dart';
 import 'package:money_manager/features/add_expense/models/expense_category/expense_category.dart';
-import 'package:money_manager/features/auth/view/post_login_cloud_sync_screen.dart';
-import 'package:money_manager/features/expenses/view/add_recurring_payment_screen.dart';
+import 'package:money_manager/app/app_router.dart';
 import 'package:money_manager/features/expenses/widgets/expenses_amount_format.dart';
 import 'package:money_manager/share/share.dart';
 import 'package:money_manager/sync/manual_sync_helper.dart';
 import 'package:money_manager/sync/sync_orchestrator.dart';
 
+@RoutePage()
 class RecurringTemplatesManagementScreen extends StatelessWidget {
   const RecurringTemplatesManagementScreen({super.key});
 
@@ -33,11 +34,7 @@ class RecurringTemplatesManagementScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.of(context).push<void>(
-            MaterialPageRoute<void>(
-              builder: (context) => const AddRecurringPaymentScreen(),
-            ),
-          );
+          context.router.push<void>(AddRecurringPaymentRoute());
         },
         tooltip: AppStrings.recurringAddTitle,
         backgroundColor: AppColors.primary,
@@ -132,12 +129,9 @@ class RecurringTemplatesManagementScreen extends StatelessWidget {
                         children: [
                           TextButton(
                             onPressed: () {
-                              Navigator.of(context).push<void>(
-                                MaterialPageRoute<void>(
-                                  builder: (context) =>
-                                      AddRecurringPaymentScreen(
-                                        editingTemplateId: t.id,
-                                      ),
+                              context.router.push<void>(
+                                AddRecurringPaymentRoute(
+                                  editingTemplateId: t.id,
                                 ),
                               );
                             },
@@ -201,20 +195,18 @@ Future<void> _openRecurringCloudSync(BuildContext context) async {
   final preview = await ManualSyncHelper.loadRecurringSyncPreview(services);
   if (!context.mounted) return;
   final mode = ManualSyncHelper.modeFromUnsynced(preview.unsynced);
-  await Navigator.of(context).push<void>(
-    MaterialPageRoute<void>(
-      builder: (_) => PostLoginCloudSyncScreen(
-        totalRows: preview.unsynced,
-        localRows: preview.localTotal,
-        remoteRows: preview.remoteRows,
-        isBootstrapOnly: mode == ManualSyncMode.pullOnly,
-        runSync: (onStage) => ManualSyncHelper.runManualSync(
-          services,
-          includeLocalOnly: preview.localOnly > 0,
-          includeError: mode == ManualSyncMode.pushThenPull,
-          mode: mode,
-          onStage: onStage,
-        ),
+  await context.router.push<void>(
+    PostLoginCloudSyncRoute(
+      totalRows: preview.unsynced,
+      localRows: preview.localTotal,
+      remoteRows: preview.remoteRows,
+      isBootstrapOnly: mode == ManualSyncMode.pullOnly,
+      runSync: (onStage) => ManualSyncHelper.runManualSync(
+        services,
+        includeLocalOnly: preview.localOnly > 0,
+        includeError: mode == ManualSyncMode.pushThenPull,
+        mode: mode,
+        onStage: onStage,
       ),
     ),
   );

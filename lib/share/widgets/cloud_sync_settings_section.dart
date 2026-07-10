@@ -1,16 +1,15 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:money_manager/app/app_router.dart';
 import 'package:money_manager/app/app_services.dart';
-import 'package:money_manager/features/auth/view/auth_screen.dart';
 import 'package:money_manager/share/share.dart';
 
-/// Cloud sync summary; opens [AuthScreen] for login / manage account.
+/// Cloud sync summary; opens [AuthRoute] for login / manage account.
 class CloudSyncSettingsSection extends StatelessWidget {
   const CloudSyncSettingsSection({super.key});
 
   Future<void> _openAuth(BuildContext context) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(builder: (context) => const AuthScreen()),
-    );
+    await context.router.push<void>(const AuthRoute());
   }
 
   @override

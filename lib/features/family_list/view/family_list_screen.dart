@@ -1,3 +1,4 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:money_manager/app/app_services.dart';
@@ -8,6 +9,7 @@ import 'package:money_manager/features/family_list/models/family_list_state/fami
 import 'package:money_manager/share/share.dart';
 
 /// Lists every household the signed-in user belongs to ([household_members]).
+@RoutePage()
 class FamilyListScreen extends StatelessWidget {
   const FamilyListScreen({super.key});
 

@@ -1,13 +1,15 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:money_manager/app/app_router.dart';
 import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/features/settings/settings-preferences/bloc/preferences_details_cubit.dart';
 import 'package:money_manager/features/settings/settings-preferences/data/preferences_details_repository.dart';
 import 'package:money_manager/features/settings/settings-preferences/models/preferences_details_state/preferences_details_state.dart';
 import 'package:money_manager/features/settings/settings-preferences/widgets/preference_dropdown.dart';
-import 'package:money_manager/features/settings/view/category_management_screen.dart';
 import 'package:money_manager/share/share.dart';
 
+@RoutePage()
 class PreferencesDetailsScreen extends StatelessWidget {
   const PreferencesDetailsScreen({super.key});
 
@@ -166,11 +168,7 @@ class _PreferencesDetailsBody extends StatelessWidget {
                       title: const Text(AppStrings.preferencesManageCategories),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () {
-                        Navigator.of(context).push<void>(
-                          MaterialPageRoute<void>(
-                            builder: (context) => const CategoryManagementScreen(),
-                          ),
-                        );
+                        context.router.push<void>(const CategoryManagementRoute());
                       },
                     ),
                   ),

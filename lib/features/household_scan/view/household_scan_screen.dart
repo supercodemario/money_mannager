@@ -1,9 +1,11 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:money_manager/features/household_scan/bloc/household_scan_cubit.dart';
 import 'package:money_manager/features/household_scan/widgets/household_scan_view.dart';
 
 /// Full-screen QR scanner; pops with a UUID string or null if dismissed.
+@RoutePage()
 class HouseholdScanScreen extends StatelessWidget {
   const HouseholdScanScreen({
     super.key,

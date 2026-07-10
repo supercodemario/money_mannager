@@ -1,3 +1,4 @@
+import 'package:money_manager/core/navigation/app_route_pop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:money_manager/core/logging/app_log.dart';
@@ -82,7 +83,7 @@ class CreateFamilyCubit extends Cubit<CreateFamilyState> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text(AppStrings.familyCreateCancelSuccess)),
         );
-        Navigator.of(context).pop();
+        context.popRoute();
       }
     } catch (e, st) {
       logAppError('create_family.cancel_invite', e, st);

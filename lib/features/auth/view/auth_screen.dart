@@ -1,16 +1,19 @@
+import 'package:auto_route/auto_route.dart';
+import 'package:money_manager/core/navigation/app_route_pop.dart';
+import 'package:money_manager/app/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/app/cloud_sync_controller.dart';
 import 'package:money_manager/core/logging/app_log.dart';
 import 'package:money_manager/data/local/sync_metadata_store.dart';
 import 'package:money_manager/features/auth/account_session_flow.dart';
-import 'package:money_manager/features/auth/view/post_login_cloud_sync_screen.dart';
 import 'package:money_manager/share/share.dart';
 import 'package:money_manager/sync/manual_sync_helper.dart';
 import 'package:money_manager/sync/sync_orchestrator.dart';
 
 /// Full-screen Supabase email/password sign-in and sign-up.
 /// Uses [CloudSyncController] from [AppServices] only (no direct Supabase imports here).
+@RoutePage()
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
 
@@ -95,7 +98,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                     const SizedBox(height: AppSpacing.s8),
                     FilledButton(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () => context.popRoute(),
                       child: const Text(AppStrings.commonDone),
                     ),
                   ],
@@ -196,7 +199,7 @@ class _AuthScreenState extends State<AuthScreen> {
       await services.profiles.hydrateDisplayNameFromAuthSession();
       if (!mounted) return;
       final allowClose = await _handlePostAuthSyncScreen(services);
-      if (mounted && allowClose) Navigator.of(context).pop();
+      if (mounted && allowClose) context.popRoute();
     } catch (e, st) {
       logAppError('auth.sign_in', e, st);
       if (mounted) {
@@ -223,7 +226,7 @@ class _AuthScreenState extends State<AuthScreen> {
           if (!mounted) return;
           final allowClose = await _handlePostAuthSyncScreen(services);
           if (mounted && allowClose) {
-            Navigator.of(context).pop();
+            context.popRoute();
             return;
           }
         } else {
@@ -271,21 +274,19 @@ class _AuthScreenState extends State<AuthScreen> {
     final mode = ManualSyncHelper.modeFromUnsynced(preview.unsynced);
     final bootstrapOnly = mode == ManualSyncMode.pullOnly;
     final shouldClose =
-        await Navigator.of(context).push<bool>(
-          MaterialPageRoute<bool>(
-            builder: (_) => PostLoginCloudSyncScreen(
-              totalRows: preview.unsynced,
-              localRows: preview.localTotal,
-              remoteRows: preview.remoteRows,
-              isBootstrapOnly: bootstrapOnly,
-              runSync: (onStage) => ManualSyncHelper.runManualSync(
-                services,
-                includeLocalOnly: preview.localOnly > 0,
-                includeError: mode == ManualSyncMode.pushThenPull,
-                mode: mode,
-                markBootstrapCompleteOnSuccess: true,
-                onStage: onStage,
-              ),
+        await context.router.push<bool>(
+          PostLoginCloudSyncRoute(
+            totalRows: preview.unsynced,
+            localRows: preview.localTotal,
+            remoteRows: preview.remoteRows,
+            isBootstrapOnly: bootstrapOnly,
+            runSync: (onStage) => ManualSyncHelper.runManualSync(
+              services,
+              includeLocalOnly: preview.localOnly > 0,
+              includeError: mode == ManualSyncMode.pushThenPull,
+              mode: mode,
+              markBootstrapCompleteOnSuccess: true,
+              onStage: onStage,
             ),
           ),
         ) ??
@@ -297,21 +298,19 @@ class _AuthScreenState extends State<AuthScreen> {
     final preview = await ManualSyncHelper.loadAggregatePreview(services);
     if (!mounted) return;
     final mode = ManualSyncHelper.modeFromUnsynced(preview.unsynced);
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => PostLoginCloudSyncScreen(
-          totalRows: preview.unsynced,
-          localRows: preview.localTotal,
-          remoteRows: preview.remoteRows,
-          isBootstrapOnly: mode == ManualSyncMode.pullOnly,
-          runSync: (onStage) => ManualSyncHelper.runManualSync(
-            services,
-            includeLocalOnly: preview.localOnly > 0,
-            includeError: mode == ManualSyncMode.pushThenPull,
-            mode: mode,
-            markBootstrapCompleteOnSuccess: true,
-            onStage: onStage,
-          ),
+    await context.router.push<void>(
+      PostLoginCloudSyncRoute(
+        totalRows: preview.unsynced,
+        localRows: preview.localTotal,
+        remoteRows: preview.remoteRows,
+        isBootstrapOnly: mode == ManualSyncMode.pullOnly,
+        runSync: (onStage) => ManualSyncHelper.runManualSync(
+          services,
+          includeLocalOnly: preview.localOnly > 0,
+          includeError: mode == ManualSyncMode.pushThenPull,
+          mode: mode,
+          markBootstrapCompleteOnSuccess: true,
+          onStage: onStage,
         ),
       ),
     );

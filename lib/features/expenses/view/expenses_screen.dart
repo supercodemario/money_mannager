@@ -1,7 +1,8 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:money_manager/app/app_router.dart';
 import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/features/add_expense/data/default_expense_categories.dart';
-import 'package:money_manager/features/expenses/view/add_recurring_payment_screen.dart';
 import 'package:money_manager/features/expenses/widgets/daily_expenses_view.dart';
 import 'package:money_manager/features/expenses/widgets/monthly_expenses_view.dart';
 import 'package:money_manager/features/expenses/widgets/recurring_expenses_view.dart';
@@ -34,11 +35,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
       floatingActionButton: _mode == ExpensesMode.recurring
           ? FloatingActionButton(
               onPressed: () {
-                Navigator.of(context).push<void>(
-                  MaterialPageRoute<void>(
-                    builder: (context) => const AddRecurringPaymentScreen(),
-                  ),
-                );
+                context.router.push<void>(AddRecurringPaymentRoute());
               },
               tooltip: AppStrings.recurringAddTitle,
               backgroundColor: AppColors.primary,

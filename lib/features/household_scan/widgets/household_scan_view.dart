@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:money_manager/core/navigation/app_route_pop.dart';
 import 'package:flutter/material.dart';
 import 'package:money_manager/features/household_scan/widgets/paste_invite_sheet.dart';
 import 'package:money_manager/share/share.dart';
@@ -53,7 +54,7 @@ class _HouseholdScanViewState extends State<HouseholdScanView> {
     if (_handled || !mounted) return;
     _handled = true;
     _controller?.stop();
-    Navigator.of(context).pop<String>(uuid);
+    context.popRoute<String>(uuid);
   }
 
   void _trySubmitRaw(String raw) {

@@ -1,3 +1,4 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:money_manager/core/logging/app_log.dart';
 import 'package:money_manager/share/share.dart';
@@ -7,6 +8,7 @@ typedef LogoutSyncRunner = Future<void> Function(
   void Function(ManualSyncStage stage) onStage,
 );
 
+@RoutePage()
 class SyncBeforeLogoutScreen extends StatefulWidget {
   const SyncBeforeLogoutScreen({
     super.key,

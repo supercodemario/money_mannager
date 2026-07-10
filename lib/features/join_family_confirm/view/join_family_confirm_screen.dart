@@ -1,3 +1,5 @@
+import 'package:auto_route/auto_route.dart';
+import 'package:money_manager/core/navigation/app_route_pop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:money_manager/app/app_services.dart';
@@ -7,6 +9,7 @@ import 'package:money_manager/features/join_family_confirm/data/join_family_conf
 import 'package:money_manager/share/share.dart';
 
 /// Confirms joining a pending [FamilyInvitePreview] (creates [households] on success).
+@RoutePage()
 class JoinFamilyConfirmScreen extends StatelessWidget {
   const JoinFamilyConfirmScreen({super.key, required this.preview});
 
@@ -63,7 +66,7 @@ class _JoinFamilyConfirmBody extends StatelessWidget {
               BlocBuilder<JoinFamilyConfirmCubit, bool>(
                 builder: (context, busy) {
                   return OutlinedButton(
-                    onPressed: busy ? null : () => Navigator.of(context).pop(false),
+                    onPressed: busy ? null : () => context.popRoute(false),
                     child: const Text(AppStrings.cancel),
                   );
                 },

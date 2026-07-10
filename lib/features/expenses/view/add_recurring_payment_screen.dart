@@ -1,3 +1,5 @@
+import 'package:auto_route/auto_route.dart';
+import 'package:money_manager/core/navigation/app_route_pop.dart';
 import 'package:flutter/material.dart';
 import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/data/recurring/recurring_calendar.dart';
@@ -6,6 +8,7 @@ import 'package:money_manager/features/add_expense/models/expense_category/expen
 import 'package:money_manager/features/expenses/widgets/expenses_amount_format.dart';
 import 'package:money_manager/share/share.dart';
 
+@RoutePage()
 class AddRecurringPaymentScreen extends StatefulWidget {
   const AddRecurringPaymentScreen({super.key, this.editingTemplateId});
 
@@ -49,7 +52,7 @@ class _AddRecurringPaymentScreenState extends State<AddRecurringPaymentScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text(AppStrings.recurringValidationTitle)),
       );
-      Navigator.of(context).pop();
+      context.popRoute();
       return;
     }
     final cats = defaultExpenseCategories();
@@ -119,7 +122,7 @@ class _AddRecurringPaymentScreenState extends State<AddRecurringPaymentScreen> {
           endMonthKey: endMonthKey,
         );
       }
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) context.popRoute();
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -158,7 +161,7 @@ class _AddRecurringPaymentScreenState extends State<AddRecurringPaymentScreen> {
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.popRoute(),
           ),
           title: const Text(AppStrings.recurringEditTitle),
         ),
@@ -175,7 +178,7 @@ class _AddRecurringPaymentScreenState extends State<AddRecurringPaymentScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.popRoute(),
         ),
         title: Text(isEdit ? AppStrings.recurringEditTitle : AppStrings.recurringAddTitle),
       ),

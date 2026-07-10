@@ -1,13 +1,14 @@
 import 'dart:async';
 
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:money_manager/app/app_router.dart';
 import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/data/local/app_database.dart';
 import 'package:money_manager/data/local/onboarding_preferences.dart';
 import 'package:money_manager/data/repositories/expense_limits_repository.dart';
 import 'package:money_manager/features/dashboard/widgets/dashboard_home_expense_body.dart';
 import 'package:money_manager/features/dashboard/widgets/dashboard_home_tutorial_body.dart';
-import 'package:money_manager/features/settings/view/expense_limits_screen.dart';
 import 'package:money_manager/share/share.dart';
 
 /// Home tab: [HomeRatioAppBar] + first-run tutorial or the expense dashboard.
@@ -75,11 +76,7 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
   }
 
   void _openExpenseLimits() {
-    Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (context) => const ExpenseLimitsScreen(),
-      ),
-    );
+    context.router.push<void>(const ExpenseLimitsRoute());
   }
 
   @override

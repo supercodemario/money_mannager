@@ -1,9 +1,11 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/data/categories/category_bucket.dart';
 import 'package:money_manager/features/add_expense/data/category_visuals.dart';
 import 'package:money_manager/share/share.dart';
 
+@RoutePage()
 class CategoryManagementScreen extends StatelessWidget {
   const CategoryManagementScreen({super.key});
 

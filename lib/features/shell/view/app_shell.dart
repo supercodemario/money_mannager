@@ -1,12 +1,14 @@
 import 'dart:ui';
 
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:money_manager/features/add_expense/view/quick_add_screen.dart';
+import 'package:money_manager/app/app_router.dart';
 import 'package:money_manager/features/dashboard/view/dashboard_home_screen.dart';
 import 'package:money_manager/features/expenses/view/expenses_screen.dart';
 import 'package:money_manager/features/settings/view/settings_screen.dart';
 import 'package:money_manager/share/share.dart';
 
+@RoutePage(name: 'AppShellRoute')
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
 
@@ -19,11 +21,7 @@ class _AppShellState extends State<AppShell> {
   int _stackIndex = 0;
 
   void _openQuickAdd() {
-    Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (context) => const QuickAddScreen(),
-      ),
-    );
+    context.router.push<void>(QuickAddRoute());
   }
 
   /// Maps bottom-nav slot (0..4) to IndexedStack index; slot 2 is Add (push, no stack change).

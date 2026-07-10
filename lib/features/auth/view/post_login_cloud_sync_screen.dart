@@ -1,3 +1,5 @@
+import 'package:auto_route/auto_route.dart';
+import 'package:money_manager/core/navigation/app_route_pop.dart';
 import 'package:flutter/material.dart';
 import 'package:money_manager/core/logging/app_log.dart';
 import 'package:money_manager/share/share.dart';
@@ -8,6 +10,7 @@ typedef PostLoginCloudSyncRunner =
 
 /// Full-screen flow after sign-in when [totalRows] local-only expenses exist:
 /// explicit sync, stage progress, completion, retry on failure.
+@RoutePage()
 class PostLoginCloudSyncScreen extends StatefulWidget {
   const PostLoginCloudSyncScreen({
     super.key,
@@ -81,11 +84,11 @@ class _PostLoginCloudSyncScreenState extends State<PostLoginCloudSyncScreen> {
   }
 
   void _popDeferAllowCloseAuth() {
-    Navigator.of(context).pop(true);
+    context.popRoute(true);
   }
 
   void _popStayOnAuthAfterFailure() {
-    Navigator.of(context).pop(false);
+    context.popRoute(false);
   }
 
   @override

@@ -1,3 +1,4 @@
+import 'package:money_manager/core/navigation/app_route_pop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:money_manager/app/app_services.dart';
@@ -74,10 +75,10 @@ class ProfileDetailsCubit extends Cubit<ProfileDetailsState> {
         await _repo.purgeMyRemotePublicData();
         await cloud.signOut();
         await _repo.wipeLocalData();
-        if (context.mounted) Navigator.of(context).pop();
+        if (context.mounted) context.popRoute();
       } else {
         await _repo.wipeLocalData();
-        if (context.mounted) Navigator.of(context).pop();
+        if (context.mounted) context.popRoute();
       }
     } catch (e, st) {
       logAppError('profile_details.clear_all', e, st);

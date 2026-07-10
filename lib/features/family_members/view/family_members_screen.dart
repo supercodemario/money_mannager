@@ -1,3 +1,4 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:money_manager/app/app_services.dart';
@@ -10,6 +11,7 @@ import 'package:money_manager/share/share.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Members of one household, filtered by [householdId] from [household_members].
+@RoutePage()
 class FamilyMembersScreen extends StatelessWidget {
   const FamilyMembersScreen({
     super.key,

@@ -4,19 +4,19 @@ import 'package:money_manager/data/local/app_database.dart';
 import 'package:money_manager/share/regional/regional_formatting_data.dart';
 import 'package:money_manager/share/regional/regional_formatting_scope.dart';
 
-/// Builds [MaterialApp] with `locale`, localization delegates, and [RegionalFormattingScope]
-/// driven by [UserPreferencesRepository.watchForUser].
+/// Builds [MaterialApp.router] with `locale`, localization delegates, and
+/// [RegionalFormattingScope] driven by [UserPreferencesRepository.watchForUser].
 class RegionalMaterialAppRoot extends StatelessWidget {
   const RegionalMaterialAppRoot({
     super.key,
     required this.title,
     required this.theme,
-    required this.home,
+    required this.routerConfig,
   });
 
   final String title;
   final ThemeData theme;
-  final Widget home;
+  final RouterConfig<Object> routerConfig;
 
   @override
   Widget build(BuildContext context) {
@@ -31,13 +31,13 @@ class RegionalMaterialAppRoot extends StatelessWidget {
               : Stream<UserPreference?>.value(null),
           builder: (context, prefSnap) {
             final data = RegionalFormattingData.fromPreference(prefSnap.data);
-            return MaterialApp(
+            return MaterialApp.router(
               title: title,
               theme: theme,
               locale: data.materialLocale,
               supportedLocales: RegionalFormattingData.supportedLocales,
               localizationsDelegates: RegionalFormattingData.localizationsDelegates,
-              home: home,
+              routerConfig: routerConfig,
               builder: (context, child) => RegionalFormattingScope(
                 data: data,
                 child: child ?? const SizedBox.shrink(),

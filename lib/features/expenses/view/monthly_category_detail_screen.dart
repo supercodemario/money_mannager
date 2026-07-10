@@ -1,3 +1,4 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/data/repositories/expense_repository.dart';
@@ -9,6 +10,7 @@ import 'package:money_manager/share/share.dart';
 
 enum _CategoryDetailTab { transactions, trend }
 
+@RoutePage()
 class MonthlyCategoryDetailScreen extends StatefulWidget {
   const MonthlyCategoryDetailScreen({
     super.key,

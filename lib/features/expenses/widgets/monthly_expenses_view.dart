@@ -1,7 +1,8 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:money_manager/app/app_router.dart';
 import 'package:money_manager/data/repositories/expense_repository.dart';
 import 'package:money_manager/features/add_expense/models/expense_category/expense_category.dart';
-import 'package:money_manager/features/expenses/view/monthly_category_detail_screen.dart';
 import 'package:money_manager/features/expenses/widgets/expenses_amount_format.dart';
 import 'package:money_manager/features/expenses/widgets/expenses_empty_state.dart';
 import 'package:money_manager/share/share.dart';
@@ -42,14 +43,12 @@ class MonthlyExpensesView extends StatelessWidget {
               child: InkWell(
                 borderRadius: BorderRadius.circular(AppRadius.xl),
                 onTap: () {
-                  Navigator.of(context).push<void>(
-                    MaterialPageRoute<void>(
-                      builder: (ctx) => MonthlyCategoryDetailScreen(
-                        repo: repo,
-                        categoryId: r.categoryId,
-                        category: c,
-                        initialMonth: month,
-                      ),
+                  context.router.push<void>(
+                    MonthlyCategoryDetailRoute(
+                      repo: repo,
+                      categoryId: r.categoryId,
+                      category: c,
+                      initialMonth: month,
                     ),
                   );
                 },
