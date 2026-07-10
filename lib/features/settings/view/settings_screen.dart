@@ -3,7 +3,7 @@ import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/app/profile_details_scope.dart';
 import 'package:money_manager/features/family_list/view/family_list_screen.dart';
 import 'package:money_manager/features/settings/view/expense_limits_screen.dart';
-import 'package:money_manager/features/settings/view/preferences_details_screen.dart';
+import 'package:money_manager/features/settings/settings-preferences/view/preferences_details_screen.dart';
 import 'package:money_manager/features/settings/view/recurring_templates_management_screen.dart';
 import 'package:money_manager/share/share.dart';
 

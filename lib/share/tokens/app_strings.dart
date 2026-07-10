@@ -284,6 +284,8 @@ class AppStrings {
   static const preferencesDefaultHouseholdSelf = 'Self expense';
   static const preferencesDefaultHouseholdNoOptions =
       'Sign in to choose a default family.';
+  static const preferencesDefaultHouseholdSaveFailed =
+      'Could not save default family. Check your connection and try again.';
   static const preferencesManageCategories = 'Manage categories';
   static const categoryManagementTitle = 'Category list';
 

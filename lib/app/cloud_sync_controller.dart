@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:money_manager/core/logging/app_log.dart';
 import 'package:money_manager/data/local/sync_metadata_store.dart';
 import 'package:money_manager/data/remote/auth_remote_gateway.dart';
 import 'package:money_manager/data/remote/household_remote_gateway.dart';
@@ -82,11 +83,15 @@ class CloudSyncController extends ChangeNotifier {
     return _household.ensurePersonalHousehold();
   }
 
-  Future<void> setDefaultExpenseHousehold(String householdId) async {
-    if (!syncAllowed) return;
-    final stillMember = await _currentUserIsMemberOfHousehold(householdId);
-    if (!stillMember) return;
+  /// Persists default expense household when [householdId] is valid for the session.
+  ///
+  /// Returns false when not signed in, not a member, or membership could not be verified.
+  Future<bool> setDefaultExpenseHousehold(String householdId) async {
+    if (!syncAllowed) return false;
+    final member = await checkHouseholdMembership(householdId);
+    if (member != true) return false;
     await SyncMetadataStore.setDefaultExpenseHouseholdId(householdId);
+    return true;
   }
 
   Future<void> signOut() async {
@@ -105,8 +110,9 @@ class CloudSyncController extends ChangeNotifier {
 
     final preferred = await SyncMetadataStore.getDefaultExpenseHouseholdId();
     if (preferred != null) {
-      final stillMember = await _currentUserIsMemberOfHousehold(preferred);
-      if (stillMember) return;
+      final member = await checkHouseholdMembership(preferred);
+      if (member == true) return;
+      if (member == null) return;
       await SyncMetadataStore.clearDefaultExpenseHouseholdId();
       if (kDebugMode) {
         debugPrint(
@@ -141,17 +147,24 @@ class CloudSyncController extends ChangeNotifier {
   Future<void> ensureHouseholdIfNeeded() =>
       ensureDefaultExpenseHouseholdPreference();
 
-  Future<bool> _currentUserIsMemberOfHousehold(String householdId) async {
+  /// `true` = member, `false` = not a member, `null` = check failed (e.g. network).
+  Future<bool?> checkHouseholdMembership(String householdId) async {
+    if (!syncAllowed) return false;
     final uid = Supabase.instance.client.auth.currentUser?.id;
     if (uid == null) return false;
-    final memberRows =
-        await Supabase.instance.client
-                .from('household_members')
-                .select('household_id')
-                .eq('user_id', uid)
-                .eq('household_id', householdId)
-                .limit(1)
-            as List<dynamic>;
-    return memberRows.isNotEmpty;
+    try {
+      final memberRows =
+          await Supabase.instance.client
+                  .from('household_members')
+                  .select('household_id')
+                  .eq('user_id', uid)
+                  .eq('household_id', householdId)
+                  .limit(1)
+              as List<dynamic>;
+      return memberRows.isNotEmpty;
+    } catch (e, st) {
+      logAppError('cloud_sync.household_membership_check', e, st);
+      return null;
+    }
   }
 }

@@ -156,3 +156,17 @@ The preferences details screen MUST include settings for Currency, Language, and
 - **WHEN** the user is signed in and opens preferences details
 - **THEN** the screen SHALL present a control to select the default expense household among the personal household (e.g. labeled Self) and shared households the user belongs to
 
+### Requirement: Preferences details follows layered feature structure
+
+The preferences details implementation MUST live under `lib/features/settings/settings-preferences/` with the standard subfolders: `view/`, `bloc/`, `data/`, `models/`, `widgets/`, and `routes/`. The view layer MUST follow **view → bloc → data** and MUST NOT call `AppServices`, repositories, or `SyncMetadataStore` directly except to construct the bloc’s dependencies at screen entry (e.g. `BlocProvider` create callback). Private reusable widgets for preferences details (e.g. dropdown rows) MUST live under `lib/features/settings/settings-preferences/widgets/`.
+
+#### Scenario: Screen entry wires bloc only
+
+- **WHEN** `PreferencesDetailsScreen` is built
+- **THEN** it SHALL provide a preferences-details bloc/cubit with injected repository dependencies and SHALL render UI via bloc-driven state
+
+#### Scenario: Persistence goes through feature data layer
+
+- **WHEN** regional preferences or default expense household are loaded or saved from preferences details
+- **THEN** those operations SHALL be invoked from the preferences-details bloc via the feature `data/` repository, not from widget `setState` handlers calling global services directly
+
