@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:money_manager/features/add_expense/models/expense_category/expense_category.dart';
 import 'package:money_manager/share/share.dart';
 
+/// Categories per [PageView] page (4×4 grid).
+const int kQuickAddCategoriesPerPage = 16;
+
 class QuickAddCategoryPager extends StatefulWidget {
   const QuickAddCategoryPager({
     super.key,
@@ -19,6 +22,9 @@ class QuickAddCategoryPager extends StatefulWidget {
 }
 
 class _QuickAddCategoryPagerState extends State<QuickAddCategoryPager> {
+  static const int _crossAxisCount = 4;
+  static const int _rowCount = 4;
+
   final _controller = PageController();
   int _page = 0;
 
@@ -28,59 +34,79 @@ class _QuickAddCategoryPagerState extends State<QuickAddCategoryPager> {
     super.dispose();
   }
 
+  void _goToPage(int page, int pageCount) {
+    if (page < 0 || page >= pageCount) return;
+    _controller.animateToPage(
+      page,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final pages = _chunk(widget.categories, 8);
+    final pages = _chunk(widget.categories, kQuickAddCategoriesPerPage);
+    if (pages.isEmpty) return const SizedBox.shrink();
+
+    final multiPage = pages.length > 1;
+
     return Column(
       children: [
-        SizedBox(
-          height: 2 * 78,
+        Expanded(
           child: PageView.builder(
             controller: _controller,
             itemCount: pages.length,
+            physics: multiPage
+                ? const PageScrollPhysics(parent: BouncingScrollPhysics())
+                : const NeverScrollableScrollPhysics(),
             onPageChanged: (i) => setState(() => _page = i),
             itemBuilder: (context, pageIndex) {
-              final items = pages[pageIndex];
-              return GridView.builder(
-                padding: EdgeInsets.zero,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  mainAxisSpacing: AppSpacing.s12,
-                  crossAxisSpacing: AppSpacing.s8,
-                  childAspectRatio: 0.92,
-                ),
-                itemCount: items.length,
-                itemBuilder: (context, i) {
-                  final c = items[i];
-                  final selected = c.id == widget.selectedId;
-                  return QuickAddCategoryTile(
-                    category: c,
-                    selected: selected,
-                    onTap: () => widget.onSelect(c.id),
-                  );
-                },
+              return _CategoryPageGrid(
+                items: pages[pageIndex],
+                selectedId: widget.selectedId,
+                onSelect: widget.onSelect,
+                crossAxisCount: _crossAxisCount,
+                rowCount: _rowCount,
               );
             },
           ),
         ),
-        const SizedBox(height: AppSpacing.s12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(
-            pages.length,
-            (i) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: i == _page ? AppColors.primary : AppColors.surfaceContainerHigh,
-                  shape: BoxShape.circle,
-                ),
-                child: const SizedBox(width: 6, height: 6),
+        if (multiPage) ...[
+          const SizedBox(height: AppSpacing.s12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                onPressed: _page > 0 ? () => _goToPage(_page - 1, pages.length) : null,
+                icon: const Icon(Icons.chevron_left),
+                tooltip: MaterialLocalizations.of(context).previousPageTooltip,
               ),
-            ),
+              ...List.generate(
+                pages.length,
+                (i) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: i == _page
+                          ? AppColors.primary
+                          : AppColors.surfaceContainerHigh,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const SizedBox(width: 6, height: 6),
+                  ),
+                ),
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                onPressed:
+                    _page < pages.length - 1 ? () => _goToPage(_page + 1, pages.length) : null,
+                icon: const Icon(Icons.chevron_right),
+                tooltip: MaterialLocalizations.of(context).nextPageTooltip,
+              ),
+            ],
           ),
-        ),
+        ],
       ],
     );
   }
@@ -92,6 +118,59 @@ class _QuickAddCategoryPagerState extends State<QuickAddCategoryPager> {
       out.add(list.sublist(i, (i + size).clamp(0, list.length)));
     }
     return out;
+  }
+}
+
+/// Non-scrollable 4×4 grid so it does not compete with [PageView] gestures.
+class _CategoryPageGrid extends StatelessWidget {
+  const _CategoryPageGrid({
+    required this.items,
+    required this.selectedId,
+    required this.onSelect,
+    required this.crossAxisCount,
+    required this.rowCount,
+  });
+
+  final List<ExpenseCategory> items;
+  final String? selectedId;
+  final ValueChanged<String> onSelect;
+  final int crossAxisCount;
+  final int rowCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (var row = 0; row < rowCount; row++) ...[
+          if (row > 0) const SizedBox(height: AppSpacing.s12),
+          Expanded(
+            child: Row(
+              children: [
+                for (var col = 0; col < crossAxisCount; col++) ...[
+                  if (col > 0) const SizedBox(width: AppSpacing.s8),
+                  Expanded(
+                    child: Builder(
+                      builder: (context) {
+                        final index = row * crossAxisCount + col;
+                        if (index >= items.length) {
+                          return const SizedBox.shrink();
+                        }
+                        final c = items[index];
+                        return QuickAddCategoryTile(
+                          category: c,
+                          selected: c.id == selectedId,
+                          onTap: () => onSelect(c.id),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
   }
 }
 
@@ -112,8 +191,9 @@ class QuickAddCategoryTile extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     return InkResponse(
       onTap: onTap,
-      radius: AppSpacing.s32,
+      radius: AppSpacing.s48,
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
           Stack(
@@ -123,17 +203,28 @@ class QuickAddCategoryTile extends StatelessWidget {
                 padding: const EdgeInsets.all(AppSpacing.s12),
                 color: category.backgroundColor,
                 borderRadius: AppRadius.xl,
-                child: Icon(category.icon, color: category.foregroundColor, size: AppSpacing.s24),
+                child: Icon(
+                  category.icon,
+                  color: category.foregroundColor,
+                  size: AppSpacing.s24,
+                ),
               ),
               if (selected)
                 Positioned(
-                  top: -6,
-                  right: -6,
+                  top: 0,
+                  right: -3,
                   child: DecoratedBox(
-                    decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
                     child: const Padding(
                       padding: EdgeInsets.all(3),
-                      child: Icon(Icons.check, size: 12, color: AppColors.onPrimary),
+                      child: Icon(
+                        Icons.check,
+                        size: 12,
+                        color: AppColors.onPrimary,
+                      ),
                     ),
                   ),
                 ),
@@ -142,7 +233,10 @@ class QuickAddCategoryTile extends StatelessWidget {
           const SizedBox(height: AppSpacing.s4),
           Text(
             category.label,
-            style: textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, color: AppColors.onSurfaceVariant),
+            style: textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.onSurfaceVariant,
+            ),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -152,4 +246,3 @@ class QuickAddCategoryTile extends StatelessWidget {
     );
   }
 }
-

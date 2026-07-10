@@ -1,10 +1,9 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:money_manager/core/navigation/app_route_pop.dart';
 import 'package:flutter/material.dart';
 import 'package:money_manager/app/app_services.dart';
-import 'package:money_manager/features/add_expense/data/category_visuals.dart';
-import 'package:money_manager/features/add_expense/widgets/quick_add_category_pager.dart';
-import 'package:money_manager/features/add_expense/widgets/quick_add_keypad.dart';
+import 'package:money_manager/core/navigation/app_route_pop.dart';
+import 'package:money_manager/features/add_expense/widgets/quick_add_amount_phase.dart';
+import 'package:money_manager/features/add_expense/widgets/quick_add_category_phase.dart';
 import 'package:money_manager/features/expenses/widgets/expenses_amount_format.dart';
 import 'package:money_manager/share/share.dart';
 
@@ -55,9 +54,7 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     final inCategoryMode = _mode == _QuickAddMode.category;
-    final services = AppServices.of(context);
     final currencySymbol = currentExpenseCurrencySymbol(context);
 
     return Scaffold(
@@ -79,192 +76,47 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
       body: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s16, vertical: AppSpacing.s16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      DateStepperPill(
-                        dateText: formatDayStepperLabel(_date),
-                        onPrev: () => setState(() => _date = _date.subtract(const Duration(days: 1))),
-                        onNext: () => setState(() => _date = _date.add(const Duration(days: 1))),
-                        prevTooltip: AppStrings.expensesPreviousDayTooltip,
-                        nextTooltip: AppStrings.expensesNextDayTooltip,
-                      ),
-                      const SizedBox(height: AppSpacing.s16),
-                      Semantics(
-                        button: inCategoryMode,
-                        label: inCategoryMode ? AppStrings.editAmount : null,
-                        child: InkWell(
-                          onTap: inCategoryMode ? _goToAmountMode : null,
-                          borderRadius: BorderRadius.circular(AppRadius.xl),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.s8),
-                            child: Column(
-                              children: [
-                                Text(
-                                  AppStrings.quickAddAmountLabel,
-                                  style: textTheme.labelSmall?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 2.0,
-                                    color: AppColors.onSurfaceVariant,
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.s4),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      currencySymbol,
-                                      style: textTheme.headlineSmall?.copyWith(
-                                        fontWeight: FontWeight.w800,
-                                        color: AppColors.primary,
-                                      ),
-                                    ),
-                                    const SizedBox(width: AppSpacing.s4),
-                                    Text(
-                                      _amountDisplay,
-                                      style: textTheme.displaySmall?.copyWith(
-                                        fontWeight: FontWeight.w900,
-                                        color: AppColors.onSurface,
-                                        letterSpacing: -1.0,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.s16),
-                      AppCard(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s12, vertical: AppSpacing.s8),
-                        color: AppColors.surfaceContainerLow,
-                        borderRadius: AppRadius.xl,
-                        child: Row(
-                          children: [
-                            Icon(Icons.notes, color: AppColors.onSurfaceVariant),
-                            const SizedBox(width: AppSpacing.s8),
-                            Expanded(
-                              child: TextField(
-                                controller: _noteController,
-                                decoration: InputDecoration(
-                                  hintText: AppStrings.quickAddNotePlaceholder,
-                                  filled: false,
-                                  contentPadding: EdgeInsets.zero,
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (inCategoryMode) ...[
-                        const SizedBox(height: AppSpacing.s16),
-                        Text(
-                          AppStrings.selectCategoryTitle,
-                          style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-                        ),
-                        const SizedBox(height: AppSpacing.s12),
-                        StreamBuilder(
-                          stream: services.categories.watchAll(),
-                          builder: (context, snap) {
-                            final categories =
-                                (snap.data ?? []).map(mapDbCategoryToExpenseCategory).toList(growable: false);
-                            return QuickAddCategoryPager(
-                              categories: categories,
-                              selectedId: _selectedCategoryId,
-                              onSelect: (id) async {
-                                if (_saving) return;
-                                setState(() => _selectedCategoryId = id);
-                                await _save();
-                              },
-                            );
-                          },
-                        ),
-                        const SizedBox(height: AppSpacing.s16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.info, size: AppSpacing.s16, color: AppColors.primary),
-                            const SizedBox(width: AppSpacing.s8),
-                            Flexible(
-                              child: Text(
-                                AppStrings.tapCategoryToSaveInstantly,
-                                style: textTheme.labelSmall?.copyWith(
-                                  color: AppColors.onSurfaceVariant,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s16,
+            vertical: AppSpacing.s16,
+          ),
+          child: inCategoryMode
+              ? QuickAddCategoryPhase(
+                  date: _date,
+                  amountDisplay: _amountDisplay,
+                  currencySymbol: currencySymbol,
+                  noteController: _noteController,
+                  selectedCategoryId: _selectedCategoryId,
+                  saving: _saving,
+                  onPrevDay: () => setState(
+                    () => _date = _date.subtract(const Duration(days: 1)),
                   ),
-                ),
-              ),
-              Visibility(
-                visible: !inCategoryMode,
-                maintainSize: true,
-                maintainAnimation: true,
-                maintainState: true,
-                child: QuickAddKeypad(
+                  onNextDay: () => setState(
+                    () => _date = _date.add(const Duration(days: 1)),
+                  ),
+                  onEditAmount: _goToAmountMode,
+                  onSelectCategory: (id) async {
+                    setState(() => _selectedCategoryId = id);
+                    await _save();
+                  },
+                )
+              : QuickAddAmountPhase(
+                  date: _date,
+                  amountDisplay: _amountDisplay,
+                  currencySymbol: currencySymbol,
+                  noteController: _noteController,
+                  amountPositive: _amountPositive,
+                  onPrevDay: () => setState(
+                    () => _date = _date.subtract(const Duration(days: 1)),
+                  ),
+                  onNextDay: () => setState(
+                    () => _date = _date.add(const Duration(days: 1)),
+                  ),
                   onDigit: _appendDigit,
                   onDot: _appendDot,
                   onBackspace: _backspace,
+                  onSelectCategory: _goToCategoryMode,
                 ),
-              ),
-              const SizedBox(height: AppSpacing.s12),
-              if (!inCategoryMode)
-                FilledButton(
-                  onPressed: _amountPositive ? _goToCategoryMode : null,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.surfaceContainerLow,
-                    foregroundColor: AppColors.onSurface,
-                    disabledBackgroundColor: AppColors.surfaceContainerHigh,
-                    disabledForegroundColor: AppColors.onSurfaceVariant,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.xl),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.s16),
-                  ),
-                  child: Text(
-                    AppStrings.selectCategoryTitle,
-                    style: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                )
-              else
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: _goToAmountMode,
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.s16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.xl),
-                      ),
-                    ),
-                    child: Text(
-                      AppStrings.editAmount,
-                      style: textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
         ),
       ),
     );

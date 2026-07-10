@@ -53,13 +53,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(QuickAddCategoryPager), findsOneWidget);
-    expect(find.byType(QuickAddKeypad), findsOneWidget);
-    expect(
-      tester.widget<Visibility>(
-        find.byWidgetPredicate((w) => w is Visibility && w.child is QuickAddKeypad),
-      ).visible,
-      isFalse,
-    );
+    expect(find.byType(QuickAddKeypad), findsNothing);
     expect(find.text(AppStrings.tapCategoryToSaveInstantly), findsOneWidget);
 
     await tester.tap(find.text(AppStrings.editAmount).first);
