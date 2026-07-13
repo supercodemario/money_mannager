@@ -131,6 +131,53 @@ class CreateFamilyRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [DaySpendDetailScreen]
+class DaySpendDetailRoute extends PageRouteInfo<DaySpendDetailRouteArgs> {
+  DaySpendDetailRoute({
+    Key? key,
+    required DateTime day,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DaySpendDetailRoute.name,
+         args: DaySpendDetailRouteArgs(key: key, day: day),
+         initialChildren: children,
+       );
+
+  static const String name = 'DaySpendDetailRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<DaySpendDetailRouteArgs>();
+      return DaySpendDetailScreen(key: args.key, day: args.day);
+    },
+  );
+}
+
+class DaySpendDetailRouteArgs {
+  const DaySpendDetailRouteArgs({this.key, required this.day});
+
+  final Key? key;
+
+  final DateTime day;
+
+  @override
+  String toString() {
+    return 'DaySpendDetailRouteArgs{key: $key, day: $day}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! DaySpendDetailRouteArgs) return false;
+    return key == other.key && day == other.day;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ day.hashCode;
+}
+
+/// generated route for
 /// [ExpenseLimitsScreen]
 class ExpenseLimitsRoute extends PageRouteInfo<void> {
   const ExpenseLimitsRoute({List<PageRouteInfo>? children})
@@ -365,6 +412,22 @@ class JoinFamilyConfirmRouteArgs {
 
   @override
   int get hashCode => key.hashCode ^ preview.hashCode;
+}
+
+/// generated route for
+/// [MonthDaySpendListingScreen]
+class MonthDaySpendListingRoute extends PageRouteInfo<void> {
+  const MonthDaySpendListingRoute({List<PageRouteInfo>? children})
+    : super(MonthDaySpendListingRoute.name, initialChildren: children);
+
+  static const String name = 'MonthDaySpendListingRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const MonthDaySpendListingScreen();
+    },
+  );
 }
 
 /// generated route for

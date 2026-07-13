@@ -16,20 +16,29 @@ import 'package:money_manager/share/share.dart';
 /// Tutorial is hidden when onboarding was completed, or when the user has added
 /// any expense, or configured monthly income / savings in expense limits.
 class DashboardHomeScreen extends StatefulWidget {
-  const DashboardHomeScreen({super.key, required this.onOpenAddExpense});
+  const DashboardHomeScreen({
+    super.key,
+    required this.onOpenAddExpense,
+    this.isActive = true,
+  });
 
   final VoidCallback onOpenAddExpense;
+
+  /// False when another bottom-nav tab is selected ([IndexedStack] keeps this alive).
+  final bool isActive;
 
   @override
   State<DashboardHomeScreen> createState() => _DashboardHomeScreenState();
 }
 
-class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
+class _DashboardHomeScreenState extends State<DashboardHomeScreen>
+    with WidgetsBindingObserver {
   bool _loadingInitial = true;
 
   bool _onboardingComplete = false;
   bool _hasExpense = false;
   bool _hasMonthlyGuidance = false;
+  bool _temporarilyRevealed = false;
 
   StreamSubscription<bool>? _expenseSub;
   StreamSubscription<ExpenseLimitPreference?>? _limitsSub;
@@ -40,14 +49,40 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
   }
 
   @override
+  void didUpdateWidget(covariant DashboardHomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isActive && !widget.isActive) {
+      _clearTemporaryReveal();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _expenseSub?.cancel();
     _limitsSub?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _clearTemporaryReveal();
+    }
+  }
+
+  void _clearTemporaryReveal() {
+    if (!_temporarilyRevealed) return;
+    setState(() => _temporarilyRevealed = false);
+  }
+
+  void _toggleTemporaryReveal() {
+    setState(() => _temporarilyRevealed = !_temporarilyRevealed);
   }
 
   Future<void> _bootstrap() async {
@@ -107,7 +142,16 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
       );
     }
     if (_showExpenseHome) {
-      return const DashboardHomeExpenseBody();
+      return ValueListenableBuilder<bool>(
+        valueListenable: AppServices.of(context).privacyMode.enabled,
+        builder: (context, privacyEnabled, _) {
+          return DashboardHomeExpenseBody(
+            privacyEnabled: privacyEnabled,
+            temporarilyRevealed: privacyEnabled && _temporarilyRevealed,
+            onToggleReveal: privacyEnabled ? _toggleTemporaryReveal : null,
+          );
+        },
+      );
     }
     return DashboardHomeTutorialBody(
       onSetExpenseLimits: _openExpenseLimits,

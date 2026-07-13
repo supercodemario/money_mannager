@@ -42,6 +42,7 @@ class _AppShellState extends State<AppShell> {
         children: [
           DashboardHomeScreen(
             onOpenAddExpense: _openQuickAdd,
+            isActive: _stackIndex == 0,
           ),
           _stackIndex == 1 ? const ExpensesScreen() : const SizedBox.shrink(),
           const _PlaceholderScreen(title: AppStrings.navInsights),

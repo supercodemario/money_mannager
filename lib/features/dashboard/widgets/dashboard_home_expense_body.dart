@@ -6,19 +6,35 @@ import 'package:money_manager/share/share.dart';
 
 /// Main Home tab content: budget hero, monthly spending, upcoming bills.
 class DashboardHomeExpenseBody extends StatelessWidget {
-  const DashboardHomeExpenseBody({super.key});
+  const DashboardHomeExpenseBody({
+    super.key,
+    required this.privacyEnabled,
+    required this.temporarilyRevealed,
+    this.onToggleReveal,
+  });
+
+  final bool privacyEnabled;
+  final bool temporarilyRevealed;
+  final VoidCallback? onToggleReveal;
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.s16),
-      children: const [
-        DashboardBudgetHero(),
-        SizedBox(height: AppSpacing.s16),
-        DashboardMonthlySpendingCard(),
-        SizedBox(height: AppSpacing.s16),
-        DashboardUpcomingBillsCard(),
-        SizedBox(height: AppSpacing.s48),
+      children: [
+        DashboardBudgetHero(
+          privacyEnabled: privacyEnabled,
+          temporarilyRevealed: temporarilyRevealed,
+          onToggleReveal: onToggleReveal,
+        ),
+        const SizedBox(height: AppSpacing.s16),
+        DashboardMonthlySpendingCard(
+          privacyEnabled: privacyEnabled,
+          temporarilyRevealed: temporarilyRevealed,
+        ),
+        const SizedBox(height: AppSpacing.s16),
+        const DashboardUpcomingBillsCard(),
+        const SizedBox(height: AppSpacing.s48),
       ],
     );
   }

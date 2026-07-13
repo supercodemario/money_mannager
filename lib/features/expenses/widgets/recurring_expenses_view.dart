@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/data/recurring/recurring_calendar.dart';
 import 'package:money_manager/data/repositories/recurring_payment_repository.dart';
 import 'package:money_manager/features/add_expense/models/expense_category/expense_category.dart';
 import 'package:money_manager/features/expenses/widgets/expenses_amount_format.dart';
 import 'package:money_manager/features/expenses/widgets/recurring_mark_paid_sheet.dart';
 import 'package:money_manager/share/share.dart';
+import 'package:money_manager/sync/manual_sync_helper.dart';
 
 class RecurringExpensesView extends StatelessWidget {
   const RecurringExpensesView({
@@ -156,7 +158,15 @@ class RecurringExpensesView extends StatelessWidget {
                                     ],
                                   ),
                                 );
-                                if (ok == true) await repo.deleteTemplate(r.template.id);
+                                if (ok == true) {
+                                  await repo.deleteTemplate(r.template.id);
+                                  if (context.mounted) {
+                                    await ManualSyncHelper
+                                        .pushPendingRecurringPaymentsIfAllowed(
+                                      AppServices.of(context),
+                                    );
+                                  }
+                                }
                               },
                             ),
                           ],

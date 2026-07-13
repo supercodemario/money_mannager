@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:money_manager/app/cloud_sync_controller.dart';
+import 'package:money_manager/app/privacy_mode_controller.dart';
 import 'package:money_manager/data/local/app_database.dart';
 import 'package:money_manager/data/repositories/category_repository.dart';
 import 'package:money_manager/data/repositories/expense_limits_repository.dart';
@@ -15,13 +16,16 @@ class AppServices extends InheritedWidget {
     required super.child,
     required this.db,
     required this.cloudSync,
-  }) : profiles = UserProfileRepository(db),
+    PrivacyModeController? privacyMode,
+  }) : privacyMode = privacyMode ?? PrivacyModeController(),
+       profiles = UserProfileRepository(db),
        household = HouseholdRemoteGateway() {
     expenses = ExpenseRepository(db, profiles, cloudSync);
     recurring = RecurringPaymentRepository(db, expenses, cloudSync);
     expenseLimits = ExpenseLimitsRepository(
       db,
       recurring,
+      expenses,
       profiles: profiles,
       cloudSync: cloudSync,
     );
@@ -31,6 +35,7 @@ class AppServices extends InheritedWidget {
 
   final AppDatabase db;
   final CloudSyncController cloudSync;
+  final PrivacyModeController privacyMode;
   final UserProfileRepository profiles;
   final HouseholdRemoteGateway household;
   late final ExpenseRepository expenses;
@@ -47,5 +52,7 @@ class AppServices extends InheritedWidget {
 
   @override
   bool updateShouldNotify(covariant AppServices oldWidget) =>
-      db != oldWidget.db || cloudSync != oldWidget.cloudSync;
+      db != oldWidget.db ||
+      cloudSync != oldWidget.cloudSync ||
+      privacyMode != oldWidget.privacyMode;
 }

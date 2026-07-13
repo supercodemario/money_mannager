@@ -21,12 +21,13 @@ enum ManualSyncMode { pushThenPull, pullOnly }
 
 /// Watches Drift for pending expense rows and performs remote sync. Not used from UI.
 ///
-/// **Automatic cycle** ([runAutoExpenseSync]): pending expenses only, OS connectivity
-/// required, no pull. Triggered by pending expense watch, session ready, connectivity.
+/// **Automatic cycle** ([runAutoExpenseSync]): pending recurring templates, expenses,
+/// and occurrences (dependency order), OS connectivity required, no pull. Triggered by
+/// pending expense watch, session ready, connectivity.
 ///
 /// **Manual cycle** ([runManualSync]): full push-then-pull for expenses, recurring,
 /// and expense profile — used from settings, post-login, and logout preflight.
-/// Recurring/profile pending rows are not uploaded by the automatic cycle.
+/// Recurring/profile pending rows are also uploaded by mutation-triggered helpers.
 class SyncOrchestrator {
   SyncOrchestrator({
     required AppDatabase db,
@@ -151,7 +152,61 @@ class SyncOrchestrator {
       logAppError('sync.ensure_default_household', e, st);
     }
 
-    await _pushPending(failFast: false);
+    // Templates → expenses → occurrences so stranded recurring uploads with expenses.
+    await _pushPendingRecurringPaymentsNow(failFast: false);
+  }
+
+  /// Uploads pending recurring templates, then expenses, then occurrences (no pull).
+  Future<void> pushPendingRecurringPayments({bool failFast = false}) {
+    final completer = Completer<void>();
+    _syncQueue = _syncQueue.catchError((Object e, StackTrace st) {
+      logAppError('sync.queue_prev', e, st);
+    }).then((_) async {
+      try {
+        await _pushPendingRecurringPaymentsNow(failFast: failFast);
+        completer.complete();
+      } catch (e, st) {
+        logAppError('sync.push_pending_recurring', e, st);
+        completer.completeError(e, st);
+      }
+    });
+    return completer.future;
+  }
+
+  Future<void> _pushPendingRecurringPaymentsNow({required bool failFast}) async {
+    if (!_cloud.syncAllowed) return;
+    final online = await _connectivity.isOnline;
+    _wasOnline = online;
+    if (!online) return;
+    await _pushPendingRecurringTemplates(failFast: failFast);
+    await _pushPending(failFast: failFast);
+    await _pushPendingRecurringOccurrences(failFast: failFast);
+  }
+
+  /// Uploads pending expense profile preferences when session + OS network allow.
+  /// Used after Limits save so values reach Supabase without a full manual sync.
+  Future<void> pushPendingExpenseProfiles({bool failFast = false}) {
+    final completer = Completer<void>();
+    _syncQueue = _syncQueue.catchError((Object e, StackTrace st) {
+      logAppError('sync.queue_prev', e, st);
+    }).then((_) async {
+      try {
+        await _pushPendingExpenseProfilesNow(failFast: failFast);
+        completer.complete();
+      } catch (e, st) {
+        logAppError('sync.push_pending_expense_profiles', e, st);
+        completer.completeError(e, st);
+      }
+    });
+    return completer.future;
+  }
+
+  Future<void> _pushPendingExpenseProfilesNow({required bool failFast}) async {
+    if (!_cloud.syncAllowed) return;
+    final online = await _connectivity.isOnline;
+    _wasOnline = online;
+    if (!online) return;
+    await _pushPendingProfiles(failFast: failFast);
   }
 
   /// Runs one sync cycle serialized with other sync calls.
@@ -375,6 +430,7 @@ class SyncOrchestrator {
       for (final m in maps) {
         final u = m['updated_at'] as int?;
         if (u != null && u > maxUpdated) maxUpdated = u;
+        await _ensureLocalRecurringTemplateForExpense(m);
         await _expenses.applyRemoteExpenseRow(m);
       }
       if (maxUpdated > since) {
@@ -411,6 +467,28 @@ class SyncOrchestrator {
     } catch (e, st) {
       logAppError('sync.pull_recurring_occurrences', e, st);
       if (failFast) rethrow;
+    }
+  }
+
+  /// Ensures a local recurring template exists before applying an expense that
+  /// references it. Incremental template pulls can miss older templates that
+  /// expenses still point at.
+  Future<void> _ensureLocalRecurringTemplateForExpense(
+    Map<String, dynamic> expenseRow,
+  ) async {
+    final templateId = expenseRow['recurring_payment_id'] as String?;
+    if (templateId == null || templateId.isEmpty) return;
+
+    final local = await _recurring.getTemplateById(templateId);
+    if (local != null) return;
+
+    try {
+      final remote = await _recurringRemote.fetchTemplateById(templateId);
+      if (remote != null) {
+        await _recurring.applyRemoteTemplateRow(remote);
+      }
+    } catch (e, st) {
+      logAppError('sync.ensure_recurring_template', e, st);
     }
   }
 }

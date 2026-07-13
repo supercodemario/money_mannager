@@ -1,6 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:money_manager/features/auth/routes/auth_routes.dart';
 import 'package:money_manager/features/create_family/routes/create_family_routes.dart';
+import 'package:money_manager/features/dashboard/routes/dashboard_routes.dart';
 import 'package:money_manager/features/expenses/routes/expenses_routes.dart';
 import 'package:money_manager/features/family_list/routes/family_list_routes.dart';
 import 'package:money_manager/features/family_members/routes/family_members_routes.dart';
@@ -16,6 +17,7 @@ class RouteRegistry {
 
   static List<AutoRoute> routes() => [
         ...shellRoutes(),
+        ...dashboardRoutes(),
         ...settingsRoutes(),
         ...expensesRoutes(),
         ...authRoutes(),

@@ -183,6 +183,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
                 const SizedBox(height: AppSpacing.s12),
+                ValueListenableBuilder<bool>(
+                  valueListenable: services.privacyMode.enabled,
+                  builder: (context, privacyOn, _) {
+                    return _PrivacyModeToggleRow(
+                      enabled: privacyOn,
+                      onChanged: (v) {
+                        services.privacyMode.setEnabled(v);
+                      },
+                    );
+                  },
+                ),
+                const SizedBox(height: AppSpacing.s12),
                 _BiometricToggleCard(
                   enabled: _biometricEnabled,
                   onChanged: (v) => setState(() => _biometricEnabled = v),
@@ -196,6 +208,79 @@ class _SettingsScreenState extends State<SettingsScreen> {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _PrivacyModeToggleRow extends StatelessWidget {
+  const _PrivacyModeToggleRow({
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.s16),
+      borderRadius: AppRadius.xl,
+      color: AppColors.surfaceContainerLow,
+      child: Row(
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(AppRadius.r12),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.onSurface.withValues(alpha: 0.06),
+                  blurRadius: AppSpacing.s4,
+                  offset: const Offset(0, AppSpacing.s2),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.s8),
+              child: Icon(
+                Icons.visibility_off_outlined,
+                size: AppSpacing.s24,
+                color: AppColors.secondaryDim,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.s12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppStrings.settingsPrivacyModeTitle,
+                  style: textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.s4),
+                Text(
+                  AppStrings.settingsPrivacyModeSubtitle,
+                  style: textTheme.labelSmall?.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: enabled,
+            onChanged: onChanged,
+            activeThumbColor: AppColors.secondary,
+            activeTrackColor: AppColors.secondaryContainer,
+          ),
+        ],
       ),
     );
   }

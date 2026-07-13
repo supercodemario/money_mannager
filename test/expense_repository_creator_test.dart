@@ -92,4 +92,40 @@ void main() {
       expect(remoteIds, contains('22222222-2222-2222-2222-222222222222'));
     },
   );
+
+  test(
+    'applyRemoteExpenseRow clears missing recurring_payment_id FK',
+    () async {
+      final cloud = CloudSyncController();
+      await cloud.initialize();
+
+      final db = AppDatabase.memory();
+      await db.ensureReady();
+      final profiles = UserProfileRepository(db);
+      final repo = ExpenseRepository(db, profiles, cloud);
+      final base = DateTime.utc(2026, 7, 1).millisecondsSinceEpoch;
+
+      await repo.applyRemoteExpenseRow({
+        'id': '28a0f272-5676-4e27-8747-a36ff78fc2f1',
+        'amount_minor': 1460000,
+        'currency_code': 'INR',
+        'category_id': 'house',
+        'budget_bucket': null,
+        'note': 'Flat rent',
+        'occurred_at': base,
+        'created_at': base,
+        'updated_at': base,
+        'recurring_payment_id': '8dd038b2-4754-41d3-a3d0-c2dba4d5866e',
+        'remote_id': '28a0f272-5676-4e27-8747-a36ff78fc2f1',
+        'server_updated_at': base,
+        'auth_user_id': '11111111-1111-1111-1111-111111111111',
+        'household_id': 'c29fc4d4-0fa4-4453-b8a7-0e2d1cf3c499',
+      });
+
+      final row = (await db.select(db.expenses).get()).single;
+      expect(row.id, '28a0f272-5676-4e27-8747-a36ff78fc2f1');
+      expect(row.recurringPaymentId, isNull);
+      expect(row.note, 'Flat rent');
+    },
+  );
 }

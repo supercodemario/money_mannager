@@ -1,4 +1,5 @@
 import 'package:money_manager/app/app_services.dart';
+import 'package:money_manager/core/logging/app_log.dart';
 import 'package:money_manager/data/local/sync_metadata_store.dart';
 import 'package:money_manager/data/remote/sync_constants.dart';
 import 'package:money_manager/sync/sync_orchestrator.dart';
@@ -89,6 +90,28 @@ class ManualSyncHelper {
       localTotal: localTotal,
       remoteRows: null,
     );
+  }
+
+  /// Push pending expense profile rows only (Limits save). No pull.
+  static Future<void> pushPendingExpenseProfiles(AppServices services) {
+    return _orchestrator(services).pushPendingExpenseProfiles(failFast: false);
+  }
+
+  /// Push pending recurring templates → expenses → occurrences (no pull).
+  static Future<void> pushPendingRecurringPayments(AppServices services) {
+    return _orchestrator(services).pushPendingRecurringPayments(failFast: false);
+  }
+
+  /// Best-effort push after a local recurring mutation; no-op when signed out.
+  static Future<void> pushPendingRecurringPaymentsIfAllowed(
+    AppServices services,
+  ) async {
+    if (!services.cloudSync.syncAllowed) return;
+    try {
+      await pushPendingRecurringPayments(services);
+    } catch (e, st) {
+      logAppError('sync.push_pending_recurring_ui', e, st);
+    }
   }
 
   static Future<void> runManualSync(

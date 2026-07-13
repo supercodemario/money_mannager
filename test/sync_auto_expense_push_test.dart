@@ -23,6 +23,9 @@ class _AlwaysAllowedCloudSyncController extends CloudSyncController {
   Future<void> ensureDefaultExpenseHouseholdPreference() async {
     await SyncMetadataStore.setDefaultExpenseHouseholdId('hid-test');
   }
+
+  @override
+  Future<bool?> checkHouseholdMembership(String householdId) async => true;
 }
 
 class _DeniedCloudSyncController extends CloudSyncController {
@@ -80,6 +83,9 @@ class _RecordingRecurringRemoteGateway extends RecurringRemoteGateway {
       const [];
 
   @override
+  Future<Map<String, dynamic>?> fetchTemplateById(String id) async => null;
+
+  @override
   Future<List<Map<String, dynamic>>> fetchOccurrencesSince({
     required int sinceUpdatedAtMs,
   }) async =>
@@ -96,6 +102,7 @@ ExpenseLimitsRepository _expenseLimitsRepository({
   return ExpenseLimitsRepository(
     db,
     recurring,
+    expenses,
     profiles: profiles,
     cloudSync: cloud,
   );

@@ -117,8 +117,13 @@ class RecurringTemplatesManagementScreen extends StatelessWidget {
                         toggled: t.isEnabled,
                         child: Switch.adaptive(
                           value: t.isEnabled,
-                          onChanged: (v) =>
-                              recurring.setSchedulingEnabled(t.id, v),
+                          onChanged: (v) async {
+                            await recurring.setSchedulingEnabled(t.id, v);
+                            if (!context.mounted) return;
+                            await ManualSyncHelper.pushPendingRecurringPaymentsIfAllowed(
+                              AppServices.of(context),
+                            );
+                          },
                         ),
                       ),
                     ),
@@ -187,7 +192,9 @@ Future<void> _showDeleteRecurringTemplateDialog(
     },
   );
   if (ok != true || !context.mounted) return;
-  await AppServices.of(context).recurring.deleteTemplate(template.id);
+  final services = AppServices.of(context);
+  await services.recurring.deleteTemplate(template.id);
+  await ManualSyncHelper.pushPendingRecurringPaymentsIfAllowed(services);
 }
 
 Future<void> _openRecurringCloudSync(BuildContext context) async {

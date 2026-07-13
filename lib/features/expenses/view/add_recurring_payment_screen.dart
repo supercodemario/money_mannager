@@ -7,6 +7,7 @@ import 'package:money_manager/features/add_expense/data/default_expense_categori
 import 'package:money_manager/features/add_expense/models/expense_category/expense_category.dart';
 import 'package:money_manager/features/expenses/widgets/expenses_amount_format.dart';
 import 'package:money_manager/share/share.dart';
+import 'package:money_manager/sync/manual_sync_helper.dart';
 
 @RoutePage()
 class AddRecurringPaymentScreen extends StatefulWidget {
@@ -98,7 +99,8 @@ class _AddRecurringPaymentScreenState extends State<AddRecurringPaymentScreen> {
 
     setState(() => _saving = true);
     try {
-      final repo = AppServices.of(context).recurring;
+      final services = AppServices.of(context);
+      final repo = services.recurring;
       final currencyCode = RegionalFormattingScope.of(context).currencyCode;
       final endMonthKey = _autoRecurring || _endMonthDate == null ? null : monthKeyForDate(_endMonthDate!);
       final editId = widget.editingTemplateId;
@@ -122,6 +124,7 @@ class _AddRecurringPaymentScreenState extends State<AddRecurringPaymentScreen> {
           endMonthKey: endMonthKey,
         );
       }
+      await ManualSyncHelper.pushPendingRecurringPaymentsIfAllowed(services);
       if (mounted) context.popRoute();
     } finally {
       if (mounted) setState(() => _saving = false);

@@ -4,6 +4,7 @@ import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/app/cloud_sync_controller.dart';
 import 'package:money_manager/app/household_flow_navigation_impl.dart';
 import 'package:money_manager/app/household_flow_scope.dart';
+import 'package:money_manager/app/privacy_mode_controller.dart';
 import 'package:money_manager/app/profile_details_navigation_impl.dart';
 import 'package:money_manager/app/profile_details_scope.dart';
 import 'package:money_manager/app/regional_material_app_root.dart';
@@ -17,8 +18,10 @@ Future<void> main() async {
   await SupabaseEnv.loadDotEnv();
   final cloudSync = CloudSyncController();
   await cloudSync.initialize();
+  final privacyMode = PrivacyModeController();
+  await privacyMode.load();
   final db = AppDatabase();
-  runApp(MyApp(db: db, cloudSync: cloudSync));
+  runApp(MyApp(db: db, cloudSync: cloudSync, privacyMode: privacyMode));
 }
 
 class MyApp extends StatefulWidget {
@@ -26,11 +29,13 @@ class MyApp extends StatefulWidget {
     super.key,
     required this.db,
     required this.cloudSync,
+    this.privacyMode,
     this.enableSyncLifecycle = true,
   });
 
   final AppDatabase db;
   final CloudSyncController cloudSync;
+  final PrivacyModeController? privacyMode;
 
   /// When false (e.g. widget tests), [SyncOrchestrator] is not started — avoids pump timeouts.
   final bool enableSyncLifecycle;
@@ -52,6 +57,7 @@ class _MyAppState extends State<MyApp> {
     return AppServices(
       db: widget.db,
       cloudSync: widget.cloudSync,
+      privacyMode: widget.privacyMode,
       child: ProfileDetailsScope(
         navigation: AppProfileDetailsNavigation(),
         child: HouseholdFlowScope(

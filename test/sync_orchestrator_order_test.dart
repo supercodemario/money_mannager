@@ -11,8 +11,18 @@ import 'package:money_manager/data/repositories/expense_limits_repository.dart';
 import 'package:money_manager/data/repositories/expense_repository.dart';
 import 'package:money_manager/data/repositories/recurring_payment_repository.dart';
 import 'package:money_manager/data/repositories/user_profile_repository.dart';
+import 'package:money_manager/sync/connectivity_gate.dart';
 import 'package:money_manager/sync/sync_orchestrator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+
+class _AlwaysOnlineConnectivity implements ConnectivityReader {
+  @override
+  Future<bool> get isOnline async => true;
+
+  @override
+  Stream<List<ConnectivityResult>>? get onConnectivityChanged => null;
+}
 
 class _AlwaysAllowedCloudSyncController extends CloudSyncController {
   @override
@@ -22,6 +32,9 @@ class _AlwaysAllowedCloudSyncController extends CloudSyncController {
   Future<void> ensureDefaultExpenseHouseholdPreference() async {
     await SyncMetadataStore.setDefaultExpenseHouseholdId('hid-test');
   }
+
+  @override
+  Future<bool?> checkHouseholdMembership(String householdId) async => true;
 }
 
 class _RecordingExpenseRemoteGateway extends ExpenseRemoteGateway {
@@ -74,6 +87,8 @@ class _RecordingRecurringRemoteGateway extends RecurringRemoteGateway {
   final pushedTemplates = <RecurringPayment>[];
   final pushedOccurrences = <RecurringPaymentOccurrence>[];
   List<Map<String, dynamic>> remoteTemplates = const [];
+  /// Templates available via [fetchTemplateById] even when not in [remoteTemplates].
+  List<Map<String, dynamic>> remoteTemplatesById = const [];
   List<Map<String, dynamic>> remoteOccurrences = const [];
 
   @override
@@ -97,6 +112,15 @@ class _RecordingRecurringRemoteGateway extends RecurringRemoteGateway {
   }) async {
     calls?.add('pull-template');
     return remoteTemplates;
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchTemplateById(String id) async {
+    calls?.add('pull-template-by-id');
+    for (final t in [...remoteTemplatesById, ...remoteTemplates]) {
+      if (t['id'] == id) return t;
+    }
+    return null;
   }
 
   @override
@@ -159,6 +183,7 @@ ExpenseLimitsRepository _expenseLimitsRepository({
   return ExpenseLimitsRepository(
     db,
     recurring,
+    expenses,
     profiles: profiles,
     cloudSync: cloud,
   );
@@ -426,6 +451,88 @@ void main() {
   );
 
   test(
+    'Expense pull fetches missing recurring template by id when not in since window',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        'default_expense_household_id': 'hid-test',
+        'sync_last_expense_pull_ms': 0,
+        'sync_last_recurring_template_pull_ms': 9999999999999,
+      });
+      final calls = <String>[];
+      final db = AppDatabase.memory();
+      final profiles = UserProfileRepository(db);
+      final cloud = _AlwaysAllowedCloudSyncController();
+      final expenses = ExpenseRepository(db, profiles, cloud);
+      final recurring = RecurringPaymentRepository(db, expenses, cloud);
+      final expenseLimits = _expenseLimitsRepository(
+        db: db,
+        profiles: profiles,
+        cloud: cloud,
+      );
+      const templateId = '11111111-1111-1111-1111-111111111111';
+      final template = {
+        'id': templateId,
+        'title': 'Rent',
+        'category_id': 'house',
+        'amount_minor_suggested': 90000,
+        'currency_code': 'USD',
+        'day_of_month': 1,
+        'end_month_key': null,
+        'is_enabled': true,
+        'is_deleted': false,
+        'created_at': 1777593600000,
+        'updated_at': 1000,
+        'remote_id': templateId,
+        'server_updated_at': 1000,
+      };
+      final remote = _RecordingExpenseRemoteGateway(calls)
+        ..remoteRows = [
+          {
+            'id': '22222222-2222-2222-2222-222222222222',
+            'amount_minor': 90000,
+            'currency_code': 'USD',
+            'category_id': 'house',
+            'budget_bucket': null,
+            'note': 'Rent',
+            'occurred_at': 1777593600000,
+            'created_at': 1777593600000,
+            'updated_at': 1777593600000,
+            'recurring_payment_id': templateId,
+            'remote_id': '22222222-2222-2222-2222-222222222222',
+            'server_updated_at': 1777593600000,
+          },
+        ];
+      // Incremental since-window returns nothing; by-id still has the template.
+      final recurringRemote = _RecordingRecurringRemoteGateway(calls: calls)
+        ..remoteTemplates = const []
+        ..remoteTemplatesById = [template];
+      final orchestrator = SyncOrchestrator(
+        db: db,
+        cloud: cloud,
+        expenses: expenses,
+        expenseLimits: expenseLimits,
+        recurring: recurring,
+        remote: remote,
+        profileRemote: _RecordingExpenseProfileRemoteGateway(),
+        recurringRemote: recurringRemote,
+      );
+
+      await orchestrator.runManualSync(
+        mode: ManualSyncMode.pullOnly,
+        failFast: true,
+      );
+
+      expect(calls, contains('pull-template-by-id'));
+      expect(await db.select(db.recurringPayments).get(), hasLength(1));
+      final expense = (await db.select(db.expenses).get()).single;
+      expect(expense.recurringPaymentId, templateId);
+
+      await SyncMetadataStore.clearAll();
+      await db.close();
+    },
+  );
+
+  test(
     'manual sync calls are serialized to one in-flight run at a time',
     () async {
       SharedPreferences.setMockInitialValues({
@@ -622,4 +729,160 @@ void main() {
       await db.close();
     },
   );
+
+  test('pushPendingExpenseProfiles uploads pending limits row', () async {
+    SharedPreferences.setMockInitialValues({});
+    final db = AppDatabase.memory();
+    final profiles = UserProfileRepository(db);
+    final cloud = _AlwaysAllowedCloudSyncController();
+    final expenses = ExpenseRepository(db, profiles, cloud);
+    final recurring = RecurringPaymentRepository(db, expenses, cloud);
+    final expenseLimits = _expenseLimitsRepository(
+      db: db,
+      profiles: profiles,
+      cloud: cloud,
+    );
+    final uid = await profiles.getCurrentUserId();
+    await expenseLimits.upsertPreferences(
+      userId: uid,
+      monthlyIncomeMinor: 50000,
+      monthlySavingsMinor: 5000,
+      excludeUnpaidRecurring: true,
+    );
+    final profileRemote = _RecordingExpenseProfileRemoteGateway();
+    final orchestrator = SyncOrchestrator(
+      db: db,
+      cloud: cloud,
+      expenses: expenses,
+      expenseLimits: expenseLimits,
+      recurring: recurring,
+      profileRemote: profileRemote,
+      recurringRemote: _RecordingRecurringRemoteGateway(),
+      connectivity: _AlwaysOnlineConnectivity(),
+    );
+
+    await orchestrator.pushPendingExpenseProfiles(failFast: true);
+
+    expect(profileRemote.pushedProfiles, hasLength(1));
+    expect(profileRemote.pushedProfiles.single.monthlyIncomeMinor, 50000);
+    final local = await expenseLimits.getPreferences(uid);
+    expect(local?.syncStatus, SyncStatusValue.synced);
+
+    await db.close();
+  });
+
+  test(
+    'pushPendingRecurringPayments uploads templates then expenses then occurrences',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        'default_expense_household_id': 'hid-test',
+      });
+      final calls = <String>[];
+      final db = AppDatabase.memory();
+      final profiles = UserProfileRepository(db);
+      final cloud = _AlwaysAllowedCloudSyncController();
+      final expenses = ExpenseRepository(db, profiles, cloud);
+      final recurring = RecurringPaymentRepository(db, expenses, cloud);
+      final expenseLimits = _expenseLimitsRepository(
+        db: db,
+        profiles: profiles,
+        cloud: cloud,
+      );
+      final expenseRemote = _RecordingExpenseRemoteGateway(calls);
+      final recurringRemote = _RecordingRecurringRemoteGateway(calls: calls);
+      final orchestrator = SyncOrchestrator(
+        db: db,
+        cloud: cloud,
+        expenses: expenses,
+        expenseLimits: expenseLimits,
+        recurring: recurring,
+        remote: expenseRemote,
+        profileRemote: _RecordingExpenseProfileRemoteGateway(),
+        recurringRemote: recurringRemote,
+        connectivity: _AlwaysOnlineConnectivity(),
+      );
+
+      final templateId = await recurring.insertTemplate(
+        title: 'Rent',
+        categoryId: 'house',
+        amountMinorSuggested: 90000,
+        currencyCode: 'USD',
+        dayOfMonth: 1,
+      );
+      await recurring.markPaidForMonth(
+        recurringPaymentId: templateId,
+        monthKey: '2026-07',
+        amountMinor: 90000,
+        occurredAtLocal: DateTime(2026, 7, 1),
+      );
+
+      await orchestrator.pushPendingRecurringPayments(failFast: true);
+
+      expect(calls, ['push-template', 'push', 'push-occurrence']);
+      expect(recurringRemote.pushedTemplates, hasLength(1));
+      expect(recurringRemote.pushedOccurrences, hasLength(1));
+
+      final template = await recurring.getTemplateById(templateId);
+      expect(template?.syncStatus, SyncStatusValue.synced);
+
+      await SyncMetadataStore.clearAll();
+      await db.close();
+    },
+  );
+
+  test(
+    'pushPendingRecurringPayments offline keeps pending and does not mark error',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        'default_expense_household_id': 'hid-test',
+      });
+      final calls = <String>[];
+      final db = AppDatabase.memory();
+      final profiles = UserProfileRepository(db);
+      final cloud = _AlwaysAllowedCloudSyncController();
+      final expenses = ExpenseRepository(db, profiles, cloud);
+      final recurring = RecurringPaymentRepository(db, expenses, cloud);
+      final expenseLimits = _expenseLimitsRepository(
+        db: db,
+        profiles: profiles,
+        cloud: cloud,
+      );
+      final orchestrator = SyncOrchestrator(
+        db: db,
+        cloud: cloud,
+        expenses: expenses,
+        expenseLimits: expenseLimits,
+        recurring: recurring,
+        remote: _RecordingExpenseRemoteGateway(calls),
+        profileRemote: _RecordingExpenseProfileRemoteGateway(),
+        recurringRemote: _RecordingRecurringRemoteGateway(calls: calls),
+        connectivity: _AlwaysOfflineConnectivity(),
+      );
+
+      final templateId = await recurring.insertTemplate(
+        title: 'Gas',
+        categoryId: 'house',
+        amountMinorSuggested: 12000,
+        currencyCode: 'USD',
+        dayOfMonth: 5,
+      );
+
+      await orchestrator.pushPendingRecurringPayments(failFast: true);
+
+      expect(calls, isEmpty);
+      final template = await recurring.getTemplateById(templateId);
+      expect(template?.syncStatus, SyncStatusValue.pending);
+
+      await SyncMetadataStore.clearAll();
+      await db.close();
+    },
+  );
+}
+
+class _AlwaysOfflineConnectivity implements ConnectivityReader {
+  @override
+  Future<bool> get isOnline async => false;
+
+  @override
+  Stream<List<ConnectivityResult>>? get onConnectivityChanged => null;
 }

@@ -1,6 +1,8 @@
 // Exports all @RoutePage screens for auto_route codegen stability.
 export 'package:money_manager/features/shell/view/app_shell.dart';
 export 'package:money_manager/features/add_expense/view/quick_add_screen.dart';
+export 'package:money_manager/features/dashboard/view/month_day_spend_listing_screen.dart';
+export 'package:money_manager/features/dashboard/view/day_spend_detail_screen.dart';
 export 'package:money_manager/features/settings/settings-preferences/view/preferences_details_screen.dart';
 export 'package:money_manager/features/settings/view/expense_limits_screen.dart';
 export 'package:money_manager/features/settings/view/category_management_screen.dart';

@@ -83,6 +83,18 @@ class RecurringRemoteGateway {
         .toList(growable: false);
   }
 
+  /// Fetches one template by id (RLS-scoped). Used when an expense references a
+  /// template that was not included in the incremental [fetchTemplatesSince] window.
+  Future<Map<String, dynamic>?> fetchTemplateById(String id) async {
+    final raw = await Supabase.instance.client
+        .from('recurring_payments')
+        .select()
+        .eq('id', id)
+        .maybeSingle();
+    if (raw == null) return null;
+    return Map<String, dynamic>.from(raw);
+  }
+
   Future<List<Map<String, dynamic>>> fetchOccurrencesSince({
     required int sinceUpdatedAtMs,
   }) async {

@@ -27,6 +27,7 @@ ExpenseLimitsRepository _expenseLimitsRepository({
   return ExpenseLimitsRepository(
     db,
     recurring,
+    expenses,
     profiles: profiles,
     cloudSync: cloud,
     nowProvider: nowProvider,

@@ -1,4 +1,6 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:money_manager/app/app_router.dart';
 import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/data/local/app_database.dart';
 import 'package:money_manager/data/repositories/expense_limits_repository.dart';
@@ -6,7 +8,14 @@ import 'package:money_manager/features/expenses/widgets/expenses_amount_format.d
 import 'package:money_manager/share/share.dart';
 
 class DashboardMonthlySpendingCard extends StatefulWidget {
-  const DashboardMonthlySpendingCard({super.key});
+  const DashboardMonthlySpendingCard({
+    super.key,
+    required this.privacyEnabled,
+    required this.temporarilyRevealed,
+  });
+
+  final bool privacyEnabled;
+  final bool temporarilyRevealed;
 
   @override
   State<DashboardMonthlySpendingCard> createState() => _DashboardMonthlySpendingCardState();
@@ -75,15 +84,28 @@ class _DashboardMonthlySpendingCardState extends State<DashboardMonthlySpendingC
                     final overBudget = hasLimits && remainingMinor < 0;
                     final overSpentMinor = overBudget ? remainingMinor.abs() : 0;
                     final remainingValue = hasLimits
-                        ? formatExpenseMinor(context, overBudget ? overSpentMinor : remainingMinor)
+                        ? privacyAwareExpenseAmount(
+                            context,
+                            overBudget ? overSpentMinor : remainingMinor,
+                            privacyEnabled: widget.privacyEnabled,
+                            temporarilyRevealed: widget.temporarilyRevealed,
+                          )
                         : AppStrings.expenseLimitsUnsetValue;
-                    final dailyValue = hasLimits
-                        ? formatExpenseMinor(context, d.indicativeDailyMinor)
+                    final dailyPlanValue = hasLimits
+                        ? formatExpenseMinor(context, d.dailyPlanMinor)
+                        : AppStrings.expenseLimitsUnsetValue;
+                    final paceDailyValue = hasLimits
+                        ? formatExpenseMinor(context, d.paceDailyMinor)
                         : AppStrings.expenseLimitsUnsetValue;
                     final savingsMinor = prefs?.monthlySavingsMinor;
                     final savingsValue = savingsMinor == null
                         ? AppStrings.expenseLimitsUnsetValue
-                        : formatExpenseMinor(context, savingsMinor);
+                        : privacyAwareExpenseAmount(
+                            context,
+                            savingsMinor,
+                            privacyEnabled: widget.privacyEnabled,
+                            temporarilyRevealed: widget.temporarilyRevealed,
+                          );
                     final usedPercent = hasLimits && d.spendablePoolMinor > 0
                         ? (monthlyTotalExpenseMinor / d.spendablePoolMinor) * 100
                         : 0.0;
@@ -131,7 +153,12 @@ class _DashboardMonthlySpendingCardState extends State<DashboardMonthlySpendingC
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    formatExpenseMinor(context, monthlyTotalExpenseMinor),
+                                    privacyAwareExpenseAmount(
+                                      context,
+                                      monthlyTotalExpenseMinor,
+                                      privacyEnabled: widget.privacyEnabled,
+                                      temporarilyRevealed: widget.temporarilyRevealed,
+                                    ),
                                     style: textTheme.titleLarge?.copyWith(
                                       fontWeight: FontWeight.w800,
                                       color: overBudget ? AppColors.error : AppColors.secondary,
@@ -203,27 +230,17 @@ class _DashboardMonthlySpendingCardState extends State<DashboardMonthlySpendingC
                             hasLimits: hasLimits,
                             overBudget: overBudget,
                             remainingValue: remainingValue,
+                            dailyPlanValue: dailyPlanValue,
+                            paceDailyValue: paceDailyValue,
                             textTheme: textTheme,
                           ),
                           const SizedBox(height: AppSpacing.s16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: DashboardStatPill(
-                                  label: AppStrings.expenseLimitsIndicativeDailyLabel,
-                                  value: dailyValue,
-                                  color: hasLimits ? AppColors.primary : AppColors.onSurfaceVariant,
-                                ),
-                              ),
-                              const SizedBox(width: AppSpacing.s8),
-                              Expanded(
-                                child: DashboardStatPill(
-                                  label: AppStrings.savingsLabel,
-                                  value: savingsValue,
-                                  color: savingsMinor == null ? AppColors.onSurfaceVariant : AppColors.secondary,
-                                ),
-                              ),
-                            ],
+                          DashboardStatPill(
+                            label: AppStrings.savingsLabel,
+                            value: savingsValue,
+                            color: savingsMinor == null
+                                ? AppColors.onSurfaceVariant
+                                : AppColors.secondary,
                           ),
                         ],
                       ),
@@ -330,12 +347,16 @@ class DashboardMonthlyBalanceRow extends StatelessWidget {
     required this.hasLimits,
     required this.overBudget,
     required this.remainingValue,
+    required this.dailyPlanValue,
+    required this.paceDailyValue,
     required this.textTheme,
   });
 
   final bool hasLimits;
   final bool overBudget;
   final String remainingValue;
+  final String dailyPlanValue;
+  final String paceDailyValue;
   final TextTheme textTheme;
 
   @override
@@ -350,26 +371,119 @@ class DashboardMonthlyBalanceRow extends StatelessWidget {
           horizontal: AppSpacing.s12,
           vertical: AppSpacing.s12,
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              overBudget ? AppStrings.monthlyOverspentLabel : AppStrings.monthlyRemainingLabel,
-              style: textTheme.labelSmall?.copyWith(
-                letterSpacing: 1.0,
-                fontWeight: FontWeight.w800,
-                color: AppColors.onSurfaceVariant,
-              ),
+            Row(
+              children: [
+                Text(
+                  overBudget
+                      ? AppStrings.monthlyOverspentLabel
+                      : AppStrings.monthlyRemainingLabel,
+                  style: textTheme.labelSmall?.copyWith(
+                    letterSpacing: 1.0,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  remainingValue,
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: !hasLimits
+                        ? AppColors.onSurfaceVariant
+                        : overBudget
+                            ? AppColors.error
+                            : AppColors.primary,
+                  ),
+                ),
+              ],
             ),
-            const Spacer(),
-            Text(
-              remainingValue,
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: !hasLimits
-                    ? AppColors.onSurfaceVariant
-                    : overBudget
-                        ? AppColors.error
-                        : AppColors.primary,
+            const SizedBox(height: AppSpacing.s12),
+            Semantics(
+              button: hasLimits,
+              label: AppStrings.monthDaySpendOpenSemantics,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: hasLimits
+                      ? () {
+                          context.router.push<void>(
+                            const MonthDaySpendListingRoute(),
+                          );
+                        }
+                      : null,
+                  borderRadius: BorderRadius.circular(AppRadius.r8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                AppStrings.dailyPlanLabel,
+                                style: textTheme.labelSmall?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.s4),
+                              Text(
+                                dailyPlanValue,
+                                style: textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: hasLimits
+                                      ? SpendVsPlanColors.plan
+                                      : AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          height: AppSpacing.s32,
+                          color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: AppSpacing.s12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  AppStrings.pacePerDayLabel,
+                                  style: textTheme.labelSmall?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.onSurfaceVariant,
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.s4),
+                                Text(
+                                  paceDailyValue,
+                                  style: textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: hasLimits
+                                        ? SpendVsPlanColors.pace
+                                        : AppColors.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (hasLimits)
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
@@ -389,30 +503,33 @@ class DashboardStatPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppRadius.r12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.s12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: textTheme.labelSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.0,
-                color: AppColors.onSurfaceVariant,
+    return SizedBox(
+      width: double.infinity,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(AppRadius.r12),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.s12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.0,
+                  color: AppColors.onSurfaceVariant,
+                ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.s4),
-            Text(
-              value,
-              style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800, color: color),
-            ),
-          ],
+              const SizedBox(height: AppSpacing.s4),
+              Text(
+                value,
+                style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800, color: color),
+              ),
+            ],
+          ),
         ),
       ),
     );

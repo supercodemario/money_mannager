@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:money_manager/app/cloud_sync_controller.dart';
+import 'package:money_manager/core/logging/app_log.dart';
 import 'package:money_manager/data/local/app_database.dart';
 import 'package:money_manager/data/repositories/user_profile_repository.dart';
 import 'package:money_manager/data/remote/sync_constants.dart';
@@ -369,7 +370,24 @@ ORDER BY total_minor DESC
       return;
     }
 
-    final recurring = m['recurring_payment_id'] as String?;
+    var recurring = m['recurring_payment_id'] as String?;
+    if (recurring != null && recurring.isNotEmpty) {
+      final recurringId = recurring;
+      final template = await (_db.select(
+        _db.recurringPayments,
+      )..where((t) => t.id.equals(recurringId))).getSingleOrNull();
+      if (template == null) {
+        logAppError(
+          'sync.apply_remote_expense',
+          StateError(
+            'Missing recurring template $recurringId for expense $id; clearing FK',
+          ),
+          StackTrace.current,
+        );
+        recurring = null;
+      }
+    }
+
     final remoteAuthUserId = m['auth_user_id'] as String?;
     final creatorProfileId = (remoteAuthUserId == null || remoteAuthUserId.isEmpty)
         ? await _profiles.getCurrentUserId()
@@ -388,7 +406,7 @@ ORDER BY total_minor DESC
       createdByUserId: Value(creatorProfileId),
       recurringPaymentId: recurring != null
           ? Value(recurring)
-          : const Value.absent(),
+          : const Value(null),
       remoteId: Value(m['remote_id'] as String? ?? id),
       syncStatus: const Value(SyncStatusValue.synced),
       serverUpdatedAt: Value(m['server_updated_at'] as int? ?? remoteUpdated),

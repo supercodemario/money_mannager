@@ -1,4 +1,5 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:money_manager/core/logging/app_log.dart';
 import 'package:money_manager/core/navigation/app_route_pop.dart';
 import 'package:flutter/material.dart';
 import 'package:money_manager/app/app_services.dart';
@@ -6,6 +7,7 @@ import 'package:money_manager/data/expense_limits/expense_limits_calculator.dart
 import 'package:money_manager/data/repositories/expense_limits_repository.dart';
 import 'package:money_manager/features/expenses/widgets/expenses_amount_format.dart';
 import 'package:money_manager/share/share.dart';
+import 'package:money_manager/sync/manual_sync_helper.dart';
 
 @RoutePage()
 class ExpenseLimitsScreen extends StatefulWidget {
@@ -116,6 +118,13 @@ class _ExpenseLimitsScreenState extends State<ExpenseLimitsScreen> {
         monthlySavingsMinor: savingsMinor,
         excludeUnpaidRecurring: _excludeRecurring,
       );
+      if (services.cloudSync.syncAllowed) {
+        try {
+          await ManualSyncHelper.pushPendingExpenseProfiles(services);
+        } catch (e, st) {
+          logAppError('expense_limits.push_profile', e, st);
+        }
+      }
       if (mounted) context.popRoute();
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -220,8 +229,10 @@ class _ExpenseLimitsScreenState extends State<ExpenseLimitsScreen> {
                         excludeRecurring: _excludeRecurring,
                       )
                     : 0;
-                final liveDailyMinor =
-                    ExpenseLimitsCalculator.indicativeDailyMinor(poolMinor: livePoolMinor, daysInMonth: liveDays);
+                final liveDailyMinor = ExpenseLimitsCalculator.dailyPlanMinor(
+                  poolMinor: livePoolMinor,
+                  daysInMonth: liveDays,
+                );
                 return Row(
                   children: [
                     Expanded(

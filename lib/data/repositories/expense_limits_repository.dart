@@ -6,6 +6,7 @@ import 'package:money_manager/data/expense_limits/expense_limits_calculator.dart
 import 'package:money_manager/data/local/app_database.dart';
 import 'package:money_manager/data/remote/sync_constants.dart';
 import 'package:money_manager/data/recurring/recurring_calendar.dart';
+import 'package:money_manager/data/repositories/expense_repository.dart';
 import 'package:money_manager/data/repositories/recurring_payment_repository.dart';
 import 'package:money_manager/data/repositories/user_profile_repository.dart';
 
@@ -14,21 +15,27 @@ class ExpenseLimitsDerived {
   const ExpenseLimitsDerived({
     required this.hasIncome,
     required this.spendablePoolMinor,
-    required this.indicativeDailyMinor,
+    required this.monthSpentMinor,
+    required this.dailyPlanMinor,
+    required this.paceDailyMinor,
     required this.daysInMonth,
     required this.recurringDeductionMinor,
   });
 
   final bool hasIncome;
   final int spendablePoolMinor;
-  final int indicativeDailyMinor;
+  final int monthSpentMinor;
+  final int dailyPlanMinor;
+  final int paceDailyMinor;
   final int daysInMonth;
   final int recurringDeductionMinor;
 
   static const empty = ExpenseLimitsDerived(
     hasIncome: false,
     spendablePoolMinor: 0,
-    indicativeDailyMinor: 0,
+    monthSpentMinor: 0,
+    dailyPlanMinor: 0,
+    paceDailyMinor: 0,
     daysInMonth: 30,
     recurringDeductionMinor: 0,
   );
@@ -37,6 +44,7 @@ class ExpenseLimitsDerived {
     required ExpenseLimitPreference? prefs,
     required List<RecurringMonthRow> recurringRows,
     required DateTime nowLocal,
+    int monthSpentMinor = 0,
   }) {
     final income = prefs?.monthlyIncomeMinor;
     final recurringDeduction = RecurringMonthRow.sumUnpaidSuggestedMinor(
@@ -45,13 +53,16 @@ class ExpenseLimitsDerived {
     final days = ExpenseLimitsCalculator.daysInMonth(
       DateTime(nowLocal.year, nowLocal.month),
     );
+    final afterToday = ExpenseLimitsCalculator.daysAfterToday(nowLocal);
 
     final pref = prefs;
     if (pref == null || income == null || income <= 0) {
       return ExpenseLimitsDerived(
         hasIncome: false,
         spendablePoolMinor: 0,
-        indicativeDailyMinor: 0,
+        monthSpentMinor: monthSpentMinor,
+        dailyPlanMinor: 0,
+        paceDailyMinor: 0,
         daysInMonth: days,
         recurringDeductionMinor: recurringDeduction,
       );
@@ -65,15 +76,22 @@ class ExpenseLimitsDerived {
       recurringDeductionMinor: recurringDeduction,
       excludeRecurring: exclude,
     );
-    final daily = ExpenseLimitsCalculator.indicativeDailyMinor(
+    final plan = ExpenseLimitsCalculator.dailyPlanMinor(
       poolMinor: pool,
       daysInMonth: days,
+    );
+    final pace = ExpenseLimitsCalculator.paceDailyMinor(
+      poolMinor: pool,
+      monthSpentMinor: monthSpentMinor,
+      daysAfterToday: afterToday,
     );
 
     return ExpenseLimitsDerived(
       hasIncome: true,
       spendablePoolMinor: pool,
-      indicativeDailyMinor: daily,
+      monthSpentMinor: monthSpentMinor,
+      dailyPlanMinor: plan,
+      paceDailyMinor: pace,
       daysInMonth: days,
       recurringDeductionMinor: recurringDeduction,
     );
@@ -92,7 +110,8 @@ bool expenseLimitsHasMonthlyGuidanceConfigured(ExpenseLimitPreference? prefs) {
 class ExpenseLimitsRepository {
   ExpenseLimitsRepository(
     this._db,
-    this._recurring, {
+    this._recurring,
+    this._expenses, {
     required UserProfileRepository profiles,
     required CloudSyncController cloudSync,
     DateTime Function()? nowProvider,
@@ -104,6 +123,7 @@ class ExpenseLimitsRepository {
 
   final AppDatabase _db;
   final RecurringPaymentRepository _recurring;
+  final ExpenseRepository _expenses;
   final UserProfileRepository _profiles;
   final CloudSyncController _cloudSync;
   final DateTime Function() _nowProvider;
@@ -273,13 +293,15 @@ class ExpenseLimitsRepository {
     }
   }
 
-  /// Recomputes when preferences change, recurring rows change, or local month rolls over.
+  /// Recomputes when preferences, recurring rows, month spent, or local month change.
   Stream<ExpenseLimitsDerived> watchDerived(String userId) {
     return Stream.multi((controller) {
       ExpenseLimitPreference? prefs;
       List<RecurringMonthRow> rows = [];
+      var monthSpentMinor = 0;
       String? activeMonthKey;
       StreamSubscription<List<RecurringMonthRow>>? recurringSub;
+      StreamSubscription<List<Expense>>? spentSub;
 
       void emit() {
         controller.add(
@@ -287,21 +309,53 @@ class ExpenseLimitsRepository {
             prefs: prefs,
             recurringRows: rows,
             nowLocal: _nowProvider(),
+            monthSpentMinor: monthSpentMinor,
           ),
         );
       }
 
-      Future<void> refreshRecurringSubscription() async {
-        final monthKey = monthKeyForDate(_nowProvider());
-        if (activeMonthKey == monthKey && recurringSub != null) return;
+      ({int startUtcMs, int endUtcMs}) monthRangeUtcMs(DateTime nowLocal) {
+        final startLocal = DateTime(nowLocal.year, nowLocal.month, 1);
+        final endLocal = DateTime(nowLocal.year, nowLocal.month + 1, 1);
+        return (
+          startUtcMs: startLocal.toUtc().millisecondsSinceEpoch,
+          endUtcMs: endLocal.toUtc().millisecondsSinceEpoch,
+        );
+      }
+
+      Future<void> refreshMonthSubscriptions() async {
+        final now = _nowProvider();
+        final monthKey = monthKeyForDate(now);
+        if (activeMonthKey == monthKey &&
+            recurringSub != null &&
+            spentSub != null) {
+          return;
+        }
 
         activeMonthKey = monthKey;
         rows = [];
+        monthSpentMinor = 0;
         await recurringSub?.cancel();
+        await spentSub?.cancel();
+
         recurringSub = _recurring.watchRowsForMonth(monthKey).listen((r) {
           rows = r;
           emit();
         }, onError: controller.addError);
+
+        final range = monthRangeUtcMs(now);
+        spentSub = _expenses
+            .watchExpensesInRange(
+              startUtcMs: range.startUtcMs,
+              endUtcMs: range.endUtcMs,
+            )
+            .listen((expenses) {
+              monthSpentMinor = expenses.fold<int>(
+                0,
+                (sum, e) => sum + e.amountMinor,
+              );
+              emit();
+            }, onError: controller.addError);
         emit();
       }
 
@@ -310,16 +364,17 @@ class ExpenseLimitsRepository {
         emit();
       }, onError: controller.addError);
 
-      unawaited(refreshRecurringSubscription());
+      unawaited(refreshMonthSubscriptions());
 
       final monthTimer = Timer.periodic(_monthCheckInterval, (_) {
-        unawaited(refreshRecurringSubscription());
+        unawaited(refreshMonthSubscriptions());
       });
 
       controller.onCancel = () async {
         monthTimer.cancel();
         await prefsSub.cancel();
         await recurringSub?.cancel();
+        await spentSub?.cancel();
       };
     });
   }

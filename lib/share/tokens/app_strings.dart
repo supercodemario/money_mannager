@@ -43,6 +43,14 @@ class AppStrings {
   static const monthlyProgressLabel = 'MONTHLY PROGRESS';
   static const monthlyRemainingLabel = 'MONTHLY REMAINING';
   static const monthlyOverspentLabel = 'MONTHLY OVERSPENT';
+  static const dailyPlanLabel = 'Daily plan';
+  static const pacePerDayLabel = 'Pace / day';
+  static const monthDaySpendListingTitle = 'Daily spend';
+  static const monthDaySpendPlanLabel = 'Plan';
+  static const monthDaySpendActualLabel = 'Spent';
+  static const monthDaySpendDailyExpenseLabel = 'Daily';
+  static const monthDaySpendRecurringAmountLabel = 'Recurring';
+  static const monthDaySpendOpenSemantics = 'Open daily spend for this month';
   static const upcomingBills = 'Recurring payments';
   static const viewAllCalendar = 'View All Calendar';
 
@@ -267,6 +275,11 @@ class AppStrings {
   static const cloudSyncLogoutWithoutSyncWarning =
       'Unsynced local changes may be lost.';
 
+  static const settingsPrivacyModeTitle = 'Privacy mode';
+  static const settingsPrivacyModeSubtitle =
+      'Hide Home budget and spending amounts';
+  static const privacyShowBalancesSemantics = 'Show balances';
+  static const privacyHideBalancesSemantics = 'Hide balances';
   static const settingsBiometricTitle = 'Biometric lock';
   static const settingsBiometricSubtitle = 'Require Face ID';
   static const settingsPushNotifications = 'Push notifications';
@@ -300,7 +313,7 @@ class AppStrings {
       'Uses enabled templates not yet paid this month (scheduled amounts).';
   static const expenseLimitsSpendableMonthlyLabel =
       'Indicative monthly spendable';
-  static const expenseLimitsIndicativeDailyLabel = 'Indicative daily';
+  static const expenseLimitsIndicativeDailyLabel = 'Daily plan';
   static const expenseLimitsSave = 'Save';
   static const expenseLimitsUnsetHint =
       'Set a monthly income to see indicative amounts.';

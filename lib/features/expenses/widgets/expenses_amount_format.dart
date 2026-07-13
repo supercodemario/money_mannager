@@ -6,6 +6,19 @@ String formatExpenseMinor(BuildContext context, int minor) {
   return RegionalFormattingScope.of(context).formatMinor(minor);
 }
 
+/// Masks [minor] as `{currencySymbol} •••••` when Privacy mode is on and not revealed.
+String privacyAwareExpenseAmount(
+  BuildContext context,
+  int minor, {
+  required bool privacyEnabled,
+  required bool temporarilyRevealed,
+}) {
+  if (privacyEnabled && !temporarilyRevealed) {
+    return '${currentExpenseCurrencySymbol(context)} •••••';
+  }
+  return formatExpenseMinor(context, minor);
+}
+
 /// Formats signed minor units as numeric text without currency symbol.
 String formatExpenseMinorNumericOnly(BuildContext context, int minor) {
   return RegionalFormattingScope.of(context).formatMinorNumericOnly(minor);

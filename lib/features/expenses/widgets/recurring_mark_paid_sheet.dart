@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/core/logging/app_log.dart';
 import 'package:money_manager/data/repositories/recurring_payment_repository.dart';
 import 'package:money_manager/features/expenses/widgets/expenses_amount_format.dart';
 import 'package:money_manager/share/share.dart';
+import 'package:money_manager/sync/manual_sync_helper.dart';
 
 Future<void> showMarkRecurringPaidSheet(
   BuildContext context, {
@@ -86,6 +88,11 @@ Future<void> showMarkRecurringPaidSheet(
                         amountMinor: minor,
                         occurredAtLocal: occurredAt,
                       );
+                      if (ctx.mounted) {
+                        await ManualSyncHelper.pushPendingRecurringPaymentsIfAllowed(
+                          AppServices.of(ctx),
+                        );
+                      }
                       if (ctx.mounted) Navigator.of(ctx).pop(true);
                     } catch (e, st) {
                       logAppError('recurring.mark_paid', e, st);
