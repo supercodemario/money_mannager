@@ -143,6 +143,25 @@ class RecurringPaymentOccurrences extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Immutable per-day Pace target for Home and analytics (`localDate` = `yyyy-MM-dd`).
+@TableIndex(
+  name: 'idx_daily_pace_user_date',
+  columns: {#userId, #localDate},
+  unique: true,
+)
+class DailyPaceSnapshots extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get userId => text().references(UserProfiles, #id)();
+  TextColumn get localDate => text()();
+  IntColumn get paceMinor => integer()();
+  IntColumn get poolMinor => integer()();
+  IntColumn get spentBeforeTodayMinor => integer()();
+  /// Divisor used at write time: days left **including** today (`D − day + 1`).
+  /// Column name is historical (`days_after_today`); value is include-today count.
+  IntColumn get daysAfterToday => integer()();
+  IntColumn get createdAtMs => integer()();
+}
+
 @DriftDatabase(
   tables: [
     UserProfiles,
@@ -152,6 +171,7 @@ class RecurringPaymentOccurrences extends Table {
     ExpenseLimitPreferences,
     UserPreferences,
     ExpenseCategories,
+    DailyPaceSnapshots,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -161,7 +181,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -235,6 +255,22 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(expenses, expenses.householdId);
         await m.addColumn(recurringPayments, recurringPayments.householdId);
       }
+      if (from < 10) {
+        await m.createTable(dailyPaceSnapshots);
+      }
+      if (from < 11) {
+        // Deduplicate concurrent race inserts, then ensure unique index exists.
+        await customStatement('''
+DELETE FROM daily_pace_snapshots
+WHERE id NOT IN (
+  SELECT MIN(id) FROM daily_pace_snapshots GROUP BY user_id, local_date
+)
+''');
+        await customStatement(
+          'CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_pace_user_date '
+          'ON daily_pace_snapshots (user_id, local_date)',
+        );
+      }
     },
     beforeOpen: (OpeningDetails details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -249,6 +285,7 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> wipeLocalData() async {
     await transaction(() async {
+      await delete(dailyPaceSnapshots).go();
       await delete(recurringPaymentOccurrences).go();
       await delete(expenses).go();
       await delete(recurringPayments).go();

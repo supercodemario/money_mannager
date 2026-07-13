@@ -94,9 +94,16 @@ class _DashboardMonthlySpendingCardState extends State<DashboardMonthlySpendingC
                     final dailyPlanValue = hasLimits
                         ? formatExpenseMinor(context, d.dailyPlanMinor)
                         : AppStrings.expenseLimitsUnsetValue;
+                    final lockedPace = hasLimits ? d.lockedPaceMinor : 0;
                     final paceDailyValue = hasLimits
-                        ? formatExpenseMinor(context, d.paceDailyMinor)
+                        ? formatExpenseMinor(context, lockedPace)
                         : AppStrings.expenseLimitsUnsetValue;
+                    final todaySpentMinor = hasLimits ? d.todaySpentMinor : 0;
+                    final todayExpenseValue = hasLimits
+                        ? formatExpenseMinor(context, todaySpentMinor)
+                        : AppStrings.expenseLimitsUnsetValue;
+                    final overPace =
+                        hasLimits && lockedPace > 0 && todaySpentMinor > lockedPace;
                     final savingsMinor = prefs?.monthlySavingsMinor;
                     final savingsValue = savingsMinor == null
                         ? AppStrings.expenseLimitsUnsetValue
@@ -232,6 +239,8 @@ class _DashboardMonthlySpendingCardState extends State<DashboardMonthlySpendingC
                             remainingValue: remainingValue,
                             dailyPlanValue: dailyPlanValue,
                             paceDailyValue: paceDailyValue,
+                            todayExpenseValue: todayExpenseValue,
+                            overPace: overPace,
                             textTheme: textTheme,
                           ),
                           const SizedBox(height: AppSpacing.s16),
@@ -349,6 +358,8 @@ class DashboardMonthlyBalanceRow extends StatelessWidget {
     required this.remainingValue,
     required this.dailyPlanValue,
     required this.paceDailyValue,
+    required this.todayExpenseValue,
+    required this.overPace,
     required this.textTheme,
   });
 
@@ -357,6 +368,8 @@ class DashboardMonthlyBalanceRow extends StatelessWidget {
   final String remainingValue;
   final String dailyPlanValue;
   final String paceDailyValue;
+  final String todayExpenseValue;
+  final bool overPace;
   final TextTheme textTheme;
 
   @override
@@ -418,6 +431,7 @@ class DashboardMonthlyBalanceRow extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
                           child: Column(
@@ -445,7 +459,7 @@ class DashboardMonthlyBalanceRow extends StatelessWidget {
                         ),
                         Container(
                           width: 1,
-                          height: AppSpacing.s32,
+                          height: AppSpacing.s48,
                           color: AppColors.outlineVariant.withValues(alpha: 0.5),
                         ),
                         Expanded(
@@ -471,6 +485,28 @@ class DashboardMonthlyBalanceRow extends StatelessWidget {
                                         : AppColors.onSurfaceVariant,
                                   ),
                                 ),
+                                const SizedBox(height: AppSpacing.s4),
+                                Text(
+                                  '${AppStrings.todayExpenseLabel} $todayExpenseValue',
+                                  style: textTheme.labelSmall?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: !hasLimits
+                                        ? AppColors.onSurfaceVariant
+                                        : overPace
+                                            ? SpendVsPlanColors.over
+                                            : SpendVsPlanColors.underOrEqual,
+                                  ),
+                                ),
+                                if (overPace) ...[
+                                  const SizedBox(height: AppSpacing.s2),
+                                  Text(
+                                    AppStrings.paceOverLabel,
+                                    style: textTheme.labelSmall?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      color: SpendVsPlanColors.over,
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),

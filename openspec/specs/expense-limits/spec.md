@@ -36,10 +36,12 @@ For the **current local calendar month**, when monthly income is set, the system
 
 ### Requirement: Indicative daily amount from calendar month length
 
-When spendable pool is defined for the current local month with **D** days (28–31), the system MUST derive two guidance values in minor units:
+When spendable pool is defined for the current local month with **D** days (28–31), the system MUST derive **Daily plan** and a **Pace snapshot write value** in minor units:
 
-- **Daily plan** — integer division of spendable pool by **D** (`pool ~/ D`), or **zero** when pool is non-positive.
-- **Pace / day** — let **remaining** be `spendablePool − currentMonthSpent` (same remaining as the dashboard monthly balance). Let **daysAfterToday** be `D − dayOfMonth` for the current local date (**excluding today**). Pace / day MUST be `remaining ~/ daysAfterToday` when remaining is positive and daysAfterToday is positive; otherwise Pace / day MUST be **zero**.
+- **Daily plan** — integer division of spendable pool by **D** (`pool ~/ D`), or **zero** when pool is non-positive. Daily plan MUST ignore month spent.
+- **Pace snapshot write value** — used only when creating the locked Pace row for a local day (see daily-pace-history). Let `spentBeforeToday` be month spent excluding today’s local-date expenses. Let `daysLeftIncludingToday` be `D − dayOfMonth + 1` (**including today**). The write value MUST be `max(0, pool − spentBeforeToday) ~/ daysLeftIncludingToday` when remaining is positive and `daysLeftIncludingToday` is positive; otherwise **zero**.
+
+The Pace value **shown on Home for the current day** MUST be the **locked daily Pace snapshot**, not a live mid-day recomputation that includes today’s spend in the leftover.
 
 #### Scenario: February length affects Daily plan divisor
 
@@ -52,22 +54,31 @@ When spendable pool is defined for the current local month with **D** days (28�
 - **AND** current-month spent is greater than zero but less than the pool
 - **THEN** Daily plan MUST remain `3000 ~/ 30`
 
-#### Scenario: Pace uses remaining and days after today
+#### Scenario: Snapshot write uses spent before today and days left including today
 
-- **WHEN** spendable pool is 3000 minor units, the month has 30 days, local day-of-month is **10**, and current-month spent is **1100** (remaining **1900**)
-- **THEN** daysAfterToday MUST be **20**
-- **AND** Pace / day MUST be `1900 ~/ 20`
+- **WHEN** spendable pool is 3000 minor units, the month has 30 days, local day-of-month is **10**, spent before today is **1100**, and spent today is **400**
+- **THEN** daysLeftIncludingToday MUST be **21**
+- **AND** the Pace snapshot write value MUST be `1900 ~/ 21`
+- **AND** MUST NOT use `1900 ~/ 20` (must not exclude today from the divisor)
+- **AND** MUST NOT use leftover that subtracts today’s 400
 
-#### Scenario: Last day yields zero pace
+#### Scenario: Steady spend keeps Pace equal to Daily plan
 
-- **WHEN** local day-of-month equals **D**
-- **THEN** daysAfterToday MUST be **0**
-- **AND** Pace / day MUST be **zero**
+- **WHEN** spendable pool is 300, the month has 30 days, Daily plan is 10
+- **AND** the user spent exactly 10 on each of the first 9 days
+- **AND** local day-of-month is **10** with no spend yet today
+- **THEN** the Pace snapshot write value MUST be `210 ~/ 21` which equals **10**
 
-#### Scenario: Overspent yields zero pace
+#### Scenario: Last day yields leftover as pace
 
-- **WHEN** current-month spent is greater than spendable pool
-- **THEN** Pace / day MUST be **zero**
+- **WHEN** local day-of-month equals **D** and `pool − spentBeforeToday` is **150**
+- **THEN** daysLeftIncludingToday MUST be **1**
+- **AND** the Pace snapshot write value MUST be **150**
+
+#### Scenario: Non-positive remaining before today yields zero pace write value
+
+- **WHEN** spent before today is greater than or equal to spendable pool
+- **THEN** the Pace snapshot write value MUST be **zero**
 - **AND** Daily plan MUST still equal `pool ~/ D` when pool is positive
 
 ### Requirement: Guidance is non-blocking
@@ -105,17 +116,26 @@ The system MUST provide a **limits detail** screen reachable from Settings where
 
 ### Requirement: Dashboard home shows limits summary details
 
-The system MUST show a limits summary section on dashboard home that includes monthly total expense, remaining or overspent monthly amount, current savings set, and both **Daily plan** and **Pace / day** using locally persisted preferences and derived guidance values. Daily plan and Pace / day MUST be presented nested under the monthly remaining/overspent block (not as a single standalone daily pill that replaces that pairing). Savings MUST remain separate from that dual-daily row.
+The system MUST show a limits summary section on dashboard home that includes monthly total expense, remaining or overspent monthly amount, current savings set, **Daily plan**, and the **locked Pace for today** (from the daily Pace snapshot). Home MUST also present **today’s expense** against that locked Pace. Daily plan and Pace MUST remain associated with the monthly remaining/overspent presentation (paired or adjacent daily row). Savings MUST remain separate from that dual-daily presentation.
+
+Home MUST NOT lower or recalculate the displayed Pace for today when the user adds expenses today. When today’s expense exceeds locked Pace, Home MUST indicate an over-Pace state (styling and/or exceed amount) while Pace remains the locked value.
 
 #### Scenario: Dashboard renders all requested details
 
 - **WHEN** the user opens dashboard home and limits are configured
-- **THEN** the limits summary SHALL display monthly total expense, remaining or overspent amount, current savings set, Daily plan, and Pace / day
+- **THEN** the limits summary SHALL display monthly total expense, remaining or overspent amount, current savings set, Daily plan, locked Pace for today, and today’s expense context for Pace comparison
 
 #### Scenario: Dual daily nested under remaining
 
 - **WHEN** limits are configured
-- **THEN** Daily plan and Pace / day SHALL appear as a paired row under the monthly remaining/overspent presentation
+- **THEN** Daily plan and Pace SHALL appear as a paired (or adjacent) row under the monthly remaining/overspent presentation
+
+#### Scenario: Pace stays locked after today spend
+
+- **WHEN** today’s locked Pace is **500**
+- **AND** the user records expenses today totaling more than **500**
+- **THEN** the displayed Pace SHALL remain **500**
+- **AND** Home SHALL show an over-Pace indication relative to today’s spend
 
 #### Scenario: Remaining monthly amount is derived from guidance and spending
 
@@ -163,3 +183,14 @@ When limits are configured, the Daily plan / Pace / day row on dashboard home MU
 
 - **WHEN** the user taps the Daily plan / Pace / day row on Home
 - **THEN** the app SHALL open the month day spend listing for the current local month
+
+### Requirement: Home Pace comes from daily snapshot ensure
+
+When limits are configured and the user views Home, the system MUST ensure a Pace snapshot exists for the current local date (creating it if missing, after month expense data is available) and MUST bind the Home Pace display to that snapshot’s `paceMinor`.
+
+#### Scenario: First Home open of the day locks Pace
+
+- **WHEN** limits are configured and no snapshot exists for today
+- **AND** the user opens Home
+- **THEN** the system SHALL create today’s Pace snapshot
+- **AND** Home SHALL display that snapshot’s Pace

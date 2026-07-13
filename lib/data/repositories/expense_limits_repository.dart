@@ -16,8 +16,11 @@ class ExpenseLimitsDerived {
     required this.hasIncome,
     required this.spendablePoolMinor,
     required this.monthSpentMinor,
+    required this.spentBeforeTodayMinor,
+    required this.todaySpentMinor,
     required this.dailyPlanMinor,
     required this.paceDailyMinor,
+    required this.lockedPaceMinor,
     required this.daysInMonth,
     required this.recurringDeductionMinor,
   });
@@ -25,8 +28,19 @@ class ExpenseLimitsDerived {
   final bool hasIncome;
   final int spendablePoolMinor;
   final int monthSpentMinor;
+
+  /// Month spent excluding today's local-date expenses (snapshot write input).
+  final int spentBeforeTodayMinor;
+
+  /// Sum of expenses on the current local calendar day.
+  final int todaySpentMinor;
   final int dailyPlanMinor;
+
+  /// Pace write formula from [spentBeforeTodayMinor] (not for Home display).
   final int paceDailyMinor;
+
+  /// Immutable Pace for today from [DailyPaceSnapshots] (0 if none / unset).
+  final int lockedPaceMinor;
   final int daysInMonth;
   final int recurringDeductionMinor;
 
@@ -34,8 +48,11 @@ class ExpenseLimitsDerived {
     hasIncome: false,
     spendablePoolMinor: 0,
     monthSpentMinor: 0,
+    spentBeforeTodayMinor: 0,
+    todaySpentMinor: 0,
     dailyPlanMinor: 0,
     paceDailyMinor: 0,
+    lockedPaceMinor: 0,
     daysInMonth: 30,
     recurringDeductionMinor: 0,
   );
@@ -45,6 +62,9 @@ class ExpenseLimitsDerived {
     required List<RecurringMonthRow> recurringRows,
     required DateTime nowLocal,
     int monthSpentMinor = 0,
+    int spentBeforeTodayMinor = 0,
+    int todaySpentMinor = 0,
+    int lockedPaceMinor = 0,
   }) {
     final income = prefs?.monthlyIncomeMinor;
     final recurringDeduction = RecurringMonthRow.sumUnpaidSuggestedMinor(
@@ -53,7 +73,7 @@ class ExpenseLimitsDerived {
     final days = ExpenseLimitsCalculator.daysInMonth(
       DateTime(nowLocal.year, nowLocal.month),
     );
-    final afterToday = ExpenseLimitsCalculator.daysAfterToday(nowLocal);
+    final daysLeft = ExpenseLimitsCalculator.daysLeftIncludingToday(nowLocal);
 
     final pref = prefs;
     if (pref == null || income == null || income <= 0) {
@@ -61,8 +81,11 @@ class ExpenseLimitsDerived {
         hasIncome: false,
         spendablePoolMinor: 0,
         monthSpentMinor: monthSpentMinor,
+        spentBeforeTodayMinor: spentBeforeTodayMinor,
+        todaySpentMinor: todaySpentMinor,
         dailyPlanMinor: 0,
         paceDailyMinor: 0,
+        lockedPaceMinor: 0,
         daysInMonth: days,
         recurringDeductionMinor: recurringDeduction,
       );
@@ -80,18 +103,21 @@ class ExpenseLimitsDerived {
       poolMinor: pool,
       daysInMonth: days,
     );
-    final pace = ExpenseLimitsCalculator.paceDailyMinor(
+    final paceWrite = ExpenseLimitsCalculator.paceSnapshotMinor(
       poolMinor: pool,
-      monthSpentMinor: monthSpentMinor,
-      daysAfterToday: afterToday,
+      spentBeforeTodayMinor: spentBeforeTodayMinor,
+      daysLeftIncludingToday: daysLeft,
     );
 
     return ExpenseLimitsDerived(
       hasIncome: true,
       spendablePoolMinor: pool,
       monthSpentMinor: monthSpentMinor,
+      spentBeforeTodayMinor: spentBeforeTodayMinor,
+      todaySpentMinor: todaySpentMinor,
       dailyPlanMinor: plan,
-      paceDailyMinor: pace,
+      paceDailyMinor: paceWrite,
+      lockedPaceMinor: lockedPaceMinor,
       daysInMonth: days,
       recurringDeductionMinor: recurringDeduction,
     );
@@ -293,25 +319,247 @@ class ExpenseLimitsRepository {
     }
   }
 
+  Future<DailyPaceSnapshot?> getPaceSnapshot({
+    required String userId,
+    required String localDate,
+  }) async {
+    final rows =
+        await (_db.select(_db.dailyPaceSnapshots)
+              ..where(
+                (t) => t.userId.equals(userId) & t.localDate.equals(localDate),
+              )
+              ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+            .get();
+    if (rows.isEmpty) return null;
+    if (rows.length > 1) {
+      // Concurrent ensures can create duplicates if the unique index was missing.
+      for (final dup in rows.skip(1)) {
+        await (_db.delete(
+          _db.dailyPaceSnapshots,
+        )..where((t) => t.id.equals(dup.id))).go();
+      }
+    }
+    return rows.first;
+  }
+
+  Stream<DailyPaceSnapshot?> watchPaceSnapshot({
+    required String userId,
+    required String localDate,
+  }) {
+    return (_db.select(_db.dailyPaceSnapshots)
+          ..where(
+            (t) => t.userId.equals(userId) & t.localDate.equals(localDate),
+          )
+          ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+        .watch()
+        .map((rows) => rows.isEmpty ? null : rows.first);
+  }
+
+  Future<List<DailyPaceSnapshot>> listPaceSnapshotsInRange({
+    required String userId,
+    required String startLocalDateInclusive,
+    required String endLocalDateInclusive,
+  }) {
+    return (_db.select(_db.dailyPaceSnapshots)
+          ..where(
+            (t) =>
+                t.userId.equals(userId) &
+                t.localDate.isBiggerOrEqualValue(startLocalDateInclusive) &
+                t.localDate.isSmallerOrEqualValue(endLocalDateInclusive),
+          )
+          ..orderBy([(t) => OrderingTerm.asc(t.localDate)]))
+        .get();
+  }
+
+  Stream<List<DailyPaceSnapshot>> watchPaceSnapshotsForMonth({
+    required String userId,
+    required DateTime monthLocal,
+  }) {
+    final days = ExpenseLimitsCalculator.daysInMonth(monthLocal);
+    final y = monthLocal.year;
+    final m = monthLocal.month.toString().padLeft(2, '0');
+    final start = '$y-$m-01';
+    final end = '$y-$m-${days.toString().padLeft(2, '0')}';
+    return (_db.select(_db.dailyPaceSnapshots)
+          ..where(
+            (t) =>
+                t.userId.equals(userId) &
+                t.localDate.isBiggerOrEqualValue(start) &
+                t.localDate.isSmallerOrEqualValue(end),
+          )
+          ..orderBy([(t) => OrderingTerm.asc(t.localDate)]))
+        .watch();
+  }
+
+  final Map<String, Future<DailyPaceSnapshot>> _ensurePaceInFlight = {};
+
+  /// Inserts today's Pace snapshot if missing. Never updates an existing row.
+  Future<DailyPaceSnapshot> ensureTodayPaceSnapshot({
+    required String userId,
+    required DateTime nowLocal,
+    required int poolMinor,
+    required int spentBeforeTodayMinor,
+  }) {
+    final localDate = ExpenseLimitsCalculator.localDateKey(nowLocal);
+    final key = '$userId|$localDate';
+    final inFlight = _ensurePaceInFlight[key];
+    if (inFlight != null) return inFlight;
+
+    final future = _ensureTodayPaceSnapshotUnlocked(
+      userId: userId,
+      nowLocal: nowLocal,
+      localDate: localDate,
+      poolMinor: poolMinor,
+      spentBeforeTodayMinor: spentBeforeTodayMinor,
+    ).whenComplete(() {
+      _ensurePaceInFlight.remove(key);
+    });
+    _ensurePaceInFlight[key] = future;
+    return future;
+  }
+
+  Future<DailyPaceSnapshot> _ensureTodayPaceSnapshotUnlocked({
+    required String userId,
+    required DateTime nowLocal,
+    required String localDate,
+    required int poolMinor,
+    required int spentBeforeTodayMinor,
+  }) async {
+    final existing = await getPaceSnapshot(
+      userId: userId,
+      localDate: localDate,
+    );
+    // Repair false lock created before month expenses loaded (spentBeforeToday was 0).
+    if (existing != null) {
+      if (existing.spentBeforeTodayMinor == 0 && spentBeforeTodayMinor > 0) {
+        await (_db.delete(
+          _db.dailyPaceSnapshots,
+        )..where((t) => t.id.equals(existing.id))).go();
+      } else {
+        return existing;
+      }
+    }
+
+    final daysLeft = ExpenseLimitsCalculator.daysLeftIncludingToday(nowLocal);
+    final pace = ExpenseLimitsCalculator.paceSnapshotMinor(
+      poolMinor: poolMinor,
+      spentBeforeTodayMinor: spentBeforeTodayMinor,
+      daysLeftIncludingToday: daysLeft,
+    );
+    final createdAt = _nowProvider().millisecondsSinceEpoch;
+    try {
+      final id = await _db
+          .into(_db.dailyPaceSnapshots)
+          .insert(
+            DailyPaceSnapshotsCompanion.insert(
+              userId: userId,
+              localDate: localDate,
+              paceMinor: pace,
+              poolMinor: poolMinor,
+              spentBeforeTodayMinor: spentBeforeTodayMinor,
+              daysAfterToday: daysLeft,
+              createdAtMs: createdAt,
+            ),
+          );
+      return DailyPaceSnapshot(
+        id: id,
+        userId: userId,
+        localDate: localDate,
+        paceMinor: pace,
+        poolMinor: poolMinor,
+        spentBeforeTodayMinor: spentBeforeTodayMinor,
+        daysAfterToday: daysLeft,
+        createdAtMs: createdAt,
+      );
+    } catch (_) {
+      final afterRace = await getPaceSnapshot(
+        userId: userId,
+        localDate: localDate,
+      );
+      if (afterRace != null) return afterRace;
+      rethrow;
+    }
+  }
+
   /// Recomputes when preferences, recurring rows, month spent, or local month change.
   Stream<ExpenseLimitsDerived> watchDerived(String userId) {
     return Stream.multi((controller) {
       ExpenseLimitPreference? prefs;
       List<RecurringMonthRow> rows = [];
-      var monthSpentMinor = 0;
+      List<Expense> monthExpenses = [];
+      var lockedPaceMinor = 0;
+      var expensesReady = false;
+      var recurringReady = false;
       String? activeMonthKey;
       StreamSubscription<List<RecurringMonthRow>>? recurringSub;
       StreamSubscription<List<Expense>>? spentSub;
 
       void emit() {
+        final now = _nowProvider();
+        final split = ExpenseLimitsCalculator.splitMonthSpentByLocalDay(
+          expenses: monthExpenses.map(
+            (e) => (occurredAtUtcMs: e.occurredAt, amountMinor: e.amountMinor),
+          ),
+          nowLocal: now,
+        );
+        final monthSpent = split.beforeTodayMinor + split.todayMinor;
         controller.add(
           ExpenseLimitsDerived.compute(
             prefs: prefs,
             recurringRows: rows,
-            nowLocal: _nowProvider(),
-            monthSpentMinor: monthSpentMinor,
+            nowLocal: now,
+            monthSpentMinor: monthSpent,
+            spentBeforeTodayMinor: split.beforeTodayMinor,
+            todaySpentMinor: split.todayMinor,
+            lockedPaceMinor: lockedPaceMinor,
           ),
         );
+      }
+
+      Future<void> ensureLockedPace() async {
+        final now = _nowProvider();
+        final income = prefs?.monthlyIncomeMinor;
+        if (prefs == null || income == null || income <= 0) {
+          lockedPaceMinor = 0;
+          emit();
+          return;
+        }
+
+        // Wait until month expense + recurring streams have emitted once so Pace
+        // is not locked with spentBeforeToday = 0 while data is still loading.
+        if (!expensesReady || !recurringReady) {
+          emit();
+          return;
+        }
+
+        final split = ExpenseLimitsCalculator.splitMonthSpentByLocalDay(
+          expenses: monthExpenses.map(
+            (e) => (occurredAtUtcMs: e.occurredAt, amountMinor: e.amountMinor),
+          ),
+          nowLocal: now,
+        );
+        final recurringDeduction = RecurringMonthRow.sumUnpaidSuggestedMinor(
+          rows,
+        );
+        final pool = ExpenseLimitsCalculator.spendablePoolMinor(
+          incomeMinor: income,
+          savingsMinor: prefs!.monthlySavingsMinor ?? 0,
+          recurringDeductionMinor: recurringDeduction,
+          excludeRecurring: prefs!.excludeUnpaidRecurring,
+        );
+
+        try {
+          final row = await ensureTodayPaceSnapshot(
+            userId: userId,
+            nowLocal: now,
+            poolMinor: pool,
+            spentBeforeTodayMinor: split.beforeTodayMinor,
+          );
+          lockedPaceMinor = row.paceMinor;
+        } catch (_) {
+          lockedPaceMinor = 0;
+        }
+        emit();
       }
 
       ({int startUtcMs, int endUtcMs}) monthRangeUtcMs(DateTime nowLocal) {
@@ -334,13 +582,17 @@ class ExpenseLimitsRepository {
 
         activeMonthKey = monthKey;
         rows = [];
-        monthSpentMinor = 0;
+        monthExpenses = [];
+        lockedPaceMinor = 0;
+        expensesReady = false;
+        recurringReady = false;
         await recurringSub?.cancel();
         await spentSub?.cancel();
 
         recurringSub = _recurring.watchRowsForMonth(monthKey).listen((r) {
           rows = r;
-          emit();
+          recurringReady = true;
+          unawaited(ensureLockedPace());
         }, onError: controller.addError);
 
         final range = monthRangeUtcMs(now);
@@ -350,18 +602,18 @@ class ExpenseLimitsRepository {
               endUtcMs: range.endUtcMs,
             )
             .listen((expenses) {
-              monthSpentMinor = expenses.fold<int>(
-                0,
-                (sum, e) => sum + e.amountMinor,
-              );
-              emit();
+              monthExpenses = expenses;
+              expensesReady = true;
+              // Do not rewrite an existing snapshot when spend updates (except
+              // repair of a false zero spentBeforeToday lock — see ensure).
+              unawaited(ensureLockedPace());
             }, onError: controller.addError);
         emit();
       }
 
       final prefsSub = watchPreferences(userId).listen((p) {
         prefs = p;
-        emit();
+        unawaited(ensureLockedPace());
       }, onError: controller.addError);
 
       unawaited(refreshMonthSubscriptions());

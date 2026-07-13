@@ -4284,6 +4284,530 @@ class ExpenseCategoriesCompanion extends UpdateCompanion<ExpenseCategory> {
   }
 }
 
+class $DailyPaceSnapshotsTable extends DailyPaceSnapshots
+    with TableInfo<$DailyPaceSnapshotsTable, DailyPaceSnapshot> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DailyPaceSnapshotsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES user_profiles (id)',
+    ),
+  );
+  static const VerificationMeta _localDateMeta = const VerificationMeta(
+    'localDate',
+  );
+  @override
+  late final GeneratedColumn<String> localDate = GeneratedColumn<String>(
+    'local_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _paceMinorMeta = const VerificationMeta(
+    'paceMinor',
+  );
+  @override
+  late final GeneratedColumn<int> paceMinor = GeneratedColumn<int>(
+    'pace_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _poolMinorMeta = const VerificationMeta(
+    'poolMinor',
+  );
+  @override
+  late final GeneratedColumn<int> poolMinor = GeneratedColumn<int>(
+    'pool_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _spentBeforeTodayMinorMeta =
+      const VerificationMeta('spentBeforeTodayMinor');
+  @override
+  late final GeneratedColumn<int> spentBeforeTodayMinor = GeneratedColumn<int>(
+    'spent_before_today_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _daysAfterTodayMeta = const VerificationMeta(
+    'daysAfterToday',
+  );
+  @override
+  late final GeneratedColumn<int> daysAfterToday = GeneratedColumn<int>(
+    'days_after_today',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMsMeta = const VerificationMeta(
+    'createdAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtMs = GeneratedColumn<int>(
+    'created_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    localDate,
+    paceMinor,
+    poolMinor,
+    spentBeforeTodayMinor,
+    daysAfterToday,
+    createdAtMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'daily_pace_snapshots';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DailyPaceSnapshot> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('local_date')) {
+      context.handle(
+        _localDateMeta,
+        localDate.isAcceptableOrUnknown(data['local_date']!, _localDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_localDateMeta);
+    }
+    if (data.containsKey('pace_minor')) {
+      context.handle(
+        _paceMinorMeta,
+        paceMinor.isAcceptableOrUnknown(data['pace_minor']!, _paceMinorMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_paceMinorMeta);
+    }
+    if (data.containsKey('pool_minor')) {
+      context.handle(
+        _poolMinorMeta,
+        poolMinor.isAcceptableOrUnknown(data['pool_minor']!, _poolMinorMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_poolMinorMeta);
+    }
+    if (data.containsKey('spent_before_today_minor')) {
+      context.handle(
+        _spentBeforeTodayMinorMeta,
+        spentBeforeTodayMinor.isAcceptableOrUnknown(
+          data['spent_before_today_minor']!,
+          _spentBeforeTodayMinorMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_spentBeforeTodayMinorMeta);
+    }
+    if (data.containsKey('days_after_today')) {
+      context.handle(
+        _daysAfterTodayMeta,
+        daysAfterToday.isAcceptableOrUnknown(
+          data['days_after_today']!,
+          _daysAfterTodayMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_daysAfterTodayMeta);
+    }
+    if (data.containsKey('created_at_ms')) {
+      context.handle(
+        _createdAtMsMeta,
+        createdAtMs.isAcceptableOrUnknown(
+          data['created_at_ms']!,
+          _createdAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DailyPaceSnapshot map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DailyPaceSnapshot(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      localDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}local_date'],
+      )!,
+      paceMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pace_minor'],
+      )!,
+      poolMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pool_minor'],
+      )!,
+      spentBeforeTodayMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}spent_before_today_minor'],
+      )!,
+      daysAfterToday: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}days_after_today'],
+      )!,
+      createdAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $DailyPaceSnapshotsTable createAlias(String alias) {
+    return $DailyPaceSnapshotsTable(attachedDatabase, alias);
+  }
+}
+
+class DailyPaceSnapshot extends DataClass
+    implements Insertable<DailyPaceSnapshot> {
+  final int id;
+  final String userId;
+  final String localDate;
+  final int paceMinor;
+  final int poolMinor;
+  final int spentBeforeTodayMinor;
+  final int daysAfterToday;
+  final int createdAtMs;
+  const DailyPaceSnapshot({
+    required this.id,
+    required this.userId,
+    required this.localDate,
+    required this.paceMinor,
+    required this.poolMinor,
+    required this.spentBeforeTodayMinor,
+    required this.daysAfterToday,
+    required this.createdAtMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['user_id'] = Variable<String>(userId);
+    map['local_date'] = Variable<String>(localDate);
+    map['pace_minor'] = Variable<int>(paceMinor);
+    map['pool_minor'] = Variable<int>(poolMinor);
+    map['spent_before_today_minor'] = Variable<int>(spentBeforeTodayMinor);
+    map['days_after_today'] = Variable<int>(daysAfterToday);
+    map['created_at_ms'] = Variable<int>(createdAtMs);
+    return map;
+  }
+
+  DailyPaceSnapshotsCompanion toCompanion(bool nullToAbsent) {
+    return DailyPaceSnapshotsCompanion(
+      id: Value(id),
+      userId: Value(userId),
+      localDate: Value(localDate),
+      paceMinor: Value(paceMinor),
+      poolMinor: Value(poolMinor),
+      spentBeforeTodayMinor: Value(spentBeforeTodayMinor),
+      daysAfterToday: Value(daysAfterToday),
+      createdAtMs: Value(createdAtMs),
+    );
+  }
+
+  factory DailyPaceSnapshot.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DailyPaceSnapshot(
+      id: serializer.fromJson<int>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
+      localDate: serializer.fromJson<String>(json['localDate']),
+      paceMinor: serializer.fromJson<int>(json['paceMinor']),
+      poolMinor: serializer.fromJson<int>(json['poolMinor']),
+      spentBeforeTodayMinor: serializer.fromJson<int>(
+        json['spentBeforeTodayMinor'],
+      ),
+      daysAfterToday: serializer.fromJson<int>(json['daysAfterToday']),
+      createdAtMs: serializer.fromJson<int>(json['createdAtMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'userId': serializer.toJson<String>(userId),
+      'localDate': serializer.toJson<String>(localDate),
+      'paceMinor': serializer.toJson<int>(paceMinor),
+      'poolMinor': serializer.toJson<int>(poolMinor),
+      'spentBeforeTodayMinor': serializer.toJson<int>(spentBeforeTodayMinor),
+      'daysAfterToday': serializer.toJson<int>(daysAfterToday),
+      'createdAtMs': serializer.toJson<int>(createdAtMs),
+    };
+  }
+
+  DailyPaceSnapshot copyWith({
+    int? id,
+    String? userId,
+    String? localDate,
+    int? paceMinor,
+    int? poolMinor,
+    int? spentBeforeTodayMinor,
+    int? daysAfterToday,
+    int? createdAtMs,
+  }) => DailyPaceSnapshot(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    localDate: localDate ?? this.localDate,
+    paceMinor: paceMinor ?? this.paceMinor,
+    poolMinor: poolMinor ?? this.poolMinor,
+    spentBeforeTodayMinor: spentBeforeTodayMinor ?? this.spentBeforeTodayMinor,
+    daysAfterToday: daysAfterToday ?? this.daysAfterToday,
+    createdAtMs: createdAtMs ?? this.createdAtMs,
+  );
+  DailyPaceSnapshot copyWithCompanion(DailyPaceSnapshotsCompanion data) {
+    return DailyPaceSnapshot(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      localDate: data.localDate.present ? data.localDate.value : this.localDate,
+      paceMinor: data.paceMinor.present ? data.paceMinor.value : this.paceMinor,
+      poolMinor: data.poolMinor.present ? data.poolMinor.value : this.poolMinor,
+      spentBeforeTodayMinor: data.spentBeforeTodayMinor.present
+          ? data.spentBeforeTodayMinor.value
+          : this.spentBeforeTodayMinor,
+      daysAfterToday: data.daysAfterToday.present
+          ? data.daysAfterToday.value
+          : this.daysAfterToday,
+      createdAtMs: data.createdAtMs.present
+          ? data.createdAtMs.value
+          : this.createdAtMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyPaceSnapshot(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('localDate: $localDate, ')
+          ..write('paceMinor: $paceMinor, ')
+          ..write('poolMinor: $poolMinor, ')
+          ..write('spentBeforeTodayMinor: $spentBeforeTodayMinor, ')
+          ..write('daysAfterToday: $daysAfterToday, ')
+          ..write('createdAtMs: $createdAtMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    localDate,
+    paceMinor,
+    poolMinor,
+    spentBeforeTodayMinor,
+    daysAfterToday,
+    createdAtMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DailyPaceSnapshot &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.localDate == this.localDate &&
+          other.paceMinor == this.paceMinor &&
+          other.poolMinor == this.poolMinor &&
+          other.spentBeforeTodayMinor == this.spentBeforeTodayMinor &&
+          other.daysAfterToday == this.daysAfterToday &&
+          other.createdAtMs == this.createdAtMs);
+}
+
+class DailyPaceSnapshotsCompanion extends UpdateCompanion<DailyPaceSnapshot> {
+  final Value<int> id;
+  final Value<String> userId;
+  final Value<String> localDate;
+  final Value<int> paceMinor;
+  final Value<int> poolMinor;
+  final Value<int> spentBeforeTodayMinor;
+  final Value<int> daysAfterToday;
+  final Value<int> createdAtMs;
+  const DailyPaceSnapshotsCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.localDate = const Value.absent(),
+    this.paceMinor = const Value.absent(),
+    this.poolMinor = const Value.absent(),
+    this.spentBeforeTodayMinor = const Value.absent(),
+    this.daysAfterToday = const Value.absent(),
+    this.createdAtMs = const Value.absent(),
+  });
+  DailyPaceSnapshotsCompanion.insert({
+    this.id = const Value.absent(),
+    required String userId,
+    required String localDate,
+    required int paceMinor,
+    required int poolMinor,
+    required int spentBeforeTodayMinor,
+    required int daysAfterToday,
+    required int createdAtMs,
+  }) : userId = Value(userId),
+       localDate = Value(localDate),
+       paceMinor = Value(paceMinor),
+       poolMinor = Value(poolMinor),
+       spentBeforeTodayMinor = Value(spentBeforeTodayMinor),
+       daysAfterToday = Value(daysAfterToday),
+       createdAtMs = Value(createdAtMs);
+  static Insertable<DailyPaceSnapshot> custom({
+    Expression<int>? id,
+    Expression<String>? userId,
+    Expression<String>? localDate,
+    Expression<int>? paceMinor,
+    Expression<int>? poolMinor,
+    Expression<int>? spentBeforeTodayMinor,
+    Expression<int>? daysAfterToday,
+    Expression<int>? createdAtMs,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (localDate != null) 'local_date': localDate,
+      if (paceMinor != null) 'pace_minor': paceMinor,
+      if (poolMinor != null) 'pool_minor': poolMinor,
+      if (spentBeforeTodayMinor != null)
+        'spent_before_today_minor': spentBeforeTodayMinor,
+      if (daysAfterToday != null) 'days_after_today': daysAfterToday,
+      if (createdAtMs != null) 'created_at_ms': createdAtMs,
+    });
+  }
+
+  DailyPaceSnapshotsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? userId,
+    Value<String>? localDate,
+    Value<int>? paceMinor,
+    Value<int>? poolMinor,
+    Value<int>? spentBeforeTodayMinor,
+    Value<int>? daysAfterToday,
+    Value<int>? createdAtMs,
+  }) {
+    return DailyPaceSnapshotsCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      localDate: localDate ?? this.localDate,
+      paceMinor: paceMinor ?? this.paceMinor,
+      poolMinor: poolMinor ?? this.poolMinor,
+      spentBeforeTodayMinor:
+          spentBeforeTodayMinor ?? this.spentBeforeTodayMinor,
+      daysAfterToday: daysAfterToday ?? this.daysAfterToday,
+      createdAtMs: createdAtMs ?? this.createdAtMs,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (localDate.present) {
+      map['local_date'] = Variable<String>(localDate.value);
+    }
+    if (paceMinor.present) {
+      map['pace_minor'] = Variable<int>(paceMinor.value);
+    }
+    if (poolMinor.present) {
+      map['pool_minor'] = Variable<int>(poolMinor.value);
+    }
+    if (spentBeforeTodayMinor.present) {
+      map['spent_before_today_minor'] = Variable<int>(
+        spentBeforeTodayMinor.value,
+      );
+    }
+    if (daysAfterToday.present) {
+      map['days_after_today'] = Variable<int>(daysAfterToday.value);
+    }
+    if (createdAtMs.present) {
+      map['created_at_ms'] = Variable<int>(createdAtMs.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyPaceSnapshotsCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('localDate: $localDate, ')
+          ..write('paceMinor: $paceMinor, ')
+          ..write('poolMinor: $poolMinor, ')
+          ..write('spentBeforeTodayMinor: $spentBeforeTodayMinor, ')
+          ..write('daysAfterToday: $daysAfterToday, ')
+          ..write('createdAtMs: $createdAtMs')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4300,6 +4824,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $ExpenseCategoriesTable expenseCategories =
       $ExpenseCategoriesTable(this);
+  late final $DailyPaceSnapshotsTable dailyPaceSnapshots =
+      $DailyPaceSnapshotsTable(this);
   late final Index expensesOccurredAt = Index(
     'expenses_occurred_at',
     'CREATE INDEX expenses_occurred_at ON expenses (occurred_at)',
@@ -4316,6 +4842,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_rp_occurrence_unique',
     'CREATE UNIQUE INDEX idx_rp_occurrence_unique ON recurring_payment_occurrences (recurring_payment_id, month_key)',
   );
+  late final Index idxDailyPaceUserDate = Index(
+    'idx_daily_pace_user_date',
+    'CREATE UNIQUE INDEX idx_daily_pace_user_date ON daily_pace_snapshots (user_id, local_date)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4328,10 +4858,12 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     expenseLimitPreferences,
     userPreferences,
     expenseCategories,
+    dailyPaceSnapshots,
     expensesOccurredAt,
     expensesCategoryOccurred,
     expensesCreatedBy,
     idxRpOccurrenceUnique,
+    idxDailyPaceUserDate,
   ];
 }
 
@@ -4428,6 +4960,30 @@ final class $$UserProfilesTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _userPreferencesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$DailyPaceSnapshotsTable, List<DailyPaceSnapshot>>
+  _dailyPaceSnapshotsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.dailyPaceSnapshots,
+        aliasName: $_aliasNameGenerator(
+          db.userProfiles.id,
+          db.dailyPaceSnapshots.userId,
+        ),
+      );
+
+  $$DailyPaceSnapshotsTableProcessedTableManager get dailyPaceSnapshotsRefs {
+    final manager = $$DailyPaceSnapshotsTableTableManager(
+      $_db,
+      $_db.dailyPaceSnapshots,
+    ).filter((f) => f.userId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _dailyPaceSnapshotsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -4546,6 +5102,31 @@ class $$UserProfilesTableFilterComposer
           }) => $$UserPreferencesTableFilterComposer(
             $db: $db,
             $table: $db.userPreferences,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> dailyPaceSnapshotsRefs(
+    Expression<bool> Function($$DailyPaceSnapshotsTableFilterComposer f) f,
+  ) {
+    final $$DailyPaceSnapshotsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.dailyPaceSnapshots,
+      getReferencedColumn: (t) => t.userId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DailyPaceSnapshotsTableFilterComposer(
+            $db: $db,
+            $table: $db.dailyPaceSnapshots,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4713,6 +5294,32 @@ class $$UserProfilesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> dailyPaceSnapshotsRefs<T extends Object>(
+    Expression<T> Function($$DailyPaceSnapshotsTableAnnotationComposer a) f,
+  ) {
+    final $$DailyPaceSnapshotsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.dailyPaceSnapshots,
+          getReferencedColumn: (t) => t.userId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$DailyPaceSnapshotsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.dailyPaceSnapshots,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$UserProfilesTableTableManager
@@ -4732,6 +5339,7 @@ class $$UserProfilesTableTableManager
             bool expensesRefs,
             bool expenseLimitPreferencesRefs,
             bool userPreferencesRefs,
+            bool dailyPaceSnapshotsRefs,
           })
         > {
   $$UserProfilesTableTableManager(_$AppDatabase db, $UserProfilesTable table)
@@ -4798,6 +5406,7 @@ class $$UserProfilesTableTableManager
                 expensesRefs = false,
                 expenseLimitPreferencesRefs = false,
                 userPreferencesRefs = false,
+                dailyPaceSnapshotsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -4805,6 +5414,7 @@ class $$UserProfilesTableTableManager
                     if (expensesRefs) db.expenses,
                     if (expenseLimitPreferencesRefs) db.expenseLimitPreferences,
                     if (userPreferencesRefs) db.userPreferences,
+                    if (dailyPaceSnapshotsRefs) db.dailyPaceSnapshots,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -4872,6 +5482,27 @@ class $$UserProfilesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (dailyPaceSnapshotsRefs)
+                        await $_getPrefetchedData<
+                          UserProfile,
+                          $UserProfilesTable,
+                          DailyPaceSnapshot
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UserProfilesTableReferences
+                              ._dailyPaceSnapshotsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UserProfilesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).dailyPaceSnapshotsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.userId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -4896,6 +5527,7 @@ typedef $$UserProfilesTableProcessedTableManager =
         bool expensesRefs,
         bool expenseLimitPreferencesRefs,
         bool userPreferencesRefs,
+        bool dailyPaceSnapshotsRefs,
       })
     >;
 typedef $$RecurringPaymentsTableCreateCompanionBuilder =
@@ -7805,6 +8437,398 @@ typedef $$ExpenseCategoriesTableProcessedTableManager =
       ExpenseCategory,
       PrefetchHooks Function()
     >;
+typedef $$DailyPaceSnapshotsTableCreateCompanionBuilder =
+    DailyPaceSnapshotsCompanion Function({
+      Value<int> id,
+      required String userId,
+      required String localDate,
+      required int paceMinor,
+      required int poolMinor,
+      required int spentBeforeTodayMinor,
+      required int daysAfterToday,
+      required int createdAtMs,
+    });
+typedef $$DailyPaceSnapshotsTableUpdateCompanionBuilder =
+    DailyPaceSnapshotsCompanion Function({
+      Value<int> id,
+      Value<String> userId,
+      Value<String> localDate,
+      Value<int> paceMinor,
+      Value<int> poolMinor,
+      Value<int> spentBeforeTodayMinor,
+      Value<int> daysAfterToday,
+      Value<int> createdAtMs,
+    });
+
+final class $$DailyPaceSnapshotsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $DailyPaceSnapshotsTable,
+          DailyPaceSnapshot
+        > {
+  $$DailyPaceSnapshotsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $UserProfilesTable _userIdTable(_$AppDatabase db) =>
+      db.userProfiles.createAlias(
+        $_aliasNameGenerator(db.dailyPaceSnapshots.userId, db.userProfiles.id),
+      );
+
+  $$UserProfilesTableProcessedTableManager get userId {
+    final $_column = $_itemColumn<String>('user_id')!;
+
+    final manager = $$UserProfilesTableTableManager(
+      $_db,
+      $_db.userProfiles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_userIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$DailyPaceSnapshotsTableFilterComposer
+    extends Composer<_$AppDatabase, $DailyPaceSnapshotsTable> {
+  $$DailyPaceSnapshotsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get localDate => $composableBuilder(
+    column: $table.localDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get paceMinor => $composableBuilder(
+    column: $table.paceMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get poolMinor => $composableBuilder(
+    column: $table.poolMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get spentBeforeTodayMinor => $composableBuilder(
+    column: $table.spentBeforeTodayMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get daysAfterToday => $composableBuilder(
+    column: $table.daysAfterToday,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$UserProfilesTableFilterComposer get userId {
+    final $$UserProfilesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.userProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProfilesTableFilterComposer(
+            $db: $db,
+            $table: $db.userProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DailyPaceSnapshotsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DailyPaceSnapshotsTable> {
+  $$DailyPaceSnapshotsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get localDate => $composableBuilder(
+    column: $table.localDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get paceMinor => $composableBuilder(
+    column: $table.paceMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get poolMinor => $composableBuilder(
+    column: $table.poolMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get spentBeforeTodayMinor => $composableBuilder(
+    column: $table.spentBeforeTodayMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get daysAfterToday => $composableBuilder(
+    column: $table.daysAfterToday,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$UserProfilesTableOrderingComposer get userId {
+    final $$UserProfilesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.userProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProfilesTableOrderingComposer(
+            $db: $db,
+            $table: $db.userProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DailyPaceSnapshotsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DailyPaceSnapshotsTable> {
+  $$DailyPaceSnapshotsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get localDate =>
+      $composableBuilder(column: $table.localDate, builder: (column) => column);
+
+  GeneratedColumn<int> get paceMinor =>
+      $composableBuilder(column: $table.paceMinor, builder: (column) => column);
+
+  GeneratedColumn<int> get poolMinor =>
+      $composableBuilder(column: $table.poolMinor, builder: (column) => column);
+
+  GeneratedColumn<int> get spentBeforeTodayMinor => $composableBuilder(
+    column: $table.spentBeforeTodayMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get daysAfterToday => $composableBuilder(
+    column: $table.daysAfterToday,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => column,
+  );
+
+  $$UserProfilesTableAnnotationComposer get userId {
+    final $$UserProfilesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.userProfiles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserProfilesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userProfiles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DailyPaceSnapshotsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DailyPaceSnapshotsTable,
+          DailyPaceSnapshot,
+          $$DailyPaceSnapshotsTableFilterComposer,
+          $$DailyPaceSnapshotsTableOrderingComposer,
+          $$DailyPaceSnapshotsTableAnnotationComposer,
+          $$DailyPaceSnapshotsTableCreateCompanionBuilder,
+          $$DailyPaceSnapshotsTableUpdateCompanionBuilder,
+          (DailyPaceSnapshot, $$DailyPaceSnapshotsTableReferences),
+          DailyPaceSnapshot,
+          PrefetchHooks Function({bool userId})
+        > {
+  $$DailyPaceSnapshotsTableTableManager(
+    _$AppDatabase db,
+    $DailyPaceSnapshotsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DailyPaceSnapshotsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DailyPaceSnapshotsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DailyPaceSnapshotsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> localDate = const Value.absent(),
+                Value<int> paceMinor = const Value.absent(),
+                Value<int> poolMinor = const Value.absent(),
+                Value<int> spentBeforeTodayMinor = const Value.absent(),
+                Value<int> daysAfterToday = const Value.absent(),
+                Value<int> createdAtMs = const Value.absent(),
+              }) => DailyPaceSnapshotsCompanion(
+                id: id,
+                userId: userId,
+                localDate: localDate,
+                paceMinor: paceMinor,
+                poolMinor: poolMinor,
+                spentBeforeTodayMinor: spentBeforeTodayMinor,
+                daysAfterToday: daysAfterToday,
+                createdAtMs: createdAtMs,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String userId,
+                required String localDate,
+                required int paceMinor,
+                required int poolMinor,
+                required int spentBeforeTodayMinor,
+                required int daysAfterToday,
+                required int createdAtMs,
+              }) => DailyPaceSnapshotsCompanion.insert(
+                id: id,
+                userId: userId,
+                localDate: localDate,
+                paceMinor: paceMinor,
+                poolMinor: poolMinor,
+                spentBeforeTodayMinor: spentBeforeTodayMinor,
+                daysAfterToday: daysAfterToday,
+                createdAtMs: createdAtMs,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$DailyPaceSnapshotsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({userId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (userId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.userId,
+                                referencedTable:
+                                    $$DailyPaceSnapshotsTableReferences
+                                        ._userIdTable(db),
+                                referencedColumn:
+                                    $$DailyPaceSnapshotsTableReferences
+                                        ._userIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$DailyPaceSnapshotsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DailyPaceSnapshotsTable,
+      DailyPaceSnapshot,
+      $$DailyPaceSnapshotsTableFilterComposer,
+      $$DailyPaceSnapshotsTableOrderingComposer,
+      $$DailyPaceSnapshotsTableAnnotationComposer,
+      $$DailyPaceSnapshotsTableCreateCompanionBuilder,
+      $$DailyPaceSnapshotsTableUpdateCompanionBuilder,
+      (DailyPaceSnapshot, $$DailyPaceSnapshotsTableReferences),
+      DailyPaceSnapshot,
+      PrefetchHooks Function({bool userId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7830,4 +8854,6 @@ class $AppDatabaseManager {
       $$UserPreferencesTableTableManager(_db, _db.userPreferences);
   $$ExpenseCategoriesTableTableManager get expenseCategories =>
       $$ExpenseCategoriesTableTableManager(_db, _db.expenseCategories);
+  $$DailyPaceSnapshotsTableTableManager get dailyPaceSnapshots =>
+      $$DailyPaceSnapshotsTableTableManager(_db, _db.dailyPaceSnapshots);
 }

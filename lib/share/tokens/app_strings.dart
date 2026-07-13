@@ -45,8 +45,11 @@ class AppStrings {
   static const monthlyOverspentLabel = 'MONTHLY OVERSPENT';
   static const dailyPlanLabel = 'Daily plan';
   static const pacePerDayLabel = 'Pace / day';
+  static const todayExpenseLabel = 'Today';
+  static const paceOverLabel = 'Over pace';
   static const monthDaySpendListingTitle = 'Daily spend';
   static const monthDaySpendPlanLabel = 'Plan';
+  static const monthDaySpendPaceLabel = 'Pace';
   static const monthDaySpendActualLabel = 'Spent';
   static const monthDaySpendDailyExpenseLabel = 'Daily';
   static const monthDaySpendRecurringAmountLabel = 'Recurring';

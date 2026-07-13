@@ -105,7 +105,24 @@ class _MonthDaySpendListingScreenState
               final hasLimits = d != null && d.hasIncome;
               final plan = hasLimits ? d.dailyPlanMinor : 0;
 
-              return StreamBuilder<List<Expense>>(
+              return StreamBuilder<List<DailyPaceSnapshot>>(
+                stream: AppServices.of(context)
+                    .expenseLimits
+                    .watchPaceSnapshotsForMonth(
+                      userId: uid,
+                      monthLocal: DateTime(now.year, now.month),
+                    ),
+                builder: (context, paceSnap) {
+                  final paceByDay = <int, int>{};
+                  for (final row in paceSnap.data ?? const <DailyPaceSnapshot>[]) {
+                    final parts = row.localDate.split('-');
+                    if (parts.length == 3) {
+                      final day = int.tryParse(parts[2]);
+                      if (day != null) paceByDay[day] = row.paceMinor;
+                    }
+                  }
+
+                  return StreamBuilder<List<Expense>>(
                 stream: AppServices.of(context).expenses.watchExpensesInRange(
                       startUtcMs: range.monthStartUtcMs,
                       endUtcMs: range.monthEndUtcMs,
@@ -165,12 +182,20 @@ class _MonthDaySpendListingScreenState
                             final dayDate = DateTime(now.year, now.month, day);
                             final dayTitle = DateFormat.d().format(dayDate);
                             final hasRecurring = split.recurringMinor > 0;
+                            final lockedPace = paceByDay[day];
+                            final threshold = lockedPace != null && lockedPace > 0
+                                ? lockedPace
+                                : (hasLimits ? plan : null);
                             final dailyColor = SpendVsPlanColors.resolve(
-                              planMinor: hasLimits ? plan : null,
+                              planMinor: threshold,
                               dailyMinor: split.dailyMinor,
                               dayLocal: dayDate,
                               nowLocal: now,
                             );
+                            final thresholdLabel = lockedPace != null
+                                ? AppStrings.monthDaySpendPaceLabel
+                                : AppStrings.monthDaySpendPlanLabel;
+                            final thresholdValue = lockedPace ?? plan;
 
                             return Material(
                               color: AppColors.surfaceContainerLowest
@@ -199,9 +224,11 @@ class _MonthDaySpendListingScreenState
                                       ),
                                       const SizedBox(height: AppSpacing.s4),
                                       Text(
-                                        '${AppStrings.monthDaySpendPlanLabel} ${hasLimits ? formatExpenseMinor(context, plan) : AppStrings.expenseLimitsUnsetValue}',
+                                        '$thresholdLabel ${hasLimits ? formatExpenseMinor(context, thresholdValue) : AppStrings.expenseLimitsUnsetValue}',
                                         style: textTheme.labelSmall?.copyWith(
-                                          color: SpendVsPlanColors.plan,
+                                          color: lockedPace != null
+                                              ? SpendVsPlanColors.pace
+                                              : SpendVsPlanColors.plan,
                                           fontWeight: FontWeight.w700,
                                         ),
                                         maxLines: 1,
@@ -249,6 +276,8 @@ class _MonthDaySpendListingScreenState
                       ),
                     ],
                   );
+                },
+              );
                 },
               );
             },
