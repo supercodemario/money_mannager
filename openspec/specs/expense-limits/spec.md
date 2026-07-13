@@ -2,8 +2,10 @@
 
 ## Purpose
 
-Users set **monthly income** and optional **savings** and **exclude unpaid recurring** preferences so the app can show **indicative** spendable pool and **daily guidance** for the current local month. Values are **guidance only**—they do not block recording expenses.
+Users set **monthly income** and optional **savings** and **exclude unpaid recurring** preferences so the app can show **spendable pool**, **Daily plan**, and **Pace / day** guidance for the current local month. Values are **guidance only**—they do not block recording expenses.
+
 ## Requirements
+
 ### Requirement: Expense limit preferences are persisted locally
 
 The system MUST persist, per user profile (or equivalent single-user scope used by the app), at least: optional **monthly income** in minor currency units, optional **monthly savings reservation** in minor units, and a boolean **exclude unpaid enabled recurring** defaulting to **false**. Values MUST survive app restarts.
@@ -34,25 +36,52 @@ For the **current local calendar month**, when monthly income is set, the system
 
 ### Requirement: Indicative daily amount from calendar month length
 
-When spendable pool is defined for the current month and the number of days in that month is **D** (28–31), the system MUST derive an **indicative daily spend** in minor units using **integer division** of pool by **D** (floor toward zero), unless pool is non-positive in which case the indicative daily MUST be **zero**.
+When spendable pool is defined for the current local month with **D** days (28–31), the system MUST derive two guidance values in minor units:
 
-#### Scenario: February length affects divisor
+- **Daily plan** — integer division of spendable pool by **D** (`pool ~/ D`), or **zero** when pool is non-positive.
+- **Pace / day** — let **remaining** be `spendablePool − currentMonthSpent` (same remaining as the dashboard monthly balance). Let **daysAfterToday** be `D − dayOfMonth` for the current local date (**excluding today**). Pace / day MUST be `remaining ~/ daysAfterToday` when remaining is positive and daysAfterToday is positive; otherwise Pace / day MUST be **zero**.
 
-- **WHEN** the current month is February in a leap year
-- **THEN** the divisor for daily guidance MUST be **29** for that month
+#### Scenario: February length affects Daily plan divisor
+
+- **WHEN** the current month is February in a leap year and pool is positive
+- **THEN** Daily plan MUST use divisor **29**
+
+#### Scenario: Daily plan ignores month spent
+
+- **WHEN** spendable pool is 3000 minor units and the month has 30 days
+- **AND** current-month spent is greater than zero but less than the pool
+- **THEN** Daily plan MUST remain `3000 ~/ 30`
+
+#### Scenario: Pace uses remaining and days after today
+
+- **WHEN** spendable pool is 3000 minor units, the month has 30 days, local day-of-month is **10**, and current-month spent is **1100** (remaining **1900**)
+- **THEN** daysAfterToday MUST be **20**
+- **AND** Pace / day MUST be `1900 ~/ 20`
+
+#### Scenario: Last day yields zero pace
+
+- **WHEN** local day-of-month equals **D**
+- **THEN** daysAfterToday MUST be **0**
+- **AND** Pace / day MUST be **zero**
+
+#### Scenario: Overspent yields zero pace
+
+- **WHEN** current-month spent is greater than spendable pool
+- **THEN** Pace / day MUST be **zero**
+- **AND** Daily plan MUST still equal `pool ~/ D` when pool is positive
 
 ### Requirement: Guidance is non-blocking
 
-The indicative daily and monthly pool values MUST be presented as **guidance** for understanding sustainable pace. The system MUST NOT prevent saving expenses or recurring mark-paid actions solely because they exceed the indicative daily amount in this capability.
+The Daily plan, Pace / day, and monthly pool values MUST be presented as **guidance** for understanding sustainable pace. The system MUST NOT prevent saving expenses or recurring mark-paid actions solely because they exceed Daily plan or Pace / day in this capability.
 
 #### Scenario: Overspend allowed
 
-- **WHEN** the user records an expense larger than the indicative daily amount
+- **WHEN** the user records an expense larger than Daily plan or Pace / day
 - **THEN** the app SHALL still allow the expense to be saved per existing expense flows
 
 ### Requirement: Limits detail screen captures inputs
 
-The system MUST provide a **limits detail** screen reachable from Settings where the user can enter monthly income, optional monthly savings, and toggle exclude-unpaid-recurring, and save. The screen MUST show derived **spendable pool** and **indicative daily** when enough inputs exist to compute them. The limits detail screen MUST present these controls using the approved Stitch v3 composition: a prominent monthly income section, side-by-side spendable summary cards, a savings-goal card that supports percentage-goal adjustment, a recurring-subtraction toggle card, and a primary save action. Derived summaries MUST refresh in real time from the current on-screen inputs.
+The system MUST provide a **limits detail** screen reachable from Settings where the user can enter monthly income, optional monthly savings, and toggle exclude-unpaid-recurring, and save. The screen MUST show derived **spendable pool** and **Daily plan** when enough inputs exist to compute them. The limits detail screen MUST present these controls using the approved Stitch v3 composition: a prominent monthly income section, side-by-side spendable summary cards, a savings-goal card that supports percentage-goal adjustment, a recurring-subtraction toggle card, and a primary save action. Derived summaries MUST refresh in real time from the current on-screen inputs.
 
 #### Scenario: Navigate from Settings Limits card
 
@@ -72,42 +101,65 @@ The system MUST provide a **limits detail** screen reachable from Settings where
 #### Scenario: Limits summaries remain derived from current inputs
 
 - **WHEN** the user changes income, savings, or recurring subtraction options
-- **THEN** the monthly and daily spendable summaries SHALL update immediately from the current inputs while continuing to apply the same existing expense-limits derivation rules for the active month
+- **THEN** the monthly and Daily plan summaries SHALL update immediately from the current inputs while continuing to apply the same existing expense-limits derivation rules for the active month
 
 ### Requirement: Dashboard home shows limits summary details
-The system MUST show a limits summary section on dashboard home that includes monthly total expense, remaining monthly amount, current savings set, and current daily limit using locally persisted preferences and derived guidance values.
+
+The system MUST show a limits summary section on dashboard home that includes monthly total expense, remaining or overspent monthly amount, current savings set, and both **Daily plan** and **Pace / day** using locally persisted preferences and derived guidance values. Daily plan and Pace / day MUST be presented nested under the monthly remaining/overspent block (not as a single standalone daily pill that replaces that pairing). Savings MUST remain separate from that dual-daily row.
 
 #### Scenario: Dashboard renders all requested details
-- **WHEN** the user opens dashboard home
-- **THEN** the limits summary SHALL display monthly total expense, remaining monthly amount, current savings set, and current daily limit
+
+- **WHEN** the user opens dashboard home and limits are configured
+- **THEN** the limits summary SHALL display monthly total expense, remaining or overspent amount, current savings set, Daily plan, and Pace / day
+
+#### Scenario: Dual daily nested under remaining
+
+- **WHEN** limits are configured
+- **THEN** Daily plan and Pace / day SHALL appear as a paired row under the monthly remaining/overspent presentation
 
 #### Scenario: Remaining monthly amount is derived from guidance and spending
+
 - **WHEN** monthly total expense and spendable monthly guidance are available
 - **THEN** remaining monthly amount SHALL be derived from those values (not a separately persisted field)
 
 #### Scenario: Unset limits show explicit placeholders
+
 - **WHEN** income/savings/limits are not configured
 - **THEN** the corresponding limits summary fields SHALL show explicit unset placeholders rather than misleading numeric values
 
 ### Requirement: Dashboard limits summary distinguishes remaining vs overspent
+
 The dashboard limits summary MUST distinguish non-exceed and exceed states by labeling the monthly balance row as remaining when under guidance and overspent when above guidance.
 
 #### Scenario: Non-exceed state keeps remaining label
+
 - **WHEN** monthly spent is less than or equal to monthly spendable guidance
 - **THEN** the monthly balance row SHALL be labeled as remaining and show the remaining amount
 
 #### Scenario: Exceed state switches to overspent label
+
 - **WHEN** monthly spent is greater than monthly spendable guidance
 - **THEN** the monthly balance row SHALL be labeled as overspent and show the absolute exceeded amount
 
 ### Requirement: Dashboard guidance messaging includes exceeded percent
+
 The dashboard monthly guidance message MUST include exceeded percent in over-budget state while preserving used-percent messaging in non-exceed state.
 
 #### Scenario: Non-exceed guidance shows used percent
+
 - **WHEN** monthly spent is less than or equal to monthly spendable guidance
 - **THEN** the guidance subtitle SHALL show used percentage of monthly spendable guidance
 
 #### Scenario: Exceed guidance shows exceeded percent
+
 - **WHEN** monthly spent is greater than monthly spendable guidance
 - **THEN** the guidance subtitle or companion line SHALL include exceeded percentage with explicit positive overage wording
 
+### Requirement: Home dual daily opens month day listing
+
+When limits are configured, the Daily plan / Pace / day row on dashboard home MUST be tappable and MUST navigate to the month day spend listing for the current local month.
+
+#### Scenario: Tap opens listing
+
+- **WHEN** the user taps the Daily plan / Pace / day row on Home
+- **THEN** the app SHALL open the month day spend listing for the current local month
