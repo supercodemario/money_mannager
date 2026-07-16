@@ -1,15 +1,33 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:money_manager/app/app_services.dart';
+import 'package:money_manager/core/navigation/app_route_pop.dart';
 import 'package:money_manager/features/add_expense/data/category_visuals.dart';
 import 'package:money_manager/features/add_expense/widgets/add_expense_bento_field.dart';
 import 'package:money_manager/features/add_expense/widgets/add_expense_category_grid.dart';
 import 'package:money_manager/features/expenses/widgets/expenses_amount_format.dart';
 import 'package:money_manager/share/share.dart';
 
+@RoutePage()
 class AddExpenseScreen extends StatefulWidget {
-  const AddExpenseScreen({super.key, this.onClose});
+  const AddExpenseScreen({
+    super.key,
+    this.onClose,
+    this.initialAmountMinor,
+    this.initialNote,
+    this.initialDate,
+    this.sourceKey,
+  });
 
   final VoidCallback? onClose;
+
+  /// Prefill amount in minor units (e.g. paise).
+  final int? initialAmountMinor;
+  final String? initialNote;
+  final DateTime? initialDate;
+
+  /// Opaque key returned via [popRoute] after a successful save (e.g. SMS id).
+  final String? sourceKey;
 
   @override
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -18,9 +36,31 @@ class AddExpenseScreen extends StatefulWidget {
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
-  DateTime _date = DateTime.now();
+  late DateTime _date;
   String? _selectedCategoryId;
   bool _saving = false;
+  bool _seededAmount = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _date = widget.initialDate ?? DateTime.now();
+    final note = widget.initialNote;
+    if (note != null && note.isNotEmpty) {
+      _noteController.text = note;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_seededAmount) return;
+    final minor = widget.initialAmountMinor;
+    if (minor == null) return;
+    _seededAmount = true;
+    _amountController.text =
+        RegionalFormattingScope.of(context).formatMinorNumericOnly(minor);
+  }
 
   @override
   void dispose() {
@@ -193,7 +233,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       onClose();
       return;
     }
-    Navigator.maybePop(context);
+    context.popRoute<String?>();
   }
 
   Future<void> _save() async {
@@ -216,7 +256,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         occurredAt: _date,
       );
       if (!mounted) return;
-      Navigator.maybePop(context);
+      await context.popRoute<String?>(widget.sourceKey);
     } finally {
       if (mounted) setState(() => _saving = false);
     }

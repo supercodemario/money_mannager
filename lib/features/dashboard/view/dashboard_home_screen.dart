@@ -9,6 +9,7 @@ import 'package:money_manager/data/local/onboarding_preferences.dart';
 import 'package:money_manager/data/repositories/expense_limits_repository.dart';
 import 'package:money_manager/features/dashboard/widgets/dashboard_home_expense_body.dart';
 import 'package:money_manager/features/dashboard/widgets/dashboard_home_tutorial_body.dart';
+import 'package:money_manager/features/sms_payments/view/payment_sms_permission_prompt.dart';
 import 'package:money_manager/share/share.dart';
 
 /// Home tab: [HomeRatioAppBar] + first-run tutorial or the expense dashboard.
@@ -39,6 +40,7 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen>
   bool _hasExpense = false;
   bool _hasMonthlyGuidance = false;
   bool _temporarilyRevealed = false;
+  bool _smsPermissionPrompted = false;
 
   StreamSubscription<bool>? _expenseSub;
   StreamSubscription<ExpenseLimitPreference?>? _limitsSub;
@@ -108,10 +110,27 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen>
       if (!mounted) return;
       setState(() => _hasMonthlyGuidance = expenseLimitsHasMonthlyGuidanceConfigured(p));
     });
+
+    // Android: ask SMS permission on Home launch (tutorial or expense dashboard).
+    if (!_smsPermissionPrompted && mounted) {
+      _smsPermissionPrompted = true;
+      await promptSmsPermissionIfNeeded(context);
+    }
   }
 
   void _openExpenseLimits() {
     context.router.push<void>(const ExpenseLimitsRoute());
+  }
+
+  Future<String?> _openAddExpenseFromSms(ExpensePrefill prefill) {
+    return context.router.push<String?>(
+      QuickAddRoute(
+        initialAmountMinor: prefill.amountMinor,
+        initialNote: prefill.note,
+        initialDate: prefill.date,
+        sourceKey: prefill.sourceKey,
+      ),
+    );
   }
 
   @override
@@ -149,6 +168,8 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen>
             privacyEnabled: privacyEnabled,
             temporarilyRevealed: privacyEnabled && _temporarilyRevealed,
             onToggleReveal: privacyEnabled ? _toggleTemporaryReveal : null,
+            onAddExpenseFromSms: _openAddExpenseFromSms,
+            isActive: widget.isActive,
           );
         },
       );

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:money_manager/app/app_router.dart';
@@ -12,9 +14,38 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen>
+    with WidgetsBindingObserver {
   bool _biometricEnabled = true;
   bool _pushEnabled = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      AppServices.of(context).smsRead.refreshFromSystemPermission();
+    }
+  }
+
+  Future<void> _onSmsReadChanged(bool value) async {
+    final smsRead = AppServices.of(context).smsRead;
+    if (!value) {
+      await smsRead.turnOff();
+      return;
+    }
+    await smsRead.turnOnFromSettings();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -194,6 +225,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     );
                   },
                 ),
+                if (Platform.isAndroid) ...[
+                  const SizedBox(height: AppSpacing.s12),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: services.smsRead.enabled,
+                    builder: (context, smsOn, _) {
+                      return _SmsReadToggleRow(
+                        enabled: smsOn,
+                        onChanged: _onSmsReadChanged,
+                      );
+                    },
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.s12),
                 _BiometricToggleCard(
                   enabled: _biometricEnabled,
@@ -267,6 +310,79 @@ class _PrivacyModeToggleRow extends StatelessWidget {
                 const SizedBox(height: AppSpacing.s4),
                 Text(
                   AppStrings.settingsPrivacyModeSubtitle,
+                  style: textTheme.labelSmall?.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: enabled,
+            onChanged: onChanged,
+            activeThumbColor: AppColors.secondary,
+            activeTrackColor: AppColors.secondaryContainer,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SmsReadToggleRow extends StatelessWidget {
+  const _SmsReadToggleRow({
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpacing.s16),
+      borderRadius: AppRadius.xl,
+      color: AppColors.surfaceContainerLow,
+      child: Row(
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(AppRadius.r12),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.onSurface.withValues(alpha: 0.06),
+                  blurRadius: AppSpacing.s4,
+                  offset: const Offset(0, AppSpacing.s2),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.s8),
+              child: Icon(
+                Icons.sms_outlined,
+                size: AppSpacing.s24,
+                color: AppColors.secondaryDim,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.s12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppStrings.settingsSmsReadTitle,
+                  style: textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.s4),
+                Text(
+                  AppStrings.settingsSmsReadSubtitle,
                   style: textTheme.labelSmall?.copyWith(
                     color: AppColors.onSurfaceVariant,
                   ),

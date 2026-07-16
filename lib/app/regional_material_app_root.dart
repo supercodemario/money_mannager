@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:money_manager/app/app_services.dart';
 import 'package:money_manager/data/local/app_database.dart';
+import 'package:money_manager/features/force_update/view/force_update_gate.dart';
 import 'package:money_manager/share/regional/regional_formatting_data.dart';
 import 'package:money_manager/share/regional/regional_formatting_scope.dart';
 
@@ -40,7 +41,9 @@ class RegionalMaterialAppRoot extends StatelessWidget {
               routerConfig: routerConfig,
               builder: (context, child) => RegionalFormattingScope(
                 data: data,
-                child: child ?? const SizedBox.shrink(),
+                child: ForceUpdateGate(
+                  child: child ?? const SizedBox.shrink(),
+                ),
               ),
             );
           },

@@ -4529,6 +4529,9 @@ class DailyPaceSnapshot extends DataClass
   final int paceMinor;
   final int poolMinor;
   final int spentBeforeTodayMinor;
+
+  /// Divisor used at write time: days left **including** today (`D − day + 1`).
+  /// Column name is historical (`days_after_today`); value is include-today count.
   final int daysAfterToday;
   final int createdAtMs;
   const DailyPaceSnapshot({

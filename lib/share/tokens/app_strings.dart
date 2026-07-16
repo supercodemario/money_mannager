@@ -283,6 +283,14 @@ class AppStrings {
       'Hide Home budget and spending amounts';
   static const privacyShowBalancesSemantics = 'Show balances';
   static const privacyHideBalancesSemantics = 'Hide balances';
+  static const settingsSmsReadTitle = 'Read payment SMS';
+  static const settingsSmsReadSubtitle =
+      'Suggest expenses from India payment SMS on this device';
+  static const forceUpdateTitle = 'Update required';
+  static const forceUpdateBody =
+      'A newer version of homeRatio is required to continue. '
+      'Please update from the Play Store.';
+  static const forceUpdateCta = 'Update';
   static const settingsBiometricTitle = 'Biometric lock';
   static const settingsBiometricSubtitle = 'Require Face ID';
   static const settingsPushNotifications = 'Push notifications';
@@ -404,6 +412,21 @@ class AppStrings {
   static const tapCategoryToSaveInstantly = 'Tap category to save instantly';
   static const saveExpense = 'Save Expense';
   static const cancel = 'Cancel';
+
+  // Payment SMS (Android)
+  static const paymentSmsSectionTitle = 'Payment SMS';
+  static const paymentSmsAddToExpense = 'Add to expense';
+  static const paymentSmsExplainTitle = 'Read payment SMS?';
+  static const paymentSmsExplainBody =
+      'HomeRatio can read payment and UPI SMS on this device to suggest expenses. '
+      'Messages stay on your phone and are never synced to the cloud.';
+  static const paymentSmsExplainAllow = 'Allow';
+  static const paymentSmsExplainNotNow = 'Not now';
+  static const paymentSmsEnableCta = 'Enable SMS access';
+  static const paymentSmsEnableHint =
+      'Allow SMS access to list recent India payment messages here.';
+  static const paymentSmsEmpty = 'No recent payment SMS to add';
+  static const paymentSmsOpenSettings = 'Open settings';
 
   // User profile
   static const defaultUserDisplayName = 'You';

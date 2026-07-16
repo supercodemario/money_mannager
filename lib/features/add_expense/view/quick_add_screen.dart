@@ -11,23 +11,54 @@ enum _QuickAddMode { amount, category }
 
 @RoutePage()
 class QuickAddScreen extends StatefulWidget {
-  const QuickAddScreen({super.key, this.onClose});
+  const QuickAddScreen({
+    super.key,
+    this.onClose,
+    this.initialAmountMinor,
+    this.initialNote,
+    this.initialDate,
+    this.sourceKey,
+  });
 
   final VoidCallback? onClose;
+
+  /// Prefill amount in minor units (e.g. paise).
+  final int? initialAmountMinor;
+  final String? initialNote;
+  final DateTime? initialDate;
+
+  /// Opaque key returned via [popRoute] after a successful save (e.g. SMS id).
+  final String? sourceKey;
 
   @override
   State<QuickAddScreen> createState() => _QuickAddScreenState();
 }
 
 class _QuickAddScreenState extends State<QuickAddScreen> {
-  _QuickAddMode _mode = _QuickAddMode.amount;
-  DateTime _date = DateTime.now();
-  String _amountInt = '0';
-  String _amountFrac = '';
-  bool _hasDot = false;
+  late _QuickAddMode _mode;
+  late DateTime _date;
+  late String _amountInt;
+  late String _amountFrac;
+  late bool _hasDot;
   String? _selectedCategoryId;
   final _noteController = TextEditingController();
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _date = widget.initialDate ?? DateTime.now();
+    final seeded = _seedAmountFromMinor(widget.initialAmountMinor);
+    _amountInt = seeded.amountInt;
+    _amountFrac = seeded.amountFrac;
+    _hasDot = seeded.hasDot;
+    // Prefill from SMS: skip keypad and go straight to category pick.
+    _mode = seeded.positive ? _QuickAddMode.category : _QuickAddMode.amount;
+    final note = widget.initialNote;
+    if (note != null && note.isNotEmpty) {
+      _noteController.text = note;
+    }
+  }
 
   @override
   void dispose() {
@@ -128,7 +159,7 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
       onClose();
       return;
     }
-    context.popRoute();
+    context.popRoute<String?>();
   }
 
   Future<void> _save() async {
@@ -149,7 +180,7 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
         occurredAt: _date,
       );
       if (!mounted) return;
-      context.popRoute();
+      await context.popRoute<String?>(widget.sourceKey);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -205,5 +236,28 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
       }
       _amountInt = _amountInt.substring(0, _amountInt.length - 1);
     });
+  }
+
+  static ({String amountInt, String amountFrac, bool hasDot, bool positive})
+      _seedAmountFromMinor(int? minor) {
+    if (minor == null || minor <= 0) {
+      return (amountInt: '0', amountFrac: '', hasDot: false, positive: false);
+    }
+    final whole = minor ~/ 100;
+    final frac = minor % 100;
+    if (frac == 0) {
+      return (
+        amountInt: whole.toString(),
+        amountFrac: '',
+        hasDot: false,
+        positive: true,
+      );
+    }
+    return (
+      amountInt: whole.toString(),
+      amountFrac: frac.toString().padLeft(2, '0'),
+      hasDot: true,
+      positive: true,
+    );
   }
 }

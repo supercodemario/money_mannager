@@ -8,6 +8,7 @@ import 'package:money_manager/app/privacy_mode_controller.dart';
 import 'package:money_manager/app/profile_details_navigation_impl.dart';
 import 'package:money_manager/app/profile_details_scope.dart';
 import 'package:money_manager/app/regional_material_app_root.dart';
+import 'package:money_manager/app/sms_read_controller.dart';
 import 'package:money_manager/data/local/app_database.dart';
 import 'package:money_manager/data/remote/supabase_env.dart';
 import 'package:money_manager/share/share.dart';
@@ -20,8 +21,17 @@ Future<void> main() async {
   await cloudSync.initialize();
   final privacyMode = PrivacyModeController();
   await privacyMode.load();
+  final smsRead = SmsReadController();
+  await smsRead.load();
   final db = AppDatabase();
-  runApp(MyApp(db: db, cloudSync: cloudSync, privacyMode: privacyMode));
+  runApp(
+    MyApp(
+      db: db,
+      cloudSync: cloudSync,
+      privacyMode: privacyMode,
+      smsRead: smsRead,
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -30,12 +40,14 @@ class MyApp extends StatefulWidget {
     required this.db,
     required this.cloudSync,
     this.privacyMode,
+    this.smsRead,
     this.enableSyncLifecycle = true,
   });
 
   final AppDatabase db;
   final CloudSyncController cloudSync;
   final PrivacyModeController? privacyMode;
+  final SmsReadController? smsRead;
 
   /// When false (e.g. widget tests), [SyncOrchestrator] is not started — avoids pump timeouts.
   final bool enableSyncLifecycle;
@@ -58,6 +70,7 @@ class _MyAppState extends State<MyApp> {
       db: widget.db,
       cloudSync: widget.cloudSync,
       privacyMode: widget.privacyMode,
+      smsRead: widget.smsRead,
       child: ProfileDetailsScope(
         navigation: AppProfileDetailsNavigation(),
         child: HouseholdFlowScope(

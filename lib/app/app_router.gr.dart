@@ -11,6 +11,99 @@
 part of 'app_router.dart';
 
 /// generated route for
+/// [AddExpenseScreen]
+class AddExpenseRoute extends PageRouteInfo<AddExpenseRouteArgs> {
+  AddExpenseRoute({
+    Key? key,
+    VoidCallback? onClose,
+    int? initialAmountMinor,
+    String? initialNote,
+    DateTime? initialDate,
+    String? sourceKey,
+    List<PageRouteInfo>? children,
+  }) : super(
+         AddExpenseRoute.name,
+         args: AddExpenseRouteArgs(
+           key: key,
+           onClose: onClose,
+           initialAmountMinor: initialAmountMinor,
+           initialNote: initialNote,
+           initialDate: initialDate,
+           sourceKey: sourceKey,
+         ),
+         initialChildren: children,
+       );
+
+  static const String name = 'AddExpenseRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<AddExpenseRouteArgs>(
+        orElse: () => const AddExpenseRouteArgs(),
+      );
+      return AddExpenseScreen(
+        key: args.key,
+        onClose: args.onClose,
+        initialAmountMinor: args.initialAmountMinor,
+        initialNote: args.initialNote,
+        initialDate: args.initialDate,
+        sourceKey: args.sourceKey,
+      );
+    },
+  );
+}
+
+class AddExpenseRouteArgs {
+  const AddExpenseRouteArgs({
+    this.key,
+    this.onClose,
+    this.initialAmountMinor,
+    this.initialNote,
+    this.initialDate,
+    this.sourceKey,
+  });
+
+  final Key? key;
+
+  final VoidCallback? onClose;
+
+  final int? initialAmountMinor;
+
+  final String? initialNote;
+
+  final DateTime? initialDate;
+
+  final String? sourceKey;
+
+  @override
+  String toString() {
+    return 'AddExpenseRouteArgs{key: $key, onClose: $onClose, initialAmountMinor: $initialAmountMinor, initialNote: $initialNote, initialDate: $initialDate, sourceKey: $sourceKey}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! AddExpenseRouteArgs) return false;
+    return key == other.key &&
+        onClose == other.onClose &&
+        initialAmountMinor == other.initialAmountMinor &&
+        initialNote == other.initialNote &&
+        initialDate == other.initialDate &&
+        sourceKey == other.sourceKey;
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^
+      onClose.hashCode ^
+      initialAmountMinor.hashCode ^
+      initialNote.hashCode ^
+      initialDate.hashCode ^
+      sourceKey.hashCode;
+}
+
+/// generated route for
 /// [AddRecurringPaymentScreen]
 class AddRecurringPaymentRoute
     extends PageRouteInfo<AddRecurringPaymentRouteArgs> {
@@ -644,10 +737,21 @@ class QuickAddRoute extends PageRouteInfo<QuickAddRouteArgs> {
   QuickAddRoute({
     Key? key,
     VoidCallback? onClose,
+    int? initialAmountMinor,
+    String? initialNote,
+    DateTime? initialDate,
+    String? sourceKey,
     List<PageRouteInfo>? children,
   }) : super(
          QuickAddRoute.name,
-         args: QuickAddRouteArgs(key: key, onClose: onClose),
+         args: QuickAddRouteArgs(
+           key: key,
+           onClose: onClose,
+           initialAmountMinor: initialAmountMinor,
+           initialNote: initialNote,
+           initialDate: initialDate,
+           sourceKey: sourceKey,
+         ),
          initialChildren: children,
        );
 
@@ -659,32 +763,65 @@ class QuickAddRoute extends PageRouteInfo<QuickAddRouteArgs> {
       final args = data.argsAs<QuickAddRouteArgs>(
         orElse: () => const QuickAddRouteArgs(),
       );
-      return QuickAddScreen(key: args.key, onClose: args.onClose);
+      return QuickAddScreen(
+        key: args.key,
+        onClose: args.onClose,
+        initialAmountMinor: args.initialAmountMinor,
+        initialNote: args.initialNote,
+        initialDate: args.initialDate,
+        sourceKey: args.sourceKey,
+      );
     },
   );
 }
 
 class QuickAddRouteArgs {
-  const QuickAddRouteArgs({this.key, this.onClose});
+  const QuickAddRouteArgs({
+    this.key,
+    this.onClose,
+    this.initialAmountMinor,
+    this.initialNote,
+    this.initialDate,
+    this.sourceKey,
+  });
 
   final Key? key;
 
   final VoidCallback? onClose;
 
+  final int? initialAmountMinor;
+
+  final String? initialNote;
+
+  final DateTime? initialDate;
+
+  final String? sourceKey;
+
   @override
   String toString() {
-    return 'QuickAddRouteArgs{key: $key, onClose: $onClose}';
+    return 'QuickAddRouteArgs{key: $key, onClose: $onClose, initialAmountMinor: $initialAmountMinor, initialNote: $initialNote, initialDate: $initialDate, sourceKey: $sourceKey}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! QuickAddRouteArgs) return false;
-    return key == other.key && onClose == other.onClose;
+    return key == other.key &&
+        onClose == other.onClose &&
+        initialAmountMinor == other.initialAmountMinor &&
+        initialNote == other.initialNote &&
+        initialDate == other.initialDate &&
+        sourceKey == other.sourceKey;
   }
 
   @override
-  int get hashCode => key.hashCode ^ onClose.hashCode;
+  int get hashCode =>
+      key.hashCode ^
+      onClose.hashCode ^
+      initialAmountMinor.hashCode ^
+      initialNote.hashCode ^
+      initialDate.hashCode ^
+      sourceKey.hashCode;
 }
 
 /// generated route for
